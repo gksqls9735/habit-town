@@ -184,14 +184,23 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <View style={styles.levelBadge}>
-            <Text style={styles.levelLabel}>LV. 7</Text>
+          <View style={styles.hudPanel}>
+            <View style={styles.hudCornerTopLeft} />
+            <View style={styles.hudCornerTopRight} />
+            <View style={styles.hudCornerBottomLeft} />
+            <View style={styles.hudCornerBottomRight} />
+            <View style={styles.levelBadge}>
+              <View style={styles.levelBadgeAccent} />
+              <Text style={styles.levelLabel}>LV. 7</Text>
+            </View>
+            <View style={styles.expTrack}>
+              <View style={styles.expFill}>
+                <View style={styles.expFillHighlight} />
+              </View>
+            </View>
           </View>
-          <View style={styles.expTrack}>
-            <View style={styles.expFill} />
-          </View>
-          <CurrencyPill label="145" symbol="D" />
-          <CurrencyPill label="1,390" symbol="C" />
+          <CurrencyPill label="145" variant="gem" />
+          <CurrencyPill label="1,390" variant="coin" />
         </View>
 
         <View
@@ -238,13 +247,36 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function CurrencyPill({ label, symbol }: { label: string; symbol: string }) {
+function CurrencyPill({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: 'coin' | 'gem';
+}) {
   return (
     <View style={styles.currencyPill}>
-      <View style={styles.currencyIcon}>
-        <Text style={styles.currencyIconText}>{symbol}</Text>
-      </View>
+      <PixelCurrencyIcon variant={variant} />
       <Text style={styles.currencyText}>{label}</Text>
+    </View>
+  );
+}
+
+function PixelCurrencyIcon({ variant }: { variant: 'coin' | 'gem' }) {
+  if (variant === 'gem') {
+    return (
+      <View style={styles.gemIcon}>
+        <View style={styles.gemTop} />
+        <View style={styles.gemMiddle} />
+        <View style={styles.gemBottom} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.coinIcon}>
+      <View style={styles.coinHighlight} />
+      <View style={styles.coinCore} />
     </View>
   );
 }
@@ -450,85 +482,172 @@ const styles = StyleSheet.create({
   hud: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 6,
-    minHeight: 44,
+    gap: 5,
+    minHeight: 42,
     position: 'absolute',
     top: 8,
   },
+  hudPanel: {
+    alignItems: 'center',
+    backgroundColor: '#a3907a',
+    borderColor: '#3d2d28',
+    borderWidth: 2,
+    flex: 1,
+    flexDirection: 'row',
+    flexShrink: 1,
+    height: 36,
+    minWidth: 0,
+    padding: 4,
+    position: 'relative',
+  },
+  hudCornerTopLeft: {
+    backgroundColor: '#3d2d28',
+    height: 2,
+    left: 0,
+    position: 'absolute',
+    top: 0,
+    width: 12,
+  },
+  hudCornerTopRight: {
+    backgroundColor: '#3d2d28',
+    height: 2,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: 12,
+  },
+  hudCornerBottomLeft: {
+    backgroundColor: '#3d2d28',
+    bottom: 0,
+    height: 2,
+    left: 0,
+    position: 'absolute',
+    width: 12,
+  },
+  hudCornerBottomRight: {
+    backgroundColor: '#3d2d28',
+    bottom: 0,
+    height: 2,
+    position: 'absolute',
+    right: 0,
+    width: 12,
+  },
   levelBadge: {
     alignItems: 'center',
-    backgroundColor: '#f9dce8',
-    borderColor: '#fff7f9',
-    borderRadius: 8,
-    borderWidth: 3,
+    backgroundColor: '#fff8ea',
+    borderColor: '#6b432f',
+    borderWidth: 2,
     flexShrink: 0,
-    height: 38,
+    height: 28,
     justifyContent: 'center',
-    minWidth: 58,
-    shadowColor: '#b17a91',
-    shadowOffset: { height: 3, width: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 0,
+    minWidth: 56,
+    position: 'relative',
+  },
+  levelBadgeAccent: {
+    backgroundColor: '#f3d1a5',
+    bottom: 2,
+    height: 3,
+    left: 3,
+    position: 'absolute',
+    right: 3,
   },
   levelLabel: {
-    color: '#7c5e72',
+    color: '#4f2f26',
     fontFamily: pixelFontFamily,
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '900',
     letterSpacing: 0,
   },
   expTrack: {
-    backgroundColor: '#fff9f5',
-    borderColor: '#e7c8d2',
-    borderRadius: 8,
-    borderWidth: 3,
+    backgroundColor: '#fff8ea',
+    borderColor: '#6b432f',
+    borderLeftWidth: 0,
+    borderWidth: 2,
     flex: 1,
     flexShrink: 1,
-    height: 26,
+    height: 28,
     minWidth: 48,
     overflow: 'hidden',
+    padding: 3,
   },
   expFill: {
-    backgroundColor: '#d5a6d8',
+    backgroundColor: '#d7a36d',
     height: '100%',
+    position: 'relative',
     width: '68%',
+  },
+  expFillHighlight: {
+    backgroundColor: '#f6c474',
+    height: 3,
+    left: 2,
+    position: 'absolute',
+    right: 2,
+    top: 2,
   },
   currencyPill: {
     alignItems: 'center',
-    backgroundColor: '#f7e2ef',
-    borderColor: '#fff8fb',
-    borderRadius: 8,
-    borderWidth: 3,
+    backgroundColor: '#a3907a',
+    borderColor: '#3d2d28',
+    borderWidth: 2,
     flexDirection: 'row',
     flexShrink: 0,
     gap: 4,
-    height: 32,
+    height: 36,
     justifyContent: 'center',
     minWidth: 64,
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
   },
-  currencyIcon: {
+  gemIcon: {
     alignItems: 'center',
-    backgroundColor: '#8fb9cf',
-    borderColor: '#6e9db8',
-    borderRadius: 3,
-    borderWidth: 2,
     height: 17,
     justifyContent: 'center',
     width: 17,
   },
-  currencyIconText: {
-    color: '#ffffff',
-    fontFamily: pixelFontFamily,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0,
+  gemTop: {
+    backgroundColor: '#f3fbff',
+    height: 3,
+    width: 7,
+  },
+  gemMiddle: {
+    backgroundColor: '#8fd0e8',
+    borderColor: '#5f8fa3',
+    borderWidth: 2,
+    height: 9,
+    width: 15,
+  },
+  gemBottom: {
+    backgroundColor: '#66aec8',
+    height: 5,
+    width: 7,
+  },
+  coinIcon: {
+    alignItems: 'center',
+    backgroundColor: '#f6c474',
+    borderColor: '#8f5e33',
+    borderWidth: 2,
+    height: 17,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 17,
+  },
+  coinHighlight: {
+    backgroundColor: '#ffe2a7',
+    height: 3,
+    left: 3,
+    position: 'absolute',
+    top: 3,
+    width: 4,
+  },
+  coinCore: {
+    backgroundColor: '#b36b31',
+    height: 7,
+    width: 7,
   },
   currencyText: {
-    color: '#6f5d7a',
+    color: '#fff8ea',
     fontFamily: pixelFontFamily,
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '900',
     letterSpacing: 0,
   },
   room: {
