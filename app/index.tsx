@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
+const pixelFontFamily = 'Galmuri11';
 
 type RailAction = {
   badge?: string;
@@ -471,6 +472,7 @@ const styles = StyleSheet.create({
   },
   levelLabel: {
     color: '#7c5e72',
+    fontFamily: pixelFontFamily,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0,
@@ -517,12 +519,14 @@ const styles = StyleSheet.create({
   },
   currencyIconText: {
     color: '#ffffff',
+    fontFamily: pixelFontFamily,
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0,
   },
   currencyText: {
     color: '#6f5d7a',
+    fontFamily: pixelFontFamily,
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0,
@@ -570,6 +574,7 @@ const styles = StyleSheet.create({
   },
   roomNameText: {
     color: '#5e4235',
+    fontFamily: pixelFontFamily,
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0,
@@ -604,6 +609,7 @@ const styles = StyleSheet.create({
   },
   railIconText: {
     color: '#805d46',
+    fontFamily: pixelFontFamily,
     fontSize: 17,
     fontWeight: '900',
     letterSpacing: 0,
@@ -614,6 +620,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 2,
     color: '#6c5847',
+    fontFamily: pixelFontFamily,
     fontWeight: '900',
     letterSpacing: 0,
     marginTop: -4,
@@ -636,6 +643,7 @@ const styles = StyleSheet.create({
   },
   railBadgeText: {
     color: '#ffffff',
+    fontFamily: pixelFontFamily,
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0,
@@ -743,6 +751,7 @@ const styles = StyleSheet.create({
   },
   popupEyebrow: {
     color: '#b36b31',
+    fontFamily: pixelFontFamily,
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0,
@@ -750,12 +759,14 @@ const styles = StyleSheet.create({
   },
   popupTitle: {
     color: '#35281f',
+    fontFamily: pixelFontFamily,
     fontSize: 18,
     fontWeight: '900',
     letterSpacing: 0,
   },
   popupSubtitle: {
     color: '#7a5947',
+    fontFamily: pixelFontFamily,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0,
@@ -773,6 +784,7 @@ const styles = StyleSheet.create({
   },
   popupCloseText: {
     color: '#5c3529',
+    fontFamily: pixelFontFamily,
     fontSize: 20,
     fontWeight: '900',
     letterSpacing: 0,
@@ -849,6 +861,7 @@ const styles = StyleSheet.create({
   },
   petName: {
     color: '#4b2f25',
+    fontFamily: pixelFontFamily,
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0,
@@ -856,6 +869,7 @@ const styles = StyleSheet.create({
   },
   petTypeLabel: {
     color: '#b36b31',
+    fontFamily: pixelFontFamily,
     fontSize: 7,
     fontWeight: '900',
     letterSpacing: 0,
@@ -864,6 +878,7 @@ const styles = StyleSheet.create({
   },
   petConfirmQuestion: {
     color: '#b65f2f',
+    fontFamily: pixelFontFamily,
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0,
@@ -895,12 +910,14 @@ const styles = StyleSheet.create({
   },
   popupCancelText: {
     color: '#7a5947',
+    fontFamily: pixelFontFamily,
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0,
   },
   popupConfirmText: {
     color: '#fff8ea',
+    fontFamily: pixelFontFamily,
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0,
