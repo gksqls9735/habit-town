@@ -47,6 +47,13 @@ DEFAULT_VIEWS = {
 }
 DEFAULT_STYLE_PROFILE = "soft-modern-retro.json"
 BUNDLED_PROFILE_DIR = Path(__file__).resolve().parent.parent / "references" / "profiles"
+DEFAULT_CATEGORY_DIRS = {
+    "char": "characters",
+    "object": "objects",
+    "bg": "backgrounds",
+    "scene": "scenes",
+    "icon": "icons",
+}
 
 
 def parse_hex_color(value: str) -> tuple[int, int, int]:
@@ -325,6 +332,86 @@ def verify_output(
     }
 
 
+def visible_bounds_record(
+    image: Image.Image,
+    frame_index: int | None = None,
+) -> dict[str, object]:
+    """Return the alpha bounding box and visible dimensions for reporting."""
+    bounds = image.getchannel("A").point(
+        lambda value: 255 if value >= 128 else 0
+    ).getbbox()
+    if bounds is None:
+        record: dict[str, int | None] = {
+            "left": None,
+            "top": None,
+            "right": None,
+            "bottom": None,
+            "width": 0,
+            "height": 0,
+        }
+    else:
+        left, top, right, bottom = bounds
+        record = {
+            "left": left,
+            "top": top,
+            "right": right,
+            "bottom": bottom,
+            "width": right - left,
+            "height": bottom - top,
+        }
+    if frame_index is not None:
+        record["index"] = frame_index
+    return record
+
+
+def animation_size_report(
+    frames: list[Image.Image],
+    reference_index: int = 0,
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Compare visible frame sizes and suggest runtime scale compensation."""
+    if not 0 <= reference_index < len(frames):
+        raise ValueError("Size reference frame must be inside the animation range")
+
+    bounds_records = [
+        visible_bounds_record(frame, index) for index, frame in enumerate(frames)
+    ]
+    reference = bounds_records[reference_index]
+    reference_width = max(1, int(reference["width"] or 0))
+    reference_height = max(1, int(reference["height"] or 0))
+    reference_area = max(1, reference_width * reference_height)
+    warnings = []
+
+    for record in bounds_records:
+        width = int(record["width"] or 0)
+        height = int(record["height"] or 0)
+        area = width * height
+        width_ratio = width / reference_width
+        height_ratio = height / reference_height
+        area_ratio = area / reference_area
+        recommended_scale = max(
+            reference_width / max(1, width),
+            reference_height / max(1, height),
+        )
+        record["width_ratio_to_reference"] = round(width_ratio, 3)
+        record["height_ratio_to_reference"] = round(height_ratio, 3)
+        record["area_ratio_to_reference"] = round(area_ratio, 3)
+        record["recommended_runtime_scale"] = round(recommended_scale, 3)
+
+        if (
+            int(record["index"] or 0) != reference_index
+            and (width_ratio < 0.85 or height_ratio < 0.85 or area_ratio < 0.72)
+        ):
+            warnings.append(
+                "Frame "
+                f"{record['index']} visible size differs from reference frame "
+                f"{reference_index}: width={width_ratio:.2f}, "
+                f"height={height_ratio:.2f}, area={area_ratio:.2f}; "
+                f"consider runtime scale {recommended_scale:.2f}"
+            )
+
+    return bounds_records, warnings
+
+
 def split_sheet(
     source: Image.Image,
     frame_count: int,
@@ -569,6 +656,7 @@ def run_animation_harness(
             verify_output(final_frame, target, output_scale, color_count)
         )
         final_frames.append(final_frame)
+    size_records, size_warnings = animation_size_report(final_frames)
 
     clean_dir = clean_path.parent
     frame_dir = clean_dir / clean_path.stem
@@ -605,6 +693,7 @@ def run_animation_harness(
                 "file": frame_path.relative_to(project_root).as_posix(),
                 "duration_ms": duration_ms,
                 "offset": offsets[index],
+                "visible_bounds": size_records[index],
             }
         )
 
@@ -639,6 +728,10 @@ def run_animation_harness(
             "rows": rows,
             "frame_width": final_size[0],
             "frame_height": final_size[1],
+        },
+        "size_consistency": {
+            "reference_frame": 0,
+            "warnings": size_warnings,
         },
         "sheet": clean_path.relative_to(project_root).as_posix(),
         "frames": frame_records,
@@ -683,12 +776,15 @@ def run_animation_harness(
             "frame_width": final_size[0],
             "frame_height": final_size[1],
             "visible_colors": max(item["visible_colors"] for item in verifications),
+            "size_consistency_warnings": size_warnings,
             "has_transparency": any(
                 item["has_transparency"] for item in verifications
             ),
             "grid_aligned": True,
         },
     )
+    for warning in size_warnings:
+        print(f"[Harness Warning] {warning}")
     print(
         f"[Harness Success] {ART_DIRECTION}/{PROJECTION}/{view}/{theme}/{asset_type} "
         f"animation verified: "
@@ -702,6 +798,7 @@ def run_harness(
     asset_type: str,
     filename: str,
     project_root: Path,
+    asset_root: Path | None = None,
     theme: str = "soft-modern-retro",
     output_scale: int | None = None,
     frame_count: int = 1,
@@ -740,8 +837,20 @@ def run_harness(
     if safe_filename != filename or Path(safe_filename).suffix.lower() != ".png":
         raise ValueError("Filename must be a plain .png filename without directories")
 
-    raw_path = project_root / "src" / "assets" / "raw" / safe_filename
-    clean_path = project_root / "src" / "assets" / "clean" / safe_filename
+    resolved_asset_root = (
+        project_root
+        / "src"
+        / "assets"
+        / "dot-image"
+        / DEFAULT_CATEGORY_DIRS[asset_type]
+        if asset_root is None
+        else asset_root
+    )
+    if not resolved_asset_root.is_absolute():
+        resolved_asset_root = project_root / resolved_asset_root
+
+    raw_path = resolved_asset_root / "raw" / safe_filename
+    clean_path = resolved_asset_root / "clean" / safe_filename
     if not raw_path.is_file():
         raise FileNotFoundError(f"Raw image not found: {raw_path}")
 
@@ -756,9 +865,7 @@ def run_harness(
             raise ValueError(
                 "Palette reference must be a plain .png filename without directories"
             )
-        palette_reference_path = (
-            project_root / "src" / "assets" / "clean" / safe_reference
-        )
+        palette_reference_path = clean_path.parent / safe_reference
         if not palette_reference_path.is_file():
             raise FileNotFoundError(
                 f"Clean palette reference not found: {palette_reference_path}"
@@ -822,7 +929,19 @@ def parse_args() -> argparse.Namespace:
         description="Normalize a raw image or sprite sheet into verified pixel art."
     )
     parser.add_argument("asset_type", choices=sorted(SPECS))
-    parser.add_argument("filename", help="PNG filename located in src/assets/raw/")
+    parser.add_argument(
+        "filename",
+        help="PNG filename located in <asset-root>/raw/",
+    )
+    parser.add_argument(
+        "--asset-root",
+        type=Path,
+        default=None,
+        help=(
+            "Asset category root containing raw/ and clean/; default is "
+            "src/assets/dot-image/<category>/"
+        ),
+    )
     parser.add_argument(
         "--theme",
         choices=sorted(THEMES),
@@ -923,6 +1042,7 @@ def main() -> int:
             args.asset_type,
             args.filename,
             args.project_root.resolve(),
+            args.asset_root,
             args.theme,
             args.scale,
             args.frames,

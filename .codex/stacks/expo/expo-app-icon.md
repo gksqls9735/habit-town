@@ -22,6 +22,8 @@ Before editing:
 
 Create or place the app icon asset in the project asset folder.
 
+Follow `.codex/common/patterns/image-assets.md` for generated drafts and references, but keep the final Expo launcher icon paths aligned with Expo configuration conventions.
+
 
 Default recommendations:
 
@@ -76,4 +78,3 @@ Do not modify app icon config when:
 - The project is not an Expo project.
 - The config is generated externally and must not be edited directly.
 - The icon asset requires manual designer approval before application.
-

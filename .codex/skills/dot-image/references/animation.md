@@ -17,11 +17,15 @@ Read this reference only when creating animation frames or sprite sheets.
 Use this contract whenever animating an existing character image.
 
 - Preserve the source image's cell size unless the user explicitly asks for a new runtime grid. If the source character is `156 x 156`, each animation frame cell must also be `156 x 156`.
+- Treat apparent runtime size as the highest-priority acceptance criterion. Matching the cell size is not enough: if the visible character pixels shrink, grow, flatten, or widen during playback, the animation is not acceptable.
 - Measure the source character's visible alpha bounding box before processing. Each frame should keep the visible body height, head size, torso volume, eye size, ear height, paw size, and tail thickness close to the source.
+- Measure each finished frame's visible alpha bounding box and compare it to the idle/source frame and, when available, the accepted walk sheet. A frame that has the same canvas size but a much smaller visible bbox will still look wrong in-app.
+- For generated or extracted sheets, preserve the accepted pose design first, then correct runtime display scale per frame when one pose naturally has a smaller bbox. Do not destructively resize the source art if that changes the accepted design.
+- Record any required per-frame display scale in the animation manifest or integration code. For example, a belly-up roll frame may need a slightly larger display scale even though the PNG cell remains unchanged.
 - Do not fit oversized generated frames into the source cell by non-uniform scaling, vertical compression, horizontal stretching, or automatic contain-style resizing. Regenerate or rebuild the frames instead.
 - Prefer source-preserving motion edits for small pet animations: move paws, tail, ears, cheeks, body offset, and shadow by a few pixels while keeping the main body mass unchanged.
 - For walk cycles, the feet and paws should change visibly between frames, but the standing height should remain stable. Body bounce can be 1 to 3 pixels only.
-- For rolling, jumping, or lying actions, rotation or pose changes may alter the alpha bounding box, but the character must not look resized. Keep the same pixel density and apparent mass.
+- For rolling, jumping, or lying actions, rotation or pose changes may alter the alpha bounding box, but the character must not look resized. Keep the same pixel density and apparent mass; if the pose reads correctly but looks smaller, prefer a runtime scale compensation over repainting the accepted frame.
 - Anchor character frames at bottom-center by default. Use the original sprite's ground contact line as the baseline unless the animation intentionally leaves the ground.
 - If a generated sheet changes the character size, rebuild the sheet from the accepted source sprite or regenerate with an explicit "same cell size and same apparent height" constraint.
 - Before accepting a sheet, compare a still frame against the source sprite at the runtime display size. Reject it if switching from idle to animation makes the pet visibly grow, shrink, flatten, or widen.
@@ -69,6 +73,8 @@ The raw sheet dimensions must divide evenly into the requested columns and calcu
 
 - Inspect each frame at the native working-grid size, not only an enlarged preview.
 - Flip rapidly between adjacent frames to detect outline crawl, palette flicker, volume changes, and anchor jitter.
+- Compare the animation frames against the idle/source character and the accepted walk cycle at the real app display size. The pet should keep a similar visual footprint while changing pose.
+- Check the harness manifest's visible bounds, size ratios, and recommended runtime scale. Treat low ratios as a blocker unless the app integration intentionally applies a matching per-frame display scale.
 - Confirm every frame uses the same recorded 2D view with no perspective or camera drift.
 - Preview at the manifest FPS and playback mode.
 - Reject sheets with cropped motion, inconsistent identity, accidental camera movement, partial alpha, blurred edges, or an unreadable loop boundary.

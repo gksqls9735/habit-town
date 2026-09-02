@@ -20,7 +20,12 @@ import { useGoalPlanner } from '../src/features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../src/features/goals/utils';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
-const catBabyRollSpritesheet = require('../assets/pets/animations/cat-baby-roll-spritesheet.png');
+const catBabyRollFrames = [
+  require('../assets/pets/animations/cat-baby-roll-frame-0.png'),
+  require('../assets/pets/animations/cat-baby-roll-frame-1.png'),
+  require('../assets/pets/animations/cat-baby-roll-frame-2.png'),
+  require('../assets/pets/animations/cat-baby-roll-frame-3.png'),
+];
 const catBabyWalkSpritesheet = require('../assets/pets/animations/cat-baby-walk-spritesheet.png');
 const pixelFontFamily = 'Galmuri11';
 
@@ -408,8 +413,12 @@ function AnimatedBabyCat({
 
   const frameHeight = size;
   const frameWidth = size;
-  const sheetSource =
-    animation.kind === 'roll' ? catBabyRollSpritesheet : catBabyWalkSpritesheet;
+  const rollFrameScales = [1, 1.04, 1.18, 1.04];
+  const rollFrameScale =
+    animation.kind === 'roll' ? rollFrameScales[animation.frame] : 1;
+  const maxFrameSize = Math.round(size * 1.18);
+  const rollFrameSource = catBabyRollFrames[animation.frame];
+  const walkSheetSource = catBabyWalkSpritesheet;
 
   return (
     <Animated.View
@@ -417,7 +426,8 @@ function AnimatedBabyCat({
         styles.animatedPetWrap,
         {
           transform: [{ translateX: movementX }],
-          width: size,
+          height: maxFrameSize,
+          width: maxFrameSize,
         },
       ]}
     >
@@ -425,12 +435,17 @@ function AnimatedBabyCat({
         style={[
           styles.characterShadow,
           {
-            top: Math.round(size * 0.76),
-            width: Math.round(size * 0.9),
+            top: Math.round(maxFrameSize * 0.76),
+            width: Math.round(frameWidth * 0.9),
           },
         ]}
       />
-      <View style={{ transform: [{ scaleX: -animation.direction }] }}>
+      <View
+        style={[
+          styles.petFrameAnchor,
+          { transform: [{ scaleX: -animation.direction }] },
+        ]}
+      >
         {animation.kind === 'idle' ? (
           <Image
             accessibilityIgnoresInvertColors
@@ -439,6 +454,19 @@ function AnimatedBabyCat({
               styles.activePetSprite,
               {
                 height: size,
+                width: size,
+              },
+            ]}
+          />
+        ) : animation.kind === 'roll' ? (
+          <Image
+            accessibilityIgnoresInvertColors
+            source={rollFrameSource}
+            style={[
+              styles.activePetSprite,
+              {
+                height: size,
+                transform: [{ scale: rollFrameScale }],
                 width: size,
               },
             ]}
@@ -455,7 +483,7 @@ function AnimatedBabyCat({
           >
             <Image
               accessibilityIgnoresInvertColors
-              source={sheetSource}
+              source={walkSheetSource}
               style={[
                 styles.petSpritesheet,
                 {
@@ -908,7 +936,12 @@ const styles = StyleSheet.create({
   },
   animatedPetWrap: {
     alignItems: 'center',
+    justifyContent: 'flex-end',
     position: 'relative',
+  },
+  petFrameAnchor: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   characterShadow: {
     backgroundColor: '#73504b',

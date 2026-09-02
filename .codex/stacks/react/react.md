@@ -5,6 +5,8 @@ Use these rules when working in React projects.
 
 ## Structure
 
+Follow `.codex/common/patterns/component.md` when choosing screen, feature, and shared component folder structure.
+
 - Keep route-level screens separate from reusable components.
 - Move repeated UI into `components/`.
 - Move feature-specific UI, hooks, services, constants, and types into `features/<feature-name>/`.
@@ -39,4 +41,3 @@ For new React web projects, report the selected Node.js, package manager, React,
 ## Verification
 
 Run the project's available checks after changes.
-

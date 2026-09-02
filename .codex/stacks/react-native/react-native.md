@@ -5,6 +5,8 @@ Use these rules when working in React Native projects that are not managed prima
 
 ## Structure
 
+Follow `.codex/common/patterns/component.md` when choosing screen, feature, and shared component folder structure.
+
 - Keep screens focused on navigation and composition.
 - Move reusable UI into shared components.
 - Move feature-specific UI, hooks, services, constants, and types into `features/<feature-name>/`.
@@ -56,4 +58,3 @@ Run the project's available React Native checks after changes.
 
 
 When native files or dependencies change, verify the relevant Android or iOS build when the environment supports it.
-

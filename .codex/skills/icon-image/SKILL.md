@@ -16,11 +16,12 @@ When this skill is invoked, create a raster PNG icon asset. Do not satisfy the r
 ## Workflow
 
 1. Understand the requested icon meaning, target screen, and visual tone.
-2. Inspect the project for existing asset folders, image import patterns, and design tokens.
+2. Inspect the project for existing asset folders, image import patterns, and design tokens. Follow `.codex/common/patterns/image-assets.md` when choosing the icon category and raw/clean separation.
 3. Choose the output path:
    - Prefer the project's existing icon/image asset folder.
    - For Expo or React Native projects without an existing convention, use `assets/icons/`.
    - For React web projects without an existing convention, use `src/assets/icons/` or `public/icons/` according to the existing build setup.
+   - For generated app-specific PNG icon sets without an existing convention, use `src/assets/images/icons/raw/` for drafts and `src/assets/images/icons/clean/` for accepted icons.
 4. Generate an original PNG icon image with a transparent background unless the user requests a filled tile.
 5. Save the file with a kebab-case descriptive name, such as `memo-add.png` or `profile-empty-state.png`.
 6. Apply the PNG in the target UI with the project's existing image component or import pattern.
@@ -63,4 +64,3 @@ Recommended outputs:
 ## Implementation Reference
 
 For Expo, React Native, React Web examples, accessibility notes, and verification checks, read `references/implementation.md`.
-

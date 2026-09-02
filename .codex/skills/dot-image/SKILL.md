@@ -1,11 +1,15 @@
 ---
 name: dot-image
-description: Generate and integrate expressive pixel-art characters, world objects, animations, scenes, backgrounds, and icons as PNG assets, then enforce true pixel-grid output with the bundled harness. Use for dot art, game sprites, scene-matched asset sets, composition previews, sprite sheets, layered environments, or pixel-art icons. Defaults to soft modern-retro when no theme is specified.
+description: Explicit-only general pixel-art asset skill. Use only when the user directly names `$dot-image`, asks to use the dot-image skill, or requests the dot-image harness by name. Do not auto-select this skill for Habit Town pet growth stages, pet-room assets, or pet animation work; use `growth-pixel-character` for those.
 ---
 
 # Dot Image
 
-Generate a raster asset or animation sheet, apply the selected visual theme, normalize it onto a fixed pixel grid, and deliver verified outputs from `src/assets/clean/`.
+Use this skill only when the user explicitly asks for `dot-image` or the dot-image harness. For Habit Town pet growth characters, pet-room visuals, and pet animation sprites, use `growth-pixel-character` instead.
+
+Generate a raster asset or animation sheet, apply the selected visual theme, normalize it onto a fixed pixel grid, and deliver verified outputs from the selected image-category `clean/` folder.
+
+Follow `.codex/common/patterns/image-assets.md` before choosing the output root.
 
 ## Style Profile
 
@@ -73,14 +77,14 @@ For a supplied portrait or panoramic background whose composition must remain in
 1. Identify the asset type as `char`, `object`, `bg`, `scene`, or `icon`. Use `object` for props, furniture, plants, pickups, containers, fixtures, and environmental interactables; reserve `icon` for UI inventory or HUD art. If the request is ambiguous, infer it from the intended game use when safe.
 2. Select the theme. Use the user's explicit choice or `soft-modern-retro` when omitted.
 3. Select the supported 2D view. Use the asset default unless the user explicitly requests `side`, `front`, or `top-down`.
-4. Inspect the project for existing naming and asset conventions. Use a descriptive kebab-case PNG filename.
+4. Inspect the project for existing naming and asset conventions. Choose an image-category root from `.codex/common/patterns/image-assets.md`, such as `src/assets/dot-image/characters/`, `src/assets/dot-image/furniture/`, `src/assets/dot-image/rewards/`, or `src/assets/dot-image/icons/`. Use a descriptive kebab-case PNG filename.
 5. Build the generation prompt from the user's subject, the resolved reusable style profile, the orthographic 2D viewpoint, the selected theme, the relevant asset-specific rules, and every required prompt term for the selected asset type. Describe visual properties directly; do not request a copy of an existing game's characters, UI, logo, or proprietary assets.
 6. Generate one raster PNG with the available image-generation capability. For animation mode, generate one evenly divided sprite sheet following [references/animation.md](references/animation.md). When the animation is derived from an existing character, lock the frame cell dimensions to the source sprite and preserve the source alpha bounding box scale as closely as the motion allows. Prefer `$generate2dsprite` when it is installed. Do not substitute SVG, CSS, emoji, or an icon library.
-7. Save the unprocessed static image or sprite sheet to `src/assets/raw/<filename>.png`. Create the directory when needed.
-8. Run the bundled harness from the project root. The `--theme` option may be omitted only for the default `soft-modern-retro` theme. The `--view` option may be omitted only when the asset default is intended:
+7. Save the unprocessed static image or sprite sheet to `<asset-root>/raw/<filename>.png`. Create the directory when needed.
+8. Run the bundled harness from the project root with the same `<asset-root>`. The `--asset-root` option should point to the category folder that contains `raw/` and `clean/`. The `--theme` option may be omitted only for the default `soft-modern-retro` theme. The `--view` option may be omitted only when the asset default is intended:
 
    ```bash
-   python .codex/skills/dot-image/scripts/dot_harness.py <char|object|bg|scene|icon> <filename>.png --style-profile auto --theme <theme> --view <side|front|top-down>
+   python .codex/skills/dot-image/scripts/dot_harness.py <char|object|bg|scene|icon> <filename>.png --asset-root <asset-root> --style-profile auto --theme <theme> --view <side|front|top-down>
    ```
 
    Once a generated image's colors have been accepted, always add `--preserve-source-palette` for that image and every derivative. This skips theme toning and fixed-profile RGB remapping while retaining the asset color cap, binary transparency, nearest-neighbor grid, and all verification checks. Do not use a palette reference or profile remapping to alter an accepted source palette unless the user explicitly requests recoloring.
@@ -88,22 +92,23 @@ For a supplied portrait or panoramic background whose composition must remain in
    For an asset that belongs to a specific scene, preserve the reusable master and process a scene-linked variant with the verified background palette:
 
    ```bash
-   python .codex/skills/dot-image/scripts/dot_harness.py char <variant>.png --theme <theme> --view side --palette-reference <clean-background>.png
+   python .codex/skills/dot-image/scripts/dot_harness.py char <variant>.png --asset-root <asset-root> --theme <theme> --view side --palette-reference <clean-background>.png
    ```
 
    For animation mode, declare the exact frame count and sheet columns:
 
    ```bash
-   python .codex/skills/dot-image/scripts/dot_harness.py char <filename>.png --theme <theme> --view side --frames 6 --columns 6 --animation idle --fps 8 --anchor bottom-center --scale 1
+   python .codex/skills/dot-image/scripts/dot_harness.py char <filename>.png --asset-root <asset-root> --theme <theme> --view side --frames 6 --columns 6 --animation idle --fps 8 --anchor bottom-center --scale 1
    ```
 
 9. Treat a nonzero exit code or a failed verification as a blocking failure. Correct the input or regenerate it, then rerun the harness. Do not copy an unchecked raw image into the clean directory.
-10. Inspect the clean PNG at native size and enlarged nearest-neighbor size. Confirm the selected 2D view, parallel projection, silhouette, focal pixels, selective outlines, transparency, and theme remain legible without perspective drift, noise, cropping, or distortion. For animation, also inspect the individual frame sequence, loop continuity, bottom-center anchoring, and source-size consistency. Compare at least one idle/source frame with the animated frames at the intended runtime display size before accepting the sheet.
-11. Report the raw path, clean path, style profile, asset type, theme, 2D view, dimensions, palette reference when used, and harness result. Animation mode additionally produces `src/assets/clean/<stem>/frame-###.png` and `src/assets/clean/<stem>.animation.json`. Composition mode produces a sibling `.composition.json`. The harness appends a machine-readable record to `src/assets/clean/dot-harness.log`.
+10. Inspect the clean PNG at native size and enlarged nearest-neighbor size. Confirm the selected 2D view, parallel projection, silhouette, focal pixels, selective outlines, transparency, and theme remain legible without perspective drift, noise, cropping, or distortion. For animation, also inspect the individual frame sequence, loop continuity, bottom-center anchoring, and source-size consistency. Compare at least one idle/source frame with the animated frames at the intended runtime display size before accepting the sheet. Treat visible-size consistency as the top priority for character animation: if the harness reports a low visible-bounds ratio, either rebuild the frame or keep the accepted design and record a matching per-frame runtime scale in the app integration.
+11. Report the asset category, raw path, clean path, style profile, asset type, theme, 2D view, dimensions, palette reference when used, harness result, and any visible-size warnings. Animation mode additionally produces `<asset-root>/clean/<stem>/frame-###.png` and `<asset-root>/clean/<stem>.animation.json`, including per-frame visible bounds and recommended runtime scale. Composition mode produces a sibling `.composition.json`. The harness appends a machine-readable record to `<asset-root>/clean/dot-harness.log`.
 
 ## Operational Boundaries
 
-- Always keep generated source images in `src/assets/raw/` and processed results in `src/assets/clean/`.
+- Always keep generated source images in the chosen category's `raw/` folder and processed results in the matching `clean/` folder.
+- Do not collapse characters, furniture, rewards, icons, backgrounds, and scenes into one generic generated folder when their product roles are known.
 - Never edit or overwrite a different existing asset to satisfy a new request.
 - If Pillow or image generation is unavailable, stop and state the missing dependency or capability instead of fabricating a result.
 - Keep implementation changes outside the asset folders scoped to what the user explicitly requested.

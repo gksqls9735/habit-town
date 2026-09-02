@@ -5,6 +5,8 @@ Use these rules when working in Expo projects.
 
 ## Structure
 
+Follow `.codex/common/patterns/component.md` when choosing screen, feature, and shared component folder structure.
+
 - Keep screens route-focused.
 - Move reusable UI into shared components.
 - Move feature-specific logic into `features/<feature-name>/`.
@@ -75,4 +77,3 @@ Run the project's available Expo or React Native checks after changes.
 
 
 When the project supports web, also verify the web entry point and important flows.
-
