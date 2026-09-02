@@ -43,6 +43,7 @@ For a supplied portrait or panoramic background whose composition must remain in
 - Use animation mode when the user requests motion, states, frames, or a sprite sheet. Read [references/animation.md](references/animation.md) before generating.
 - When assets must share one scene or the user requests a combined preview, read [references/scene-integration.md](references/scene-integration.md). Create palette-linked variants and use the deterministic compositor instead of asking image generation to redraw the combined scene.
 - When animating an existing asset, provide the clean PNG to the image-generation capability as the visual reference. Preserve its identity, proportions, palette roles, equipment, facing direction, and pixel-cluster language across every frame.
+- When animating an existing character, preserve the source sprite's cell size and apparent body scale. Follow the Source Character Size Contract in [references/animation.md](references/animation.md); do not accept sheets where idle-to-animation playback makes the character visibly grow, shrink, flatten, or widen.
 - The harness normalizes and validates supplied frames; it does not invent missing motion frames.
 
 ## Theme Selection
@@ -74,7 +75,7 @@ For a supplied portrait or panoramic background whose composition must remain in
 3. Select the supported 2D view. Use the asset default unless the user explicitly requests `side`, `front`, or `top-down`.
 4. Inspect the project for existing naming and asset conventions. Use a descriptive kebab-case PNG filename.
 5. Build the generation prompt from the user's subject, the resolved reusable style profile, the orthographic 2D viewpoint, the selected theme, the relevant asset-specific rules, and every required prompt term for the selected asset type. Describe visual properties directly; do not request a copy of an existing game's characters, UI, logo, or proprietary assets.
-6. Generate one raster PNG with the available image-generation capability. For animation mode, generate one evenly divided sprite sheet following [references/animation.md](references/animation.md). Prefer `$generate2dsprite` when it is installed. Do not substitute SVG, CSS, emoji, or an icon library.
+6. Generate one raster PNG with the available image-generation capability. For animation mode, generate one evenly divided sprite sheet following [references/animation.md](references/animation.md). When the animation is derived from an existing character, lock the frame cell dimensions to the source sprite and preserve the source alpha bounding box scale as closely as the motion allows. Prefer `$generate2dsprite` when it is installed. Do not substitute SVG, CSS, emoji, or an icon library.
 7. Save the unprocessed static image or sprite sheet to `src/assets/raw/<filename>.png`. Create the directory when needed.
 8. Run the bundled harness from the project root. The `--theme` option may be omitted only for the default `soft-modern-retro` theme. The `--view` option may be omitted only when the asset default is intended:
 
@@ -97,7 +98,7 @@ For a supplied portrait or panoramic background whose composition must remain in
    ```
 
 9. Treat a nonzero exit code or a failed verification as a blocking failure. Correct the input or regenerate it, then rerun the harness. Do not copy an unchecked raw image into the clean directory.
-10. Inspect the clean PNG at native size and enlarged nearest-neighbor size. Confirm the selected 2D view, parallel projection, silhouette, focal pixels, selective outlines, transparency, and theme remain legible without perspective drift, noise, cropping, or distortion. For animation, also inspect the individual frame sequence and loop continuity.
+10. Inspect the clean PNG at native size and enlarged nearest-neighbor size. Confirm the selected 2D view, parallel projection, silhouette, focal pixels, selective outlines, transparency, and theme remain legible without perspective drift, noise, cropping, or distortion. For animation, also inspect the individual frame sequence, loop continuity, bottom-center anchoring, and source-size consistency. Compare at least one idle/source frame with the animated frames at the intended runtime display size before accepting the sheet.
 11. Report the raw path, clean path, style profile, asset type, theme, 2D view, dimensions, palette reference when used, and harness result. Animation mode additionally produces `src/assets/clean/<stem>/frame-###.png` and `src/assets/clean/<stem>.animation.json`. Composition mode produces a sibling `.composition.json`. The harness appends a machine-readable record to `src/assets/clean/dot-harness.log`.
 
 ## Operational Boundaries

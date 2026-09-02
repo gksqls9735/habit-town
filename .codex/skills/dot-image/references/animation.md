@@ -12,6 +12,20 @@ Read this reference only when creating animation frames or sprite sheets.
 - Leave enough empty space for moving ears, tails, weapons, splashes, particles, and anticipation poses.
 - Describe distinct key poses in the generation prompt. Do not ask only for several nearly identical copies.
 
+## Source Character Size Contract
+
+Use this contract whenever animating an existing character image.
+
+- Preserve the source image's cell size unless the user explicitly asks for a new runtime grid. If the source character is `156 x 156`, each animation frame cell must also be `156 x 156`.
+- Measure the source character's visible alpha bounding box before processing. Each frame should keep the visible body height, head size, torso volume, eye size, ear height, paw size, and tail thickness close to the source.
+- Do not fit oversized generated frames into the source cell by non-uniform scaling, vertical compression, horizontal stretching, or automatic contain-style resizing. Regenerate or rebuild the frames instead.
+- Prefer source-preserving motion edits for small pet animations: move paws, tail, ears, cheeks, body offset, and shadow by a few pixels while keeping the main body mass unchanged.
+- For walk cycles, the feet and paws should change visibly between frames, but the standing height should remain stable. Body bounce can be 1 to 3 pixels only.
+- For rolling, jumping, or lying actions, rotation or pose changes may alter the alpha bounding box, but the character must not look resized. Keep the same pixel density and apparent mass.
+- Anchor character frames at bottom-center by default. Use the original sprite's ground contact line as the baseline unless the animation intentionally leaves the ground.
+- If a generated sheet changes the character size, rebuild the sheet from the accepted source sprite or regenerate with an explicit "same cell size and same apparent height" constraint.
+- Before accepting a sheet, compare a still frame against the source sprite at the runtime display size. Reject it if switching from idle to animation makes the pet visibly grow, shrink, flatten, or widen.
+
 ## Motion Design
 
 - Start from readable key poses: contact, recoil, passing, apex, impact, or recovery as appropriate to the motion.

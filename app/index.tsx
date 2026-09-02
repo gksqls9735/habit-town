@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Image,
   ImageBackground,
   ImageSourcePropType,
@@ -14,6 +16,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
+const catBabyRollSpritesheet = require('../assets/pets/animations/cat-baby-roll-spritesheet.png');
+const catBabyWalkSpritesheet = require('../assets/pets/animations/cat-baby-walk-spritesheet.png');
 const pixelFontFamily = 'Galmuri11';
 
 type RailAction = {
@@ -38,6 +42,14 @@ type PetDefinition = {
   name: string;
   roomName: string;
   stages: Record<GrowthStage, ImageSourcePropType>;
+};
+
+type PetAnimationKind = 'idle' | 'roll' | 'walk';
+
+type PetAnimationState = {
+  direction: -1 | 1;
+  frame: number;
+  kind: PetAnimationKind;
 };
 
 const leftActions: RailAction[] = [
@@ -120,7 +132,7 @@ export default function HomeScreen() {
   };
   const railTop = compactHeight ? 126 : Math.round(148 * roomScale);
   const sideInset = Math.max(6, Math.round(width * 0.02));
-  const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
+  const activePet = pets[0];
   const currentStage: GrowthStage = 'baby';
   const characterSize = Math.round(132 * roomScale);
   const characterBottom = compactHeight ? '15%' : '18%';
@@ -147,25 +159,9 @@ export default function HomeScreen() {
             style={styles.roomBackground}
           >
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
-              <View
-                style={[
-                  styles.characterShadow,
-                  {
-                    top: Math.round(characterSize * 0.8),
-                    width: Math.round(characterSize * 1.1),
-                  },
-                ]}
-              />
-              <Image
-                accessibilityIgnoresInvertColors
-                source={activePet.stages[currentStage]}
-                style={[
-                  styles.activePetSprite,
-                  {
-                    height: characterSize,
-                    width: characterSize,
-                  },
-                ]}
+              <AnimatedBabyCat
+                movementRange={Math.round(Math.min(width * 0.24, 104) * roomScale)}
+                size={characterSize}
               />
               <View style={styles.roomNameTag}>
                 <Text style={styles.roomNameText}>{activePet.roomName}</Text>
@@ -243,9 +239,170 @@ export default function HomeScreen() {
   );
 }
 
+function AnimatedBabyCat({
+  movementRange,
+  size,
+}: {
+  movementRange: number;
+  size: number;
+}) {
+  const [animation, setAnimation] = useState<PetAnimationState>({
+    direction: 1,
+    frame: 0,
+    kind: 'idle',
+  });
+  const movementX = useRef(new Animated.Value(0)).current;
+  const currentX = useRef(0);
+
+  useEffect(() => {
+    let frameTimer: ReturnType<typeof setInterval> | undefined;
+    let actionTimer: ReturnType<typeof setTimeout> | undefined;
+    let isMounted = true;
+
+    const clearFrameTimer = () => {
+      if (frameTimer) {
+        clearInterval(frameTimer);
+        frameTimer = undefined;
+      }
+    };
+
+    const scheduleNextAction = () => {
+      const delay = randomBetween(1800, 5200);
+      actionTimer = setTimeout(runAction, delay);
+    };
+
+    const runAction = () => {
+      clearFrameTimer();
+
+      const kind: Exclude<PetAnimationKind, 'idle'> =
+        Math.random() > 0.46 ? 'walk' : 'roll';
+      const direction: -1 | 1 = Math.random() > 0.5 ? 1 : -1;
+      const distance =
+        kind === 'walk'
+          ? randomBetween(movementRange * 0.45, movementRange)
+          : randomBetween(movementRange * 0.24, movementRange * 0.62);
+      let nextX = clamp(currentX.current + distance * direction, -movementRange, movementRange);
+
+      if (Math.abs(nextX - currentX.current) < 12) {
+        nextX = clamp(currentX.current - distance * direction, -movementRange, movementRange);
+      }
+
+      setAnimation({ direction, frame: 0, kind });
+
+      frameTimer = setInterval(() => {
+        setAnimation((current) => ({
+          ...current,
+          frame: (current.frame + 1) % 4,
+        }));
+      }, kind === 'walk' ? 130 : 155);
+
+      Animated.timing(movementX, {
+        duration: kind === 'walk' ? 1120 : 1280,
+        easing: Easing.inOut(Easing.quad),
+        toValue: nextX,
+        useNativeDriver: true,
+      }).start(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        currentX.current = nextX;
+        clearFrameTimer();
+        setAnimation((current) => ({
+          direction: current.direction,
+          frame: 0,
+          kind: 'idle',
+        }));
+        scheduleNextAction();
+      });
+    };
+
+    scheduleNextAction();
+
+    return () => {
+      isMounted = false;
+      clearFrameTimer();
+      if (actionTimer) {
+        clearTimeout(actionTimer);
+      }
+      movementX.stopAnimation();
+    };
+  }, [movementRange, movementX]);
+
+  const frameHeight = size;
+  const frameWidth = size;
+  const sheetSource =
+    animation.kind === 'roll' ? catBabyRollSpritesheet : catBabyWalkSpritesheet;
+
+  return (
+    <Animated.View
+      style={[
+        styles.animatedPetWrap,
+        {
+          transform: [{ translateX: movementX }],
+          width: size,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.characterShadow,
+          {
+            top: Math.round(size * 0.76),
+            width: Math.round(size * 0.9),
+          },
+        ]}
+      />
+      <View style={{ transform: [{ scaleX: -animation.direction }] }}>
+        {animation.kind === 'idle' ? (
+          <Image
+            accessibilityIgnoresInvertColors
+            source={pets[0].stages.baby}
+            style={[
+              styles.activePetSprite,
+              {
+                height: size,
+                width: size,
+              },
+            ]}
+          />
+        ) : (
+          <View
+            style={[
+              styles.spriteViewport,
+              {
+                height: frameHeight,
+                width: frameWidth,
+              },
+            ]}
+          >
+            <Image
+              accessibilityIgnoresInvertColors
+              source={sheetSource}
+              style={[
+                styles.petSpritesheet,
+                {
+                  height: frameHeight,
+                  transform: [{ translateX: -animation.frame * frameWidth }],
+                  width: frameWidth * 4,
+                },
+              ]}
+            />
+          </View>
+        )}
+      </View>
+    </Animated.View>
+  );
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
+
+function randomBetween(min: number, max: number) {
+  return min + Math.random() * (max - min);
+}
+
 
 function CurrencyPill({
   label,
@@ -672,6 +829,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
   },
+  animatedPetWrap: {
+    alignItems: 'center',
+    position: 'relative',
+  },
   characterShadow: {
     backgroundColor: '#73504b',
     height: 18,
@@ -680,6 +841,14 @@ const styles = StyleSheet.create({
   },
   activePetSprite: {
     resizeMode: 'contain',
+  },
+  spriteViewport: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  petSpritesheet: {
+    resizeMode: 'stretch',
   },
   roomNameTag: {
     alignItems: 'center',
