@@ -1,0 +1,4 @@
+interface:
+  display_name: "Planning"
+  short_description: "Draft and update project planning docs"
+  default_prompt: "Use $planning to create or update the project plan in .codex/context/description.md."

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Handoff"
+  short_description: "Save a continuation handoff summary."
+  default_prompt: "Use $handoff to save a continuation summary for the next Codex session."
+policy:
+  allow_implicit_invocation: false

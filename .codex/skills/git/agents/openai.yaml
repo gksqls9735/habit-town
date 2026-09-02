@@ -1,0 +1,6 @@
+interface:
+  display_name: "Git Sync"
+  short_description: "Pull, commit, and push the current repository."
+  default_prompt: "Use $git to pull, commit current work, and push the current branch."
+policy:
+  allow_implicit_invocation: false

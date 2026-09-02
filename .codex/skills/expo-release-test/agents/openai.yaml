@@ -1,0 +1,6 @@
+interface:
+  display_name: "Expo Release Test"
+  short_description: "Check Expo release readiness and update a versioned checklist report."
+  default_prompt: "Use $expo-release-test to check whether this Expo app is ready for release and save the report."
+policy:
+  allow_implicit_invocation: false

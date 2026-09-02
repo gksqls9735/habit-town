@@ -1,0 +1,6 @@
+interface:
+  display_name: "Worklog"
+  short_description: "Save a repository worklog."
+  default_prompt: "Use $worklog to save the current repository work state."
+policy:
+  allow_implicit_invocation: false

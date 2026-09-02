@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reference"
+  short_description: "Create UI design reference context"
+  default_prompt: "Use $reference to analyze a Pinterest UI reference and write .codex/context/design-description.md."

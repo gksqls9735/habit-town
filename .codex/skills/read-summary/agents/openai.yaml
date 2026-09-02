@@ -1,0 +1,6 @@
+interface:
+  display_name: "Read Summary"
+  short_description: "Read the latest saved summary."
+  default_prompt: "Use $read-summary to load the latest saved summary and continue."
+policy:
+  allow_implicit_invocation: false

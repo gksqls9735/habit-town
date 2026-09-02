@@ -1,0 +1,6 @@
+interface:
+  display_name: "Read Worklog"
+  short_description: "Read the latest saved worklog."
+  default_prompt: "Use $read-worklog to load the latest saved worklog and continue."
+policy:
+  allow_implicit_invocation: false

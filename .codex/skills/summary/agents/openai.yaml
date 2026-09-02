@@ -1,0 +1,6 @@
+interface:
+  display_name: "Summary"
+  short_description: "Save a concise conversation summary."
+  default_prompt: "Use $summary to save a concise summary of the current conversation."
+policy:
+  allow_implicit_invocation: false

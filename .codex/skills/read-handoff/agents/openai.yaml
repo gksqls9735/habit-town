@@ -1,0 +1,6 @@
+interface:
+  display_name: "Read Handoff"
+  short_description: "Read the latest saved handoff."
+  default_prompt: "Use $read-handoff to load the latest saved handoff and continue."
+policy:
+  allow_implicit_invocation: false
