@@ -14,6 +14,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TodayTasksModal } from '../src/features/goals/components/TodayTasksModal';
+import { YearlyGoalModal } from '../src/features/goals/components/YearlyGoalModal';
+import { useGoalPlanner } from '../src/features/goals/hooks/useGoalPlanner';
+import { getRemainingTaskBadge } from '../src/features/goals/utils';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
 const catBabyRollSpritesheet = require('../assets/pets/animations/cat-baby-roll-spritesheet.png');
@@ -119,6 +123,31 @@ const pets: PetDefinition[] = [
 export default function HomeScreen() {
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('cat');
+  const goalPlanner = useGoalPlanner();
+  const {
+    addYearlyGoal,
+    closeTodayTasks,
+    closeYearlyGoal,
+    dailyPlans,
+    expandedPlanIds,
+    generateAdditionalTaskForSelectedGoal,
+    goalError,
+    hasUsedTaskRefresh,
+    isGeneratingPlan,
+    isTodayTasksOpen,
+    isYearlyGoalOpen,
+    openTodayTasks,
+    openYearlyGoal,
+    openYearlyGoalFromTodayTasks,
+    refreshOneIncompleteTaskForSelectedGoal,
+    selectedTaskGoalId,
+    setSelectedTaskGoalId,
+    setYearlyGoalDraft,
+    togglePlanExpanded,
+    toggleTask,
+    yearlyGoalDraft,
+    yearlyGoals,
+  } = goalPlanner;
   const { height, width } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
   const scale = clamp(shortestSide / 390, 0.78, 1.08);
@@ -146,6 +175,24 @@ export default function HomeScreen() {
     },
   ];
   const popupWidth = Math.min(width - 32, 360);
+  const leftRailActions: RailAction[] = leftActions.map((action) => {
+    if (action.label === '오늘 할일') {
+      return {
+        ...action,
+        badge: getRemainingTaskBadge(dailyPlans),
+        onPress: openTodayTasks,
+      };
+    }
+
+    if (action.label === '올해 목표') {
+      return {
+        ...action,
+        onPress: openYearlyGoal,
+      };
+    }
+
+    return action;
+  });
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -205,7 +252,7 @@ export default function HomeScreen() {
             { gap: railMetrics.gap, left: sideInset, top: railTop },
           ]}
         >
-          {leftActions.map((action) => (
+          {leftRailActions.map((action) => (
             <RailButton action={action} key={action.label} metrics={railMetrics} />
           ))}
         </View>
@@ -234,6 +281,36 @@ export default function HomeScreen() {
             width={popupWidth}
           />
         ) : null}
+
+        <YearlyGoalModal
+          errorMessage={goalError}
+          isGenerating={isGeneratingPlan}
+          onChangeDraft={setYearlyGoalDraft}
+          onClose={closeYearlyGoal}
+          onSave={addYearlyGoal}
+          yearlyGoals={yearlyGoals}
+          value={yearlyGoalDraft}
+          visible={isYearlyGoalOpen}
+          width={popupWidth}
+        />
+        <TodayTasksModal
+          errorMessage={goalError}
+          hasUsedTaskRefresh={hasUsedTaskRefresh}
+          isGenerating={isGeneratingPlan}
+          onClose={closeTodayTasks}
+          onGenerate={generateAdditionalTaskForSelectedGoal}
+          onOpenGoal={openYearlyGoalFromTodayTasks}
+          onRefreshOneTask={refreshOneIncompleteTaskForSelectedGoal}
+          onSelectGoal={setSelectedTaskGoalId}
+          onTogglePlan={togglePlanExpanded}
+          onToggleTask={toggleTask}
+          plans={dailyPlans}
+          selectedGoalId={selectedTaskGoalId}
+          expandedPlanIds={expandedPlanIds}
+          visible={isTodayTasksOpen}
+          width={popupWidth}
+          yearlyGoals={yearlyGoals}
+        />
       </View>
     </SafeAreaView>
   );
