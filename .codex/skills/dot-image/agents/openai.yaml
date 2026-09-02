@@ -1,0 +1,6 @@
+interface:
+  display_name: "Dot Image"
+  short_description: "Generate and integrate verified pixel-art asset sets."
+  default_prompt: "Use $dot-image to generate or integrate a cohesive pixel-art asset set with the soft modern-retro default style, verified grids, and another theme only when I choose one."
+policy:
+  allow_implicit_invocation: true

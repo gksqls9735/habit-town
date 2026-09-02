@@ -1,0 +1,4 @@
+interface:
+  display_name: "Growth Pixel Character"
+  short_description: "Create matching growth pets and 9:16 pet rooms"
+  default_prompt: "Use $growth-pixel-character to create a consistent four-stage pixel pet set or matching 9:16 pet-room background."

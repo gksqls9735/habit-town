@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "name": "cinematic-sd",
+  "description": "Cinematic side-scrolling pixel art with compact SD characters, deep cool shadows, weathered materials, and restrained warm focal light.",
+  "prompt_terms": [
+    "cinematic side-scrolling pixel art",
+    "orthographic 2D side view",
+    "chunky deliberate pixel clusters",
+    "deep navy and plum shadows",
+    "restrained amber, coral, cream, and teal focal accents",
+    "weathered tactile materials",
+    "selective deep-colored outlines",
+    "three to five readable value groups",
+    "no smooth shading or antialiasing"
+  ],
+  "character": {
+    "proportions": "2.5 to 3 heads tall SD silhouette",
+    "outline_pixels": "1 to 2 pixels at the 64x64 working grid",
+    "default_scene_height": "24 to 32 pixels on a 128-pixel-tall background"
+  },
+  "environment": {
+    "depth": "foreground, gameplay plane, midground, and distant silhouette bands",
+    "materials": "weathered brick, metal, stone, cloth, wood, glass, water, and vegetation expressed with grouped clusters",
+    "lighting": "cool ambient shadows with sparse warm practical or sunset highlights"
+  },
+  "palette": {
+    "colors": [
+      "#080A0F", "#0E111A", "#151720", "#1C1A24", "#23212B", "#2A2430",
+      "#101827", "#162238", "#1B2E45", "#21425A", "#2A5C6B", "#2F7A83",
+      "#4B9A94", "#2A1E2C", "#362C37", "#45292B", "#554249", "#663C36",
+      "#7C3E38", "#A7553B", "#7F4936", "#A65033", "#B45D4E", "#CE594E",
+      "#DB604C", "#E6683B", "#F4803D", "#FF853F", "#F99958", "#F9A654",
+      "#F6AC65", "#F8CE97", "#FFF2CF", "#FFF4D2", "#5B3B3D", "#6A3B3E",
+      "#7E4F41", "#CE594F", "#D35B4F", "#DC604D", "#FE7743", "#FF7C44",
+      "#28382F", "#3B5140", "#58704C", "#80905F", "#5A5854", "#858078"
+    ]
+  }
+}

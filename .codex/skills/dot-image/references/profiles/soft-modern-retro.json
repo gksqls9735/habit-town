@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "name": "soft-modern-retro",
+  "description": "Soft modern-retro pixel art with compact friendly forms, warm everyday materials, muted nostalgic color, and calm diffused light.",
+  "prompt_terms": [
+    "soft modern-retro pixel art",
+    "orthographic 2D presentation",
+    "chunky deliberate pixel clusters",
+    "warm cream and muted pastel base colors",
+    "dusty coral, mustard, sage, teal, and denim accents",
+    "soft blue-gray and cocoa shadows",
+    "rounded practical silhouettes with restrained vintage details",
+    "three to five readable value groups",
+    "crisp edges with no smooth shading or antialiasing"
+  ],
+  "character": {
+    "proportions": "2.5 to 3 heads tall friendly SD silhouette",
+    "outline_pixels": "1 to 2 pixels at the 64x64 working grid",
+    "default_scene_height": "24 to 32 pixels on a 128-pixel-tall background",
+    "wardrobe": "simple layered everyday clothing with subtle 1970s to 1990s influence and no visible brands"
+  },
+  "environment": {
+    "depth": "foreground, gameplay plane, midground, and quiet distant silhouette bands",
+    "materials": "painted wood and metal, warm brick, terrazzo, laminate, woven cloth, glass, ceramic, and grouped plants",
+    "lighting": "calm diffused ambient light with creamy highlights and soft cool shadows"
+  },
+  "palette": {
+    "colors": [
+      "#171A24", "#202431", "#2A2D3A", "#343746", "#3E4250", "#4B4D58",
+      "#263345", "#30445A", "#3C5870", "#50738A", "#6C91A0", "#91B2B6",
+      "#294D4A", "#37645C", "#4F7C6B", "#70977B", "#92AD8A", "#B6C4A0",
+      "#4A3738", "#5D4541", "#70534A", "#876354", "#A27863", "#BC9277",
+      "#8E4F4D", "#AD625D", "#C97870", "#D99083", "#E4A69A", "#EEC1B1",
+      "#8B642F", "#A97C3C", "#C5964B", "#D8AD61", "#E6C47A", "#F0D79A",
+      "#6E685D", "#858075", "#9E988B", "#B7B0A0", "#D0C8B5", "#E5DDC9",
+      "#F4E9D2", "#FFF4DE", "#D9B7A1", "#C59A86", "#756B78", "#9B8EA0"
+    ]
+  }
+}

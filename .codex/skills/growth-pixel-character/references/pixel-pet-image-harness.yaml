@@ -1,0 +1,238 @@
+version: 1
+project: pixel-pet-growth-app
+style_anchor: golden_dog
+
+global_style:
+  medium: clean cute retro pixel art
+  mood: warm, cozy, friendly
+  rendering:
+    antialiasing: false
+    shading_steps: [2, 4]
+    outline: deep brown or dark neutral
+    saturation: restrained warm pastel
+    fur_detail: grouped pixel clusters only
+  face:
+    eyes: round and simple
+    nose: very small
+    mouth: short and friendly
+    cheeks: pale pink pixels on both sides
+  proportions:
+    form: SD with a slightly oversized head
+    legs: short but distinct
+    adult_realism: prohibited
+  default_view: front
+  optional_view: consistent slight three-quarter
+
+growth:
+  order: [baby, child, teen, adult]
+  adult_height_ratio:
+    baby: 0.55
+    child: 0.72
+    teen: 0.86
+    adult: 1.0
+  invariant_features: [eyes, nose, mouth, cheeks, coat_pattern, pixel_density]
+  chart:
+    separator: small neutral-gray pixel arrow
+    optional_label: cream-beige plaque with brown outline
+    background: white or near-white ivory
+  sprite_export:
+    background: transparent
+    grounding: bottom-center
+    chart_and_individual_sprites_are_separate: true
+    generation_grid: [128, 128]
+    output_canvas: [256, 256]
+    output_scale: 2
+    max_colors: 32
+    alpha: binary
+    interpolation: nearest-neighbor
+    adult_visible_height_on_generation_grid: 112
+    canvas_safety_margin_on_generation_grid: 5
+    popup_display_divisors: [128, 64]
+    required_manifest_suffix: .sprite.json
+
+animals:
+  hamster:
+    coat: golden cream with ivory belly and muzzle
+    features: [small round pink inner ears, black eyes, pink cheeks]
+    avoid: [inflated cheek pouches, ball-shaped obesity]
+  tuxedo_cat:
+    coat: charcoal black with white muzzle chest and paw tips
+    features: [green eyes, small pink nose, pink cheeks, natural black tail]
+    avoid: [realistic cat proportions, sharp intimidating expression]
+  golden_dog:
+    coat: pale cream gold
+    features: [short round muzzle, floppy ears, black eyes and nose, smiling mouth, pink cheeks]
+    avoid: [realistic retriever face, long muzzle, excessive fur detail]
+  capybara:
+    coat: warm tawny brown
+    features: [low long SD silhouette, tiny ears and eyes, broad simple muzzle, pink cheeks]
+    avoid: [realistic rodent anatomy, oversized heavy torso]
+
+backgrounds:
+  default_preset: premium_detailed
+  presets:
+    premium_detailed:
+      working_grid: [288, 512]
+      output_scale: 2
+      colors: 48
+      finish: polished_new
+      preserve: [layered_trim, board_color_variation, plank_boundaries, staggered_joints, fine_wood_grain_clusters, restrained_wall_texture]
+    detailed_pixel:
+      working_grid: [144, 256]
+      output_scale: 4
+      colors: 24
+      finish: polished_new
+      preserve: [plank_boundaries, staggered_joints, wood_grain_clusters]
+    clean_strong:
+      working_grid: [72, 128]
+      output_scale: 8
+      colors: 16
+      finish: polished_new
+    balanced:
+      working_grid: [144, 256]
+      output_scale: 4
+      colors: 32
+      finish: polished_new
+  simple_room:
+    aspect_ratio: "9:16"
+    wall:
+      color: near-white warm ivory
+      pattern: none
+      area_percent: [60, 65]
+    floor:
+      material: pristine light honey-oak pixel planks
+      seams: thin muted caramel with consistent spacing
+      area_percent: [35, 40]
+    baseboard: slim clean cream beige or light wood with a light-cocoa edge
+    placement: keep the lower center empty
+    finish_requirements:
+      - newly finished and clean
+      - nearly uniform ivory wall
+      - orderly medium-width floorboards
+      - subtle clustered wall texture without smooth gradients
+      - layered baseboard with restrained highlight and shadow bands
+      - gentle board-to-board value variation
+      - several neat wood-grain pixel clusters within each visible board
+      - visible staggered plank joints after normalization
+      - multiple readable plank rows without merging
+    finish_avoid:
+      - rustic or shabby appearance
+      - wall stains or large irregular light patches
+      - thick dark plank gaps
+      - cracks dents dirt or discoloration
+      - distressed or broken board edges
+  decorated_room:
+    allowed_props: [small_window, curtain, plant, low_shelf, pet_cushion, small_ball, paw_rug]
+    placement: sides and upper wall
+    contrast: lower than the pet
+
+objects:
+  pet_room_object:
+    working_grid: [64, 64]
+    output_canvas: [256, 256]
+    output_scale: 4
+    max_colors: 40
+    alpha: binary
+    interpolation: nearest-neighbor
+    grounding: bottom-center for floor objects; centered for wall fixtures
+    palette_policy:
+      accepted_source_is_locked: true
+      required_harness_flag: --preserve-source-palette
+      allow_color_count_reduction: true
+      theme_rgb_toning: prohibited
+      brightness_lift: prohibited
+      fixed_profile_palette_remap: prohibited
+      palette_reference_remap: prohibited
+      recolor_only_when_explicitly_requested: true
+    required_visual_comparison:
+      - cream cocoa coral and highlight colors remain in the same color family
+      - material warmth and saturation roles remain unchanged
+      - focal accent remains unchanged
+      - transparent isolation does not introduce a halo or baked background
+
+ui:
+  character_selector_popup:
+    style: fixed-grid retro pixel UI
+    pixel_grid_unit_css_px: 2
+    geometry:
+      border_width_css_px: 2
+      corner_style: square or stepped pixel corner
+      divider_height_css_px: 2
+      divider_pattern_css_px: [6, 4]
+      coordinate_rule: whole CSS pixels only
+    shadows:
+      allowed_offsets_css_px: [[2, 2], [4, 4], [6, 6]]
+      blur_radius_css_px: 0
+      spread_radius_css_px: 0
+      soft_shadow: prohibited
+    sprites:
+      source_canvas_px: [256, 256]
+      desktop_display_px: [128, 128]
+      compact_display_px: [64, 64]
+      allowed_scale: exact integer divisor only
+      rendering: nearest-neighbor pixelated and crisp-edges
+      smoothing: prohibited
+    cards:
+      columns_default: 3
+      selected_state: stronger cocoa outline plus pixel cursor
+      background: warm ivory with two-to-four flat value steps
+      nested_soft_card_style: prohibited
+    controls:
+      minimum_touch_height_css_px: 44
+      button_shape: square or stepped pixel silhouette
+      focus_and_selection: visible without relying on color alone
+    motion:
+      timing: stepped
+      allowed_translation_css_px: multiples of 2
+      scale_animation: prohibited
+      fractional_transform: prohibited
+    responsive:
+      preserve_pixel_grid_unit: true
+      preserve_sprite_divisor_scale: true
+      behavior: reflow content or switch from 128px sprites to 64px sprites
+      whole_popup_transform_scaling: prohibited
+    avoid:
+      - browser-default dotted or dashed decorative lines
+      - blurred shadows
+      - antialiased sprite scaling
+      - fractional positioning
+      - rounded soft modern card styling
+      - gradients that simulate smooth lighting
+
+negative_constraints:
+  - photorealistic
+  - 3D render
+  - smooth vector illustration
+  - hyper-detailed fur
+  - blurry or antialiased pixels
+  - busy wallpaper pattern
+  - shabby rustic or distressed finish
+  - thick dark floor gaps
+  - wall stains or irregular patches
+  - strong perspective
+  - unnecessary text
+  - watermark or logo
+  - inconsistent identity across stages
+
+consistency_checks:
+  - shared pixel size and density
+  - shared face language
+  - shared saturation and shading depth
+  - stable identity across growth stages
+  - every newly generated sprite uses a 128x128 logical grid and 2x integer output
+  - every newly generated sprite has binary transparency and no antialiased edge pixels
+  - each sprite uses no more than 32 opaque colors
+  - baby child teen and adult visible heights follow the declared growth ratios
+  - non-realistic adult proportions
+  - clear silhouette in app UI
+  - background remains subordinate to the pet
+  - layered baseboard remains readable after normalization
+  - board-to-board value variation remains visible without looking stained
+  - floor plank boundaries remain readable after normalization
+  - intentional wood-grain clusters survive at native working-grid size
+  - popup outlines dividers and shadows align to the fixed 2px UI grid
+  - popup shadows use integer offsets and zero blur
+  - popup sprites render at exact 256px divisor sizes
+  - responsive popup layouts reflow without transform scaling
+  - accepted object colors remain visually unchanged after normalization
+  - accepted objects record source-preserved palette mode in the harness log
