@@ -418,7 +418,7 @@ def clean_light_edge_halo(
     image: Image.Image,
     frame_index: int,
 ) -> tuple[Image.Image, dict[str, int | bool]]:
-    """Darken bright low-saturation pixels that sit on the alpha silhouette edge."""
+    """Remove or darken bright low-saturation pixels on the alpha silhouette edge."""
     result = image.copy()
     pixels = result.load()
     width, height = result.size
@@ -443,7 +443,29 @@ def clean_light_edge_halo(
         key=lambda color: sum(color),
         default=(14, 14, 14),
     )
-    changed = 0
+    removed = 0
+    darkened = 0
+
+    def touches_alpha(x: int, y: int) -> bool:
+        return any(
+            0 <= x + dx < width
+            and 0 <= y + dy < height
+            and pixels[x + dx, y + dy][3] == 0
+            for dx, dy in directions
+        )
+
+    def has_nearby_outline(x: int, y: int) -> bool:
+        for yy in range(max(0, y - 2), min(height, y + 3)):
+            for xx in range(max(0, x - 2), min(width, x + 3)):
+                if xx == x and yy == y:
+                    continue
+                red, green, blue, alpha = pixels[xx, yy]
+                if alpha == 0:
+                    continue
+                brightness = (red + green + blue) / 3
+                if brightness <= 84:
+                    return True
+        return False
 
     for y in range(height):
         for x in range(width):
@@ -453,28 +475,32 @@ def clean_light_edge_halo(
 
             brightness = (red + green + blue) / 3
             saturation = max(red, green, blue) - min(red, green, blue)
-            is_halo_candidate = (
-                brightness >= 62
-                and saturation <= 80
-                and max(red, green, blue) >= 80
+            gray_or_white_fringe = brightness >= 156 and saturation <= 62
+            pale_warm_fringe = (
+                red >= 218
+                and green >= 188
+                and blue >= 135
+                and saturation <= 98
             )
+            is_halo_candidate = gray_or_white_fringe or pale_warm_fringe
             if not is_halo_candidate:
                 continue
 
-            touches_alpha = any(
-                0 <= x + dx < width
-                and 0 <= y + dy < height
-                and pixels[x + dx, y + dy][3] == 0
-                for dx, dy in directions
-            )
-            if touches_alpha:
+            if not touches_alpha(x, y):
+                continue
+
+            if has_nearby_outline(x, y):
+                pixels[x, y] = (0, 0, 0, 0)
+                removed += 1
+            else:
                 pixels[x, y] = (*outline_color, alpha)
-                changed += 1
+                darkened += 1
 
     return result, {
         "frame": frame_index,
         "enabled": True,
-        "darkened_edge_pixels": changed,
+        "removed_edge_pixels": removed,
+        "darkened_edge_pixels": darkened,
     }
 
 
@@ -967,6 +993,10 @@ def run_animation_harness(
         },
         "edge_halo_cleanup": {
             "enabled": True,
+            "total_removed_edge_pixels": sum(
+                int(record["removed_edge_pixels"])
+                for record in edge_cleanup_records
+            ),
             "total_darkened_edge_pixels": sum(
                 int(record["darkened_edge_pixels"])
                 for record in edge_cleanup_records
@@ -1033,6 +1063,10 @@ def run_animation_harness(
             },
             "edge_halo_cleanup": {
                 "enabled": True,
+                "total_removed_edge_pixels": sum(
+                    int(record["removed_edge_pixels"])
+                    for record in edge_cleanup_records
+                ),
                 "total_darkened_edge_pixels": sum(
                     int(record["darkened_edge_pixels"])
                     for record in edge_cleanup_records

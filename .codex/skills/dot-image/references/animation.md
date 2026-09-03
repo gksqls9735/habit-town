@@ -61,7 +61,7 @@ Animation mode is enabled by `--frames` greater than 1. The harness:
 3. Removes a connected dark isolation background from each character frame.
 4. Aligns visible content using `--anchor`; `auto` resolves to `bottom-center` for characters and `none` for other asset types.
 5. Quantizes all frames together with one shared palette to reduce color flicker.
-6. Darkens bright low-saturation pixels that touch the transparent silhouette edge so generated white halos become dark pixel outlines instead of visible borders.
+6. Removes bright low-saturation pixels that touch the transparent silhouette edge when they sit next to an existing dark outline, and only darkens remaining bright edge pixels when removal would risk cutting intentional fur or highlights.
 7. When `--size-reference` and `--scale-to-reference` are supplied, scales each frame's visible content up toward the original character's visible bounds without changing the frame cell dimensions.
 8. Writes a clean sprite sheet, individual frame PNGs, and an `.animation.json` manifest.
 
@@ -77,7 +77,7 @@ The raw sheet dimensions must divide evenly into the requested columns and calcu
 
 - Inspect each frame at the native working-grid size, not only an enlarged preview.
 - Flip rapidly between adjacent frames to detect outline crawl, palette flicker, volume changes, and anchor jitter.
-- Check the transparent silhouette edge for white, cream, or pale gray halos. The harness records `edge_halo_cleanup`; treat a visible remaining halo as a blocker even when alpha and grid checks pass.
+- Check the transparent silhouette edge for white, cream, or pale gray halos. The harness records `edge_halo_cleanup` with removed and darkened edge pixels; treat a visible remaining halo as a blocker even when alpha and grid checks pass.
 - Compare the animation frames against the idle/source character and the accepted walk cycle at the real app display size. The pet should keep a similar visual footprint while changing pose.
 - Check the harness manifest's visible bounds, size ratios, `size_scale`, and recommended runtime scale. Treat low ratios as a blocker unless `--scale-to-reference` was applied successfully or the app integration intentionally applies a matching per-frame display scale.
 - Confirm every frame uses the same recorded 2D view with no perspective or camera drift.

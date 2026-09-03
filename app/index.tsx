@@ -27,6 +27,7 @@ const catBabyRollFrames = [
   require('../assets/pets/animations/cat-baby-roll-frame-3.png'),
 ];
 const catBabyWalkSpritesheet = require('../assets/pets/animations/cat-baby-walk-spritesheet.png');
+const hamsterBabyWalkSpritesheet = require('../assets/pets/animations/hamster-baby-walk-spritesheet.png');
 const pixelFontFamily = 'Galmuri11';
 
 type RailAction = {
@@ -127,7 +128,7 @@ const pets: PetDefinition[] = [
 
 export default function HomeScreen() {
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
-  const [activePetId, setActivePetId] = useState<PetDefinition['id']>('cat');
+  const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
   const goalPlanner = useGoalPlanner();
   const {
     addYearlyGoal,
@@ -341,6 +342,9 @@ function AnimatedBabyCat({
   });
   const movementX = useRef(new Animated.Value(0)).current;
   const currentX = useRef(0);
+  const canUseBabyCatAnimation = pet.id === 'cat' && stage === 'baby';
+  const canUseBabyHamsterAnimation = pet.id === 'hamster' && stage === 'baby';
+  const canUseWalkAnimation = canUseBabyCatAnimation || canUseBabyHamsterAnimation;
 
   useEffect(() => {
     let frameTimer: ReturnType<typeof setInterval> | undefined;
@@ -363,7 +367,7 @@ function AnimatedBabyCat({
       clearFrameTimer();
 
       const kind: Exclude<PetAnimationKind, 'idle'> =
-        Math.random() > 0.46 ? 'walk' : 'roll';
+        canUseBabyCatAnimation && Math.random() <= 0.46 ? 'roll' : 'walk';
       const requestedDirection: -1 | 1 = Math.random() > 0.5 ? 1 : -1;
       const distance =
         kind === 'walk'
@@ -426,9 +430,14 @@ function AnimatedBabyCat({
       }
       movementX.stopAnimation();
     };
-  }, [movementRange, movementX]);
+  }, [
+    canUseBabyCatAnimation,
+    movementRange,
+    movementX,
+    pet.id,
+    stage,
+  ]);
 
-  const canUseBabyCatAnimation = pet.id === 'cat' && stage === 'baby';
   const petSource = pet.stages[stage];
   const frameHeight = size;
   const frameWidth = size;
@@ -438,7 +447,9 @@ function AnimatedBabyCat({
   const rollFrameSize = Math.round(size * rollFrameScale);
   const maxFrameSize = Math.round(size * Math.max(...rollFrameScales));
   const rollFrameSource = catBabyRollFrames[animation.frame];
-  const walkSheetSource = catBabyWalkSpritesheet;
+  const walkSheetSource = canUseBabyHamsterAnimation
+    ? hamsterBabyWalkSpritesheet
+    : catBabyWalkSpritesheet;
 
   return (
     <Animated.View
@@ -466,7 +477,9 @@ function AnimatedBabyCat({
           { transform: [{ scaleX: -animation.direction }] },
         ]}
       >
-        {animation.kind === 'idle' || !canUseBabyCatAnimation ? (
+        {animation.kind === 'idle' ||
+        (animation.kind === 'roll' && !canUseBabyCatAnimation) ||
+        (animation.kind === 'walk' && !canUseWalkAnimation) ? (
           <Image
             accessibilityIgnoresInvertColors
             source={petSource}
