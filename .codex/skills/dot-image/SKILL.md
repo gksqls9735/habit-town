@@ -101,6 +101,12 @@ For a supplied portrait or panoramic background whose composition must remain in
    python .codex/skills/dot-image/scripts/dot_harness.py char <filename>.png --asset-root <asset-root> --theme <theme> --view side --frames 6 --columns 6 --animation idle --fps 8 --anchor bottom-center --scale 1
    ```
 
+   When animating an existing pet or character, pass the original still sprite as the apparent-size reference. Add `--scale-to-reference` only after the animation poses are accepted and the remaining issue is that playback looks smaller than the original pet:
+
+   ```bash
+   python .codex/skills/dot-image/scripts/dot_harness.py char <filename>.png --asset-root <asset-root> --theme <theme> --view side --frames 4 --columns 4 --animation roll --fps 8 --anchor bottom-center --scale 1 --size-reference assets/pets/cat-baby.png --scale-to-reference
+   ```
+
 9. Treat a nonzero exit code or a failed verification as a blocking failure. Correct the input or regenerate it, then rerun the harness. Do not copy an unchecked raw image into the clean directory.
 10. Inspect the clean PNG at native size and enlarged nearest-neighbor size. Confirm the selected 2D view, parallel projection, silhouette, focal pixels, selective outlines, transparency, and theme remain legible without perspective drift, noise, cropping, or distortion. For animation, also inspect the individual frame sequence, loop continuity, bottom-center anchoring, and source-size consistency. Compare at least one idle/source frame with the animated frames at the intended runtime display size before accepting the sheet. Treat visible-size consistency as the top priority for character animation: if the harness reports a low visible-bounds ratio, either rebuild the frame or keep the accepted design and record a matching per-frame runtime scale in the app integration.
 11. Report the asset category, raw path, clean path, style profile, asset type, theme, 2D view, dimensions, palette reference when used, harness result, and any visible-size warnings. Animation mode additionally produces `<asset-root>/clean/<stem>/frame-###.png` and `<asset-root>/clean/<stem>.animation.json`, including per-frame visible bounds and recommended runtime scale. Composition mode produces a sibling `.composition.json`. The harness appends a machine-readable record to `<asset-root>/clean/dot-harness.log`.

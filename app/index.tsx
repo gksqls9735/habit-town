@@ -166,7 +166,7 @@ export default function HomeScreen() {
   };
   const railTop = compactHeight ? 126 : Math.round(148 * roomScale);
   const sideInset = Math.max(6, Math.round(width * 0.02));
-  const activePet = pets[0];
+  const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
   const currentStage: GrowthStage = 'baby';
   const characterSize = Math.round(132 * roomScale);
   const characterBottom = compactHeight ? '15%' : '18%';
@@ -213,6 +213,8 @@ export default function HomeScreen() {
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
               <AnimatedBabyCat
                 movementRange={Math.round(Math.min(width * 0.24, 104) * roomScale)}
+                pet={activePet}
+                stage={currentStage}
                 size={characterSize}
               />
               <View style={styles.roomNameTag}>
@@ -323,9 +325,13 @@ export default function HomeScreen() {
 
 function AnimatedBabyCat({
   movementRange,
+  pet,
+  stage,
   size,
 }: {
   movementRange: number;
+  pet: PetDefinition;
+  stage: GrowthStage;
   size: number;
 }) {
   const [animation, setAnimation] = useState<PetAnimationState>({
@@ -358,16 +364,27 @@ function AnimatedBabyCat({
 
       const kind: Exclude<PetAnimationKind, 'idle'> =
         Math.random() > 0.46 ? 'walk' : 'roll';
-      const direction: -1 | 1 = Math.random() > 0.5 ? 1 : -1;
+      const requestedDirection: -1 | 1 = Math.random() > 0.5 ? 1 : -1;
       const distance =
         kind === 'walk'
           ? randomBetween(movementRange * 0.45, movementRange)
           : randomBetween(movementRange * 0.24, movementRange * 0.62);
-      let nextX = clamp(currentX.current + distance * direction, -movementRange, movementRange);
+      let nextX = clamp(
+        currentX.current + distance * requestedDirection,
+        -movementRange,
+        movementRange,
+      );
 
       if (Math.abs(nextX - currentX.current) < 12) {
-        nextX = clamp(currentX.current - distance * direction, -movementRange, movementRange);
+        nextX = clamp(
+          currentX.current - distance * requestedDirection,
+          -movementRange,
+          movementRange,
+        );
       }
+
+      const movementDelta = nextX - currentX.current;
+      const direction: -1 | 1 = movementDelta >= 0 ? 1 : -1;
 
       setAnimation({ direction, frame: 0, kind });
 
@@ -411,12 +428,15 @@ function AnimatedBabyCat({
     };
   }, [movementRange, movementX]);
 
+  const canUseBabyCatAnimation = pet.id === 'cat' && stage === 'baby';
+  const petSource = pet.stages[stage];
   const frameHeight = size;
   const frameWidth = size;
-  const rollFrameScales = [1, 1.04, 1.18, 1.04];
+  const rollFrameScales = [1.06, 1.1, 1.18, 1.1];
   const rollFrameScale =
     animation.kind === 'roll' ? rollFrameScales[animation.frame] : 1;
-  const maxFrameSize = Math.round(size * 1.18);
+  const rollFrameSize = Math.round(size * rollFrameScale);
+  const maxFrameSize = Math.round(size * Math.max(...rollFrameScales));
   const rollFrameSource = catBabyRollFrames[animation.frame];
   const walkSheetSource = catBabyWalkSpritesheet;
 
@@ -446,10 +466,10 @@ function AnimatedBabyCat({
           { transform: [{ scaleX: -animation.direction }] },
         ]}
       >
-        {animation.kind === 'idle' ? (
+        {animation.kind === 'idle' || !canUseBabyCatAnimation ? (
           <Image
             accessibilityIgnoresInvertColors
-            source={pets[0].stages.baby}
+            source={petSource}
             style={[
               styles.activePetSprite,
               {
@@ -465,9 +485,8 @@ function AnimatedBabyCat({
             style={[
               styles.activePetSprite,
               {
-                height: size,
-                transform: [{ scale: rollFrameScale }],
-                width: size,
+                height: rollFrameSize,
+                width: rollFrameSize,
               },
             ]}
           />

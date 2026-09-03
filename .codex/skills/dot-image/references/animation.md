@@ -11,6 +11,7 @@ Read this reference only when creating animation frames or sprite sheets.
 - Keep one fixed orthographic 2D view across every frame. Never rotate, tilt, zoom, or orbit the camera during an animation.
 - Leave enough empty space for moving ears, tails, weapons, splashes, particles, and anticipation poses.
 - Describe distinct key poses in the generation prompt. Do not ask only for several nearly identical copies.
+- Do not leave white, cream, or pale gray halo pixels on the transparent silhouette edge. Bright edge pixels must either belong to the character's intentional interior fur/highlight area or be replaced with the sprite's dark outline color.
 
 ## Source Character Size Contract
 
@@ -22,6 +23,7 @@ Use this contract whenever animating an existing character image.
 - Measure each finished frame's visible alpha bounding box and compare it to the idle/source frame and, when available, the accepted walk sheet. A frame that has the same canvas size but a much smaller visible bbox will still look wrong in-app.
 - For generated or extracted sheets, preserve the accepted pose design first, then correct runtime display scale per frame when one pose naturally has a smaller bbox. Do not destructively resize the source art if that changes the accepted design.
 - Record any required per-frame display scale in the animation manifest or integration code. For example, a belly-up roll frame may need a slightly larger display scale even though the PNG cell remains unchanged.
+- When a source pet still sprite exists, pass it with `--size-reference`. If the accepted animation still appears smaller during playback, run the harness with `--scale-to-reference` so each frame is scaled against the original pet's visible alpha bounds while preserving the frame cell size.
 - Do not fit oversized generated frames into the source cell by non-uniform scaling, vertical compression, horizontal stretching, or automatic contain-style resizing. Regenerate or rebuild the frames instead.
 - Prefer source-preserving motion edits for small pet animations: move paws, tail, ears, cheeks, body offset, and shadow by a few pixels while keeping the main body mass unchanged.
 - For walk cycles, the feet and paws should change visibly between frames, but the standing height should remain stable. Body bounce can be 1 to 3 pixels only.
@@ -59,7 +61,9 @@ Animation mode is enabled by `--frames` greater than 1. The harness:
 3. Removes a connected dark isolation background from each character frame.
 4. Aligns visible content using `--anchor`; `auto` resolves to `bottom-center` for characters and `none` for other asset types.
 5. Quantizes all frames together with one shared palette to reduce color flicker.
-6. Writes a clean sprite sheet, individual frame PNGs, and an `.animation.json` manifest.
+6. Darkens bright low-saturation pixels that touch the transparent silhouette edge so generated white halos become dark pixel outlines instead of visible borders.
+7. When `--size-reference` and `--scale-to-reference` are supplied, scales each frame's visible content up toward the original character's visible bounds without changing the frame cell dimensions.
+8. Writes a clean sprite sheet, individual frame PNGs, and an `.animation.json` manifest.
 
 Example:
 
@@ -73,8 +77,9 @@ The raw sheet dimensions must divide evenly into the requested columns and calcu
 
 - Inspect each frame at the native working-grid size, not only an enlarged preview.
 - Flip rapidly between adjacent frames to detect outline crawl, palette flicker, volume changes, and anchor jitter.
+- Check the transparent silhouette edge for white, cream, or pale gray halos. The harness records `edge_halo_cleanup`; treat a visible remaining halo as a blocker even when alpha and grid checks pass.
 - Compare the animation frames against the idle/source character and the accepted walk cycle at the real app display size. The pet should keep a similar visual footprint while changing pose.
-- Check the harness manifest's visible bounds, size ratios, and recommended runtime scale. Treat low ratios as a blocker unless the app integration intentionally applies a matching per-frame display scale.
+- Check the harness manifest's visible bounds, size ratios, `size_scale`, and recommended runtime scale. Treat low ratios as a blocker unless `--scale-to-reference` was applied successfully or the app integration intentionally applies a matching per-frame display scale.
 - Confirm every frame uses the same recorded 2D view with no perspective or camera drift.
 - Preview at the manifest FPS and playback mode.
 - Reject sheets with cropped motion, inconsistent identity, accidental camera movement, partial alpha, blurred edges, or an unreadable loop boundary.

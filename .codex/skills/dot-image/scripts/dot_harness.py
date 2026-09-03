@@ -367,18 +367,20 @@ def visible_bounds_record(
 def animation_size_report(
     frames: list[Image.Image],
     reference_index: int = 0,
+    reference_bounds: dict[str, object] | None = None,
 ) -> tuple[list[dict[str, object]], list[str]]:
     """Compare visible frame sizes and suggest runtime scale compensation."""
-    if not 0 <= reference_index < len(frames):
+    if reference_bounds is None and not 0 <= reference_index < len(frames):
         raise ValueError("Size reference frame must be inside the animation range")
 
     bounds_records = [
         visible_bounds_record(frame, index) for index, frame in enumerate(frames)
     ]
-    reference = bounds_records[reference_index]
+    reference = reference_bounds or bounds_records[reference_index]
     reference_width = max(1, int(reference["width"] or 0))
     reference_height = max(1, int(reference["height"] or 0))
     reference_area = max(1, reference_width * reference_height)
+    reference_label = "size reference" if reference_bounds is not None else f"reference frame {reference_index}"
     warnings = []
 
     for record in bounds_records:
@@ -398,18 +400,179 @@ def animation_size_report(
         record["recommended_runtime_scale"] = round(recommended_scale, 3)
 
         if (
-            int(record["index"] or 0) != reference_index
+            (reference_bounds is not None or int(record["index"] or 0) != reference_index)
             and (width_ratio < 0.85 or height_ratio < 0.85 or area_ratio < 0.72)
         ):
             warnings.append(
                 "Frame "
-                f"{record['index']} visible size differs from reference frame "
-                f"{reference_index}: width={width_ratio:.2f}, "
+                f"{record['index']} visible size differs from {reference_label}: "
+                f"width={width_ratio:.2f}, "
                 f"height={height_ratio:.2f}, area={area_ratio:.2f}; "
                 f"consider runtime scale {recommended_scale:.2f}"
             )
 
     return bounds_records, warnings
+
+
+def clean_light_edge_halo(
+    image: Image.Image,
+    frame_index: int,
+) -> tuple[Image.Image, dict[str, int | bool]]:
+    """Darken bright low-saturation pixels that sit on the alpha silhouette edge."""
+    result = image.copy()
+    pixels = result.load()
+    width, height = result.size
+    directions = (
+        (-1, -1),
+        (0, -1),
+        (1, -1),
+        (-1, 0),
+        (1, 0),
+        (-1, 1),
+        (0, 1),
+        (1, 1),
+    )
+    visible_pixels = [
+        pixels[x, y][:3]
+        for y in range(height)
+        for x in range(width)
+        if pixels[x, y][3] != 0
+    ]
+    outline_color = min(
+        visible_pixels,
+        key=lambda color: sum(color),
+        default=(14, 14, 14),
+    )
+    changed = 0
+
+    for y in range(height):
+        for x in range(width):
+            red, green, blue, alpha = pixels[x, y]
+            if alpha == 0:
+                continue
+
+            brightness = (red + green + blue) / 3
+            saturation = max(red, green, blue) - min(red, green, blue)
+            is_halo_candidate = (
+                brightness >= 62
+                and saturation <= 80
+                and max(red, green, blue) >= 80
+            )
+            if not is_halo_candidate:
+                continue
+
+            touches_alpha = any(
+                0 <= x + dx < width
+                and 0 <= y + dy < height
+                and pixels[x + dx, y + dy][3] == 0
+                for dx, dy in directions
+            )
+            if touches_alpha:
+                pixels[x, y] = (*outline_color, alpha)
+                changed += 1
+
+    return result, {
+        "frame": frame_index,
+        "enabled": True,
+        "darkened_edge_pixels": changed,
+    }
+
+
+def scale_frame_to_reference(
+    image: Image.Image,
+    frame_index: int,
+    reference_bounds: dict[str, object] | None,
+    anchor: str,
+    max_scale: float,
+) -> tuple[Image.Image, dict[str, object]]:
+    """Scale visible frame content up to match a source character's apparent size."""
+    source_bounds = visible_bounds_record(image)
+    if reference_bounds is None:
+        return image, {
+            "frame": frame_index,
+            "enabled": False,
+            "applied_scale": 1,
+            "reason": "no size reference",
+            "before": source_bounds,
+            "after": source_bounds,
+        }
+
+    source_width = int(source_bounds["width"] or 0)
+    source_height = int(source_bounds["height"] or 0)
+    reference_width = int(reference_bounds["width"] or 0)
+    reference_height = int(reference_bounds["height"] or 0)
+    if source_width == 0 or source_height == 0:
+        return image, {
+            "frame": frame_index,
+            "enabled": True,
+            "applied_scale": 1,
+            "reason": "empty frame",
+            "before": source_bounds,
+            "after": source_bounds,
+        }
+    if reference_width == 0 or reference_height == 0:
+        return image, {
+            "frame": frame_index,
+            "enabled": False,
+            "applied_scale": 1,
+            "reason": "empty size reference",
+            "before": source_bounds,
+            "after": source_bounds,
+        }
+
+    reference_area = reference_width * reference_height
+    source_area = source_width * source_height
+    width_scale = reference_width / source_width
+    area_scale = math.sqrt(reference_area / source_area)
+    desired_scale = max(1, width_scale, area_scale)
+    fit_scale = min(
+        (image.width - 2) / source_width,
+        (image.height - 2) / source_height,
+    )
+    applied_scale = min(desired_scale, fit_scale, max_scale)
+    if applied_scale <= 1.01:
+        return image, {
+            "frame": frame_index,
+            "enabled": True,
+            "applied_scale": 1,
+            "desired_scale": round(desired_scale, 3),
+            "max_fit_scale": round(fit_scale, 3),
+            "before": source_bounds,
+            "after": source_bounds,
+        }
+
+    left = int(source_bounds["left"] or 0)
+    top = int(source_bounds["top"] or 0)
+    right = int(source_bounds["right"] or 0)
+    bottom = int(source_bounds["bottom"] or 0)
+    content = image.crop((left, top, right, bottom))
+    scaled_size = (
+        max(1, round(content.width * applied_scale)),
+        max(1, round(content.height * applied_scale)),
+    )
+    scaled = content.resize(scaled_size, Image.Resampling.NEAREST)
+    result = Image.new("RGBA", image.size, (0, 0, 0, 0))
+
+    if anchor == "center":
+        paste_left = (image.width - scaled.width) // 2
+        paste_top = (image.height - scaled.height) // 2
+    else:
+        paste_left = (image.width - scaled.width) // 2
+        paste_top = image.height - scaled.height - 1
+    paste_left = max(0, min(paste_left, image.width - scaled.width))
+    paste_top = max(0, min(paste_top, image.height - scaled.height))
+    result.alpha_composite(scaled, (paste_left, paste_top))
+    after_bounds = visible_bounds_record(result)
+
+    return result, {
+        "frame": frame_index,
+        "enabled": True,
+        "applied_scale": round(applied_scale, 3),
+        "desired_scale": round(desired_scale, 3),
+        "max_fit_scale": round(fit_scale, 3),
+        "before": source_bounds,
+        "after": after_bounds,
+    }
 
 
 def split_sheet(
@@ -619,6 +782,9 @@ def run_animation_harness(
     style_profile: dict[str, object] | None = None,
     style_profile_path: Path | None = None,
     preserve_source_palette: bool = False,
+    size_reference_path: Path | None = None,
+    scale_to_reference: bool = False,
+    max_size_scale: float = 1.45,
 ) -> Path:
     spec = SPECS[asset_type]
     theme_spec = THEMES[theme]
@@ -647,16 +813,65 @@ def run_animation_harness(
         style_profile.get("palette_rgb") if style_profile is not None else None,
         preserve_source_palette,
     )
+    edge_cleanup_records = []
+    cleaned_frames = []
+    for index, frame in enumerate(normalized_frames):
+        cleaned_frame, cleanup_record = clean_light_edge_halo(frame, index)
+        cleaned_frames.append(cleaned_frame)
+        edge_cleanup_records.append(cleanup_record)
+
+    size_reference_bounds = None
+    if size_reference_path is not None:
+        with Image.open(size_reference_path) as reference_source:
+            size_reference = resize_to_target(reference_source.convert("RGBA"), target)
+        if asset_type in {"char", "object"}:
+            size_reference = remove_connected_dark_background(size_reference)
+        size_reference_bounds = visible_bounds_record(size_reference)
+
+    size_scale_records = []
+    scaled_frames = []
+    for index, frame in enumerate(cleaned_frames):
+        if scale_to_reference:
+            scaled_frame, scale_record = scale_frame_to_reference(
+                frame,
+                index,
+                size_reference_bounds,
+                anchor,
+                max_size_scale,
+            )
+        else:
+            bounds = visible_bounds_record(frame)
+            scale_record = {
+                "frame": index,
+                "enabled": False,
+                "applied_scale": 1,
+                "reason": "disabled",
+                "before": bounds,
+                "after": bounds,
+            }
+            scaled_frame = frame
+        scaled_frames.append(scaled_frame)
+        size_scale_records.append(scale_record)
+
     final_size = (target[0] * output_scale, target[1] * output_scale)
     final_frames = []
     verifications = []
-    for frame in normalized_frames:
+    for frame in scaled_frames:
         final_frame = frame.resize(final_size, Image.Resampling.NEAREST)
         verifications.append(
             verify_output(final_frame, target, output_scale, color_count)
         )
         final_frames.append(final_frame)
-    size_records, size_warnings = animation_size_report(final_frames)
+    size_records, size_warnings = animation_size_report(
+        final_frames,
+        reference_bounds=(
+            visible_bounds_record(
+                size_reference.resize(final_size, Image.Resampling.NEAREST)
+            )
+            if size_reference_path is not None
+            else None
+        ),
+    )
 
     clean_dir = clean_path.parent
     frame_dir = clean_dir / clean_path.stem
@@ -694,6 +909,8 @@ def run_animation_harness(
                 "duration_ms": duration_ms,
                 "offset": offsets[index],
                 "visible_bounds": size_records[index],
+                "size_scale": size_scale_records[index],
+                "edge_halo_cleanup": edge_cleanup_records[index],
             }
         )
 
@@ -730,8 +947,30 @@ def run_animation_harness(
             "frame_height": final_size[1],
         },
         "size_consistency": {
-            "reference_frame": 0,
+            "reference_frame": 0 if size_reference_path is None else None,
+            "reference_image": (
+                size_reference_path.relative_to(project_root).as_posix()
+                if size_reference_path is not None
+                and size_reference_path.is_relative_to(project_root)
+                else str(size_reference_path) if size_reference_path is not None else None
+            ),
+            "reference_bounds": (
+                visible_bounds_record(
+                    size_reference.resize(final_size, Image.Resampling.NEAREST)
+                )
+                if size_reference_path is not None
+                else None
+            ),
+            "scale_to_reference": scale_to_reference,
+            "max_size_scale": max_size_scale,
             "warnings": size_warnings,
+        },
+        "edge_halo_cleanup": {
+            "enabled": True,
+            "total_darkened_edge_pixels": sum(
+                int(record["darkened_edge_pixels"])
+                for record in edge_cleanup_records
+            ),
         },
         "sheet": clean_path.relative_to(project_root).as_posix(),
         "frames": frame_records,
@@ -777,6 +1016,28 @@ def run_animation_harness(
             "frame_height": final_size[1],
             "visible_colors": max(item["visible_colors"] for item in verifications),
             "size_consistency_warnings": size_warnings,
+            "size_scale": {
+                "enabled": scale_to_reference,
+                "reference_image": (
+                    size_reference_path.relative_to(project_root).as_posix()
+                    if size_reference_path is not None
+                    and size_reference_path.is_relative_to(project_root)
+                    else str(size_reference_path)
+                    if size_reference_path is not None
+                    else None
+                ),
+                "max_size_scale": max_size_scale,
+                "applied_scales": [
+                    record["applied_scale"] for record in size_scale_records
+                ],
+            },
+            "edge_halo_cleanup": {
+                "enabled": True,
+                "total_darkened_edge_pixels": sum(
+                    int(record["darkened_edge_pixels"])
+                    for record in edge_cleanup_records
+                ),
+            },
             "has_transparency": any(
                 item["has_transparency"] for item in verifications
             ),
@@ -812,6 +1073,9 @@ def run_harness(
     style_profile_requested: str = "auto",
     working_grid: tuple[int, int] | None = None,
     preserve_source_palette: bool = False,
+    size_reference: Path | None = None,
+    scale_to_reference: bool = False,
+    max_size_scale: float = 1.45,
 ) -> Path:
     if asset_type not in SPECS:
         raise ValueError(f"Unknown asset type: {asset_type}")
@@ -827,6 +1091,12 @@ def run_harness(
         raise ValueError("Custom working grids are supported only for bg and scene")
     if working_grid is not None and frame_count != 1:
         raise ValueError("Custom working grids are supported only in static mode")
+    if scale_to_reference and frame_count == 1:
+        raise ValueError("Reference scaling is supported only in animation mode")
+    if scale_to_reference and size_reference is None:
+        raise ValueError("--scale-to-reference requires --size-reference")
+    if max_size_scale < 1 or max_size_scale > 2:
+        raise ValueError("Max size scale must be between 1 and 2")
 
     style_profile, style_profile_path = load_style_profile(
         project_root,
@@ -853,6 +1123,14 @@ def run_harness(
     clean_path = resolved_asset_root / "clean" / safe_filename
     if not raw_path.is_file():
         raise FileNotFoundError(f"Raw image not found: {raw_path}")
+
+    size_reference_path = None
+    if size_reference is not None:
+        size_reference_path = size_reference
+        if not size_reference_path.is_absolute():
+            size_reference_path = project_root / size_reference_path
+        if not size_reference_path.is_file():
+            raise FileNotFoundError(f"Size reference image not found: {size_reference_path}")
 
     palette_reference_path = None
     palette_reference = None
@@ -921,6 +1199,9 @@ def run_harness(
         style_profile,
         style_profile_path,
         preserve_source_palette,
+        size_reference_path,
+        scale_to_reference,
+        max_size_scale,
     )
 
 
@@ -982,6 +1263,29 @@ def parse_args() -> argparse.Namespace:
         type=parse_working_grid,
         default=None,
         help="Optional WIDTHxHEIGHT grid for static bg or scene assets",
+    )
+    parser.add_argument(
+        "--size-reference",
+        type=Path,
+        default=None,
+        help=(
+            "Optional source character PNG used as the apparent-size reference "
+            "for animation frame reports and --scale-to-reference"
+        ),
+    )
+    parser.add_argument(
+        "--scale-to-reference",
+        action="store_true",
+        help=(
+            "Scale animation frame visible content up to match --size-reference "
+            "while preserving each frame cell size"
+        ),
+    )
+    parser.add_argument(
+        "--max-size-scale",
+        type=float,
+        default=1.45,
+        help="Maximum per-frame scale applied by --scale-to-reference (default: 1.45)",
     )
     parser.add_argument(
         "--preserve-source-palette",
@@ -1056,6 +1360,9 @@ def main() -> int:
             args.style_profile,
             args.working_grid,
             args.preserve_source_palette,
+            args.size_reference,
+            args.scale_to_reference,
+            args.max_size_scale,
         )
     except (FileNotFoundError, OSError, ValueError) as error:
         print(f"[Harness Error] {error}", file=sys.stderr)
