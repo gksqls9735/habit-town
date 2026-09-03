@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { generateDailyTasksForGoal } from '../goalAiService';
+import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
 import { DailyPlan, YearlyGoal } from '../types';
 import {
   getCompletedNonRepeatableTaskTitles,
@@ -20,7 +21,57 @@ export function useGoalPlanner() {
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [goalError, setGoalError] = useState('');
   const [hasUsedTaskRefresh, setHasUsedTaskRefresh] = useState(false);
+  const [isLoadingGoalData, setIsLoadingGoalData] = useState(true);
   const [selectedTaskGoalId, setSelectedTaskGoalId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    loadGoalPlannerData()
+      .then((savedData) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setYearlyGoals(savedData.yearlyGoals);
+        setDailyPlans(savedData.dailyPlans);
+        setHasUsedTaskRefresh(savedData.hasUsedTaskRefresh);
+      })
+      .catch((error) => {
+        const message =
+          error instanceof Error ? error.message : '저장된 목표 데이터를 불러오지 못했습니다.';
+
+        if (isMounted) {
+          setGoalError(message);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingGoalData(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const persistGoalPlannerData = (
+    nextYearlyGoals = yearlyGoals,
+    nextDailyPlans = dailyPlans,
+    nextHasUsedTaskRefresh = hasUsedTaskRefresh,
+  ) => {
+    saveGoalPlannerData({
+      dailyPlans: nextDailyPlans,
+      hasUsedTaskRefresh: nextHasUsedTaskRefresh,
+      yearlyGoals: nextYearlyGoals,
+    }).catch((error) => {
+      const message =
+        error instanceof Error ? error.message : '목표 데이터를 저장하지 못했습니다.';
+
+      setGoalError(message);
+    });
+  };
 
   const openTodayTasks = () => {
     setSelectedTaskGoalId(null);
@@ -49,6 +100,7 @@ export function useGoalPlanner() {
   const generateDailyPlan = async (
     goalsOverride?: YearlyGoal[],
     generationType: GenerationType = 'ad',
+    yearlyGoalsOverride = yearlyGoals,
   ) => {
     const targetGoals = goalsOverride ?? yearlyGoals;
     if (targetGoals.length === 0 || isGeneratingPlan) {
@@ -86,11 +138,14 @@ export function useGoalPlanner() {
         };
       });
 
-      setDailyPlans((currentPlans) => [...nextPlans, ...currentPlans]);
+      const savedPlans = [...nextPlans, ...dailyPlans];
+
+      setDailyPlans(savedPlans);
       setExpandedPlanIds((currentIds) => [
         ...nextPlans.map((plan) => plan.id),
         ...currentIds,
       ]);
+      persistGoalPlannerData(yearlyGoalsOverride, savedPlans);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : '오늘 할 일을 생성하지 못했습니다.';
@@ -112,12 +167,14 @@ export function useGoalPlanner() {
       title: cleanGoal,
     };
 
-    setYearlyGoals((currentGoals) => [...currentGoals, nextGoal]);
+    const nextYearlyGoals = [...yearlyGoals, nextGoal];
+
+    setYearlyGoals(nextYearlyGoals);
     setGoalError('');
     setYearlyGoalDraft('');
     setIsYearlyGoalOpen(false);
     setSelectedTaskGoalId(nextGoal.id);
-    await generateDailyPlan([nextGoal], 'basic');
+    await generateDailyPlan([nextGoal], 'basic', nextYearlyGoals);
     setIsTodayTasksOpen(true);
   };
 
@@ -178,8 +235,7 @@ export function useGoalPlanner() {
         1,
       );
 
-      setDailyPlans((currentPlans) =>
-        currentPlans.map((plan) =>
+      const nextPlans = dailyPlans.map((plan) =>
           plan.id === target.planId
             ? {
                 ...plan,
@@ -188,9 +244,11 @@ export function useGoalPlanner() {
                 ),
               }
             : plan,
-        ),
       );
+
+      setDailyPlans(nextPlans);
       setHasUsedTaskRefresh(true);
+      persistGoalPlannerData(yearlyGoals, nextPlans, true);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : '할 일을 새로고침하지 못했습니다.';
@@ -207,8 +265,7 @@ export function useGoalPlanner() {
       return;
     }
 
-    setDailyPlans((currentPlans) =>
-      currentPlans.map((plan) =>
+    const nextPlans = dailyPlans.map((plan) =>
         plan.id === planId
           ? {
               ...plan,
@@ -217,8 +274,10 @@ export function useGoalPlanner() {
               ),
             }
           : plan,
-      ),
     );
+
+    setDailyPlans(nextPlans);
+    persistGoalPlannerData(yearlyGoals, nextPlans);
   };
 
   const togglePlanExpanded = (planId: string) => {
@@ -239,6 +298,7 @@ export function useGoalPlanner() {
     goalError,
     hasUsedTaskRefresh,
     isGeneratingPlan,
+    isLoadingGoalData,
     isTodayTasksOpen,
     isYearlyGoalOpen,
     openTodayTasks,
