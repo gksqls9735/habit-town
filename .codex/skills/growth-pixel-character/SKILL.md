@@ -9,6 +9,7 @@ Produce four independently usable sprites named `baby`, `child`, `teen`, and `ad
 
 Read [references/final-style-contract.md](references/final-style-contract.md) before extracting, generating, or composing a set.
 Read [references/pixel-pet-image-harness.yaml](references/pixel-pet-image-harness.yaml) when generating a new animal, checking cross-species consistency, creating a pet-room background, or building a character-selection popup.
+For pet animation sprites or sprite sheets, also read the animation contract at `../dot-image/references/animation.md` before generating, editing, or accepting frames.
 
 ## Independent Asset Boundary
 
@@ -82,6 +83,30 @@ python .codex/skills/dot-image/scripts/dot_harness.py object pet-food-bowl.png \
   --style-profile auto \
   --theme soft-modern-retro \
   --view side \
+  --preserve-source-palette
+```
+
+## Build Pet Animation Sprites
+
+1. Read `../dot-image/references/animation.md` before creating or editing walk, roll, idle, or other pet animation frames.
+2. Preserve the source pet's app cell size and apparent runtime size. For the current native pet assets, keep each frame on the source sprite canvas instead of normalizing to a smaller default grid.
+3. Save a raw sprite sheet under the selected asset root's `raw/` folder and run the animation harness before copying or wiring the output into app-facing assets.
+4. Use `--working-grid WIDTHxHEIGHT --scale 1 --size-reference <source-pet.png> --preserve-source-palette` for existing accepted pets so the harness checks the actual app cell size, visible bounds, binary alpha, halo cleanup, and manifest metadata.
+5. Treat low visible-size ratios, cropped motion, frame-edge halos, alpha fringing, or nonmatching frame dimensions as blockers. Fix the raw sheet and rerun the harness rather than accepting the manually edited file.
+
+```bash
+python .codex/skills/dot-image/scripts/dot_harness.py char hamster-baby-roll-spritesheet.png \
+  --asset-root assets/pets/animations \
+  --theme soft-modern-retro \
+  --view front \
+  --frames 4 \
+  --columns 4 \
+  --animation roll \
+  --fps 8 \
+  --anchor bottom-center \
+  --scale 1 \
+  --working-grid 158x158 \
+  --size-reference assets/pets/hamster-baby.png \
   --preserve-source-palette
 ```
 

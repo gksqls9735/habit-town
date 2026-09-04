@@ -4,7 +4,9 @@ import {
   Easing,
   Image,
   ImageBackground,
+  ImageStyle,
   ImageSourcePropType,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -26,9 +28,19 @@ const catBabyRollFrames = [
   require('../assets/pets/animations/cat-baby-roll-frame-2.png'),
   require('../assets/pets/animations/cat-baby-roll-frame-3.png'),
 ];
+const hamsterBabyRollFrames = [
+  require('../assets/pets/animations/hamster-baby-roll-frame-0.png'),
+  require('../assets/pets/animations/hamster-baby-roll-frame-1.png'),
+  require('../assets/pets/animations/hamster-baby-roll-frame-2.png'),
+  require('../assets/pets/animations/hamster-baby-roll-frame-3.png'),
+];
 const catBabyWalkSpritesheet = require('../assets/pets/animations/cat-baby-walk-spritesheet.png');
 const hamsterBabyWalkSpritesheet = require('../assets/pets/animations/hamster-baby-walk-spritesheet.png');
 const pixelFontFamily = 'Galmuri11';
+const pixelatedImageStyle =
+  Platform.OS === 'web'
+    ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
+    : null;
 
 type RailAction = {
   badge?: string;
@@ -344,6 +356,7 @@ function AnimatedBabyCat({
   const currentX = useRef(0);
   const canUseBabyCatAnimation = pet.id === 'cat' && stage === 'baby';
   const canUseBabyHamsterAnimation = pet.id === 'hamster' && stage === 'baby';
+  const canUseRollAnimation = canUseBabyCatAnimation || canUseBabyHamsterAnimation;
   const canUseWalkAnimation = canUseBabyCatAnimation || canUseBabyHamsterAnimation;
 
   useEffect(() => {
@@ -367,7 +380,7 @@ function AnimatedBabyCat({
       clearFrameTimer();
 
       const kind: Exclude<PetAnimationKind, 'idle'> =
-        canUseBabyCatAnimation && Math.random() <= 0.46 ? 'roll' : 'walk';
+        canUseRollAnimation && Math.random() <= 0.46 ? 'roll' : 'walk';
       const requestedDirection: -1 | 1 = Math.random() > 0.5 ? 1 : -1;
       const distance =
         kind === 'walk'
@@ -432,6 +445,7 @@ function AnimatedBabyCat({
     };
   }, [
     canUseBabyCatAnimation,
+    canUseRollAnimation,
     movementRange,
     movementX,
     pet.id,
@@ -441,12 +455,16 @@ function AnimatedBabyCat({
   const petSource = pet.stages[stage];
   const frameHeight = size;
   const frameWidth = size;
-  const rollFrameScales = [1.06, 1.1, 1.18, 1.1];
+  const rollFrameScales = canUseBabyHamsterAnimation
+    ? [1, 1, 1, 1]
+    : [1.06, 1.1, 1.18, 1.1];
   const rollFrameScale =
     animation.kind === 'roll' ? rollFrameScales[animation.frame] : 1;
   const rollFrameSize = Math.round(size * rollFrameScale);
   const maxFrameSize = Math.round(size * Math.max(...rollFrameScales));
-  const rollFrameSource = catBabyRollFrames[animation.frame];
+  const rollFrameSource = canUseBabyHamsterAnimation
+    ? hamsterBabyRollFrames[animation.frame]
+    : catBabyRollFrames[animation.frame];
   const walkSheetSource = canUseBabyHamsterAnimation
     ? hamsterBabyWalkSpritesheet
     : catBabyWalkSpritesheet;
@@ -478,13 +496,14 @@ function AnimatedBabyCat({
         ]}
       >
         {animation.kind === 'idle' ||
-        (animation.kind === 'roll' && !canUseBabyCatAnimation) ||
+        (animation.kind === 'roll' && !canUseRollAnimation) ||
         (animation.kind === 'walk' && !canUseWalkAnimation) ? (
           <Image
             accessibilityIgnoresInvertColors
             source={petSource}
             style={[
               styles.activePetSprite,
+              pixelatedImageStyle,
               {
                 height: size,
                 width: size,
@@ -497,6 +516,7 @@ function AnimatedBabyCat({
             source={rollFrameSource}
             style={[
               styles.activePetSprite,
+              pixelatedImageStyle,
               {
                 height: rollFrameSize,
                 width: rollFrameSize,
@@ -518,6 +538,7 @@ function AnimatedBabyCat({
               source={walkSheetSource}
               style={[
                 styles.petSpritesheet,
+                pixelatedImageStyle,
                 {
                   height: frameHeight,
                   transform: [{ translateX: -animation.frame * frameWidth }],

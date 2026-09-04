@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "type": "sprite-animation",
+  "name": "roll",
+  "asset_type": "char",
+  "theme": "soft-modern-retro",
+  "projection": "orthographic-2d",
+  "view": "front",
+  "art_direction": "expressive-modern-pixel",
+  "fps": 8,
+  "playback": "loop",
+  "frame_count": 4,
+  "working_grid": {
+    "width": 158,
+    "height": 158
+  },
+  "output_scale": 1,
+  "anchor": "none",
+  "palette_reference": null,
+  "style_profile": "soft-modern-retro",
+  "palette_mode": "source-preserved",
+  "layout": {
+    "columns": 4,
+    "rows": 1,
+    "frame_width": 158,
+    "frame_height": 158
+  },
+  "size_consistency": {
+    "reference_frame": null,
+    "reference_image": "assets/pets/hamster-baby.png",
+    "reference_bounds": {
+      "left": 17,
+      "top": 11,
+      "right": 141,
+      "bottom": 147,
+      "width": 124,
+      "height": 136
+    },
+    "scale_to_reference": false,
+    "max_size_scale": 1.45,
+    "warnings": []
+  },
+  "edge_halo_cleanup": {
+    "enabled": true,
+    "total_removed_edge_pixels": 5,
+    "total_darkened_edge_pixels": 115
+  },
+  "sheet": "assets/pets/animations/clean/hamster-baby-roll-spritesheet.png",
+  "frames": [
+    {
+      "index": 0,
+      "file": "assets/pets/animations/clean/hamster-baby-roll-spritesheet/frame-000.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 17,
+        "top": 12,
+        "right": 141,
+        "bottom": 147,
+        "width": 124,
+        "height": 135,
+        "index": 0,
+        "width_ratio_to_reference": 1.0,
+        "height_ratio_to_reference": 0.993,
+        "area_ratio_to_reference": 0.993,
+        "recommended_runtime_scale": 1.007
+      },
+      "size_scale": {
+        "frame": 0,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 17,
+          "top": 12,
+          "right": 141,
+          "bottom": 147,
+          "width": 124,
+          "height": 135
+        },
+        "after": {
+          "left": 17,
+          "top": 12,
+          "right": 141,
+          "bottom": 147,
+          "width": 124,
+          "height": 135
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 0,
+        "enabled": true,
+        "removed_edge_pixels": 4,
+        "darkened_edge_pixels": 41
+      }
+    },
+    {
+      "index": 1,
+      "file": "assets/pets/animations/clean/hamster-baby-roll-spritesheet/frame-001.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 6,
+        "top": 25,
+        "right": 152,
+        "bottom": 144,
+        "width": 146,
+        "height": 119,
+        "index": 1,
+        "width_ratio_to_reference": 1.177,
+        "height_ratio_to_reference": 0.875,
+        "area_ratio_to_reference": 1.03,
+        "recommended_runtime_scale": 1.143
+      },
+      "size_scale": {
+        "frame": 1,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 6,
+          "top": 25,
+          "right": 152,
+          "bottom": 144,
+          "width": 146,
+          "height": 119
+        },
+        "after": {
+          "left": 6,
+          "top": 25,
+          "right": 152,
+          "bottom": 144,
+          "width": 146,
+          "height": 119
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 1,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 17
+      }
+    },
+    {
+      "index": 2,
+      "file": "assets/pets/animations/clean/hamster-baby-roll-spritesheet/frame-002.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 8,
+        "top": 22,
+        "right": 118,
+        "bottom": 150,
+        "width": 110,
+        "height": 128,
+        "index": 2,
+        "width_ratio_to_reference": 0.887,
+        "height_ratio_to_reference": 0.941,
+        "area_ratio_to_reference": 0.835,
+        "recommended_runtime_scale": 1.127
+      },
+      "size_scale": {
+        "frame": 2,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 8,
+          "top": 22,
+          "right": 118,
+          "bottom": 150,
+          "width": 110,
+          "height": 128
+        },
+        "after": {
+          "left": 8,
+          "top": 22,
+          "right": 118,
+          "bottom": 150,
+          "width": 110,
+          "height": 128
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 2,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 12
+      }
+    },
+    {
+      "index": 3,
+      "file": "assets/pets/animations/clean/hamster-baby-roll-spritesheet/frame-003.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 6,
+        "top": 26,
+        "right": 152,
+        "bottom": 144,
+        "width": 146,
+        "height": 118,
+        "index": 3,
+        "width_ratio_to_reference": 1.177,
+        "height_ratio_to_reference": 0.868,
+        "area_ratio_to_reference": 1.022,
+        "recommended_runtime_scale": 1.153
+      },
+      "size_scale": {
+        "frame": 3,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 6,
+          "top": 26,
+          "right": 152,
+          "bottom": 144,
+          "width": 146,
+          "height": 118
+        },
+        "after": {
+          "left": 6,
+          "top": 26,
+          "right": 152,
+          "bottom": 144,
+          "width": 146,
+          "height": 118
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 3,
+        "enabled": true,
+        "removed_edge_pixels": 1,
+        "darkened_edge_pixels": 45
+      }
+    }
+  ]
+}

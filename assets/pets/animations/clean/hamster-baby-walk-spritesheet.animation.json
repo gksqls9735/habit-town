@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "type": "sprite-animation",
+  "name": "walk",
+  "asset_type": "char",
+  "theme": "soft-modern-retro",
+  "projection": "orthographic-2d",
+  "view": "front",
+  "art_direction": "expressive-modern-pixel",
+  "fps": 8,
+  "playback": "loop",
+  "frame_count": 4,
+  "working_grid": {
+    "width": 158,
+    "height": 158
+  },
+  "output_scale": 1,
+  "anchor": "none",
+  "palette_reference": null,
+  "style_profile": "soft-modern-retro",
+  "palette_mode": "source-preserved",
+  "layout": {
+    "columns": 4,
+    "rows": 1,
+    "frame_width": 158,
+    "frame_height": 158
+  },
+  "size_consistency": {
+    "reference_frame": null,
+    "reference_image": "assets/pets/hamster-baby.png",
+    "reference_bounds": {
+      "left": 17,
+      "top": 11,
+      "right": 141,
+      "bottom": 147,
+      "width": 124,
+      "height": 136
+    },
+    "scale_to_reference": false,
+    "max_size_scale": 1.45,
+    "warnings": []
+  },
+  "edge_halo_cleanup": {
+    "enabled": true,
+    "total_removed_edge_pixels": 0,
+    "total_darkened_edge_pixels": 18
+  },
+  "sheet": "assets/pets/animations/clean/hamster-baby-walk-spritesheet.png",
+  "frames": [
+    {
+      "index": 0,
+      "file": "assets/pets/animations/clean/hamster-baby-walk-spritesheet/frame-000.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 17,
+        "top": 11,
+        "right": 141,
+        "bottom": 147,
+        "width": 124,
+        "height": 136,
+        "index": 0,
+        "width_ratio_to_reference": 1.0,
+        "height_ratio_to_reference": 1.0,
+        "area_ratio_to_reference": 1.0,
+        "recommended_runtime_scale": 1.0
+      },
+      "size_scale": {
+        "frame": 0,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 17,
+          "top": 11,
+          "right": 141,
+          "bottom": 147,
+          "width": 124,
+          "height": 136
+        },
+        "after": {
+          "left": 17,
+          "top": 11,
+          "right": 141,
+          "bottom": 147,
+          "width": 124,
+          "height": 136
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 0,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 2
+      }
+    },
+    {
+      "index": 1,
+      "file": "assets/pets/animations/clean/hamster-baby-walk-spritesheet/frame-001.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 16,
+        "top": 10,
+        "right": 140,
+        "bottom": 150,
+        "width": 124,
+        "height": 140,
+        "index": 1,
+        "width_ratio_to_reference": 1.0,
+        "height_ratio_to_reference": 1.029,
+        "area_ratio_to_reference": 1.029,
+        "recommended_runtime_scale": 1.0
+      },
+      "size_scale": {
+        "frame": 1,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 16,
+          "top": 10,
+          "right": 140,
+          "bottom": 150,
+          "width": 124,
+          "height": 140
+        },
+        "after": {
+          "left": 16,
+          "top": 10,
+          "right": 140,
+          "bottom": 150,
+          "width": 124,
+          "height": 140
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 1,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 7
+      }
+    },
+    {
+      "index": 2,
+      "file": "assets/pets/animations/clean/hamster-baby-walk-spritesheet/frame-002.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 17,
+        "top": 11,
+        "right": 141,
+        "bottom": 147,
+        "width": 124,
+        "height": 136,
+        "index": 2,
+        "width_ratio_to_reference": 1.0,
+        "height_ratio_to_reference": 1.0,
+        "area_ratio_to_reference": 1.0,
+        "recommended_runtime_scale": 1.0
+      },
+      "size_scale": {
+        "frame": 2,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 17,
+          "top": 11,
+          "right": 141,
+          "bottom": 147,
+          "width": 124,
+          "height": 136
+        },
+        "after": {
+          "left": 17,
+          "top": 11,
+          "right": 141,
+          "bottom": 147,
+          "width": 124,
+          "height": 136
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 2,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 2
+      }
+    },
+    {
+      "index": 3,
+      "file": "assets/pets/animations/clean/hamster-baby-walk-spritesheet/frame-003.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 18,
+        "top": 10,
+        "right": 142,
+        "bottom": 150,
+        "width": 124,
+        "height": 140,
+        "index": 3,
+        "width_ratio_to_reference": 1.0,
+        "height_ratio_to_reference": 1.029,
+        "area_ratio_to_reference": 1.029,
+        "recommended_runtime_scale": 1.0
+      },
+      "size_scale": {
+        "frame": 3,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 18,
+          "top": 10,
+          "right": 142,
+          "bottom": 150,
+          "width": 124,
+          "height": 140
+        },
+        "after": {
+          "left": 18,
+          "top": 10,
+          "right": 142,
+          "bottom": 150,
+          "width": 124,
+          "height": 140
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 3,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 7
+      }
+    }
+  ]
+}

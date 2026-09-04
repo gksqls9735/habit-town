@@ -446,12 +446,15 @@ def clean_light_edge_halo(
     removed = 0
     darkened = 0
 
-    def touches_alpha(x: int, y: int) -> bool:
-        return any(
-            0 <= x + dx < width
-            and 0 <= y + dy < height
-            and pixels[x + dx, y + dy][3] == 0
+    def transparent_neighbor_count(x: int, y: int) -> int:
+        return sum(
+            1
             for dx, dy in directions
+            if (
+                0 <= x + dx < width
+                and 0 <= y + dy < height
+                and pixels[x + dx, y + dy][3] == 0
+            )
         )
 
     def has_nearby_outline(x: int, y: int) -> bool:
@@ -475,21 +478,31 @@ def clean_light_edge_halo(
 
             brightness = (red + green + blue) / 3
             saturation = max(red, green, blue) - min(red, green, blue)
-            gray_or_white_fringe = brightness >= 156 and saturation <= 62
+            transparent_neighbors = transparent_neighbor_count(x, y)
+            if transparent_neighbors == 0:
+                continue
+
+            removable_neutral_fringe = (
+                brightness >= 205
+                and saturation <= 38
+                and transparent_neighbors >= 3
+            )
+            gray_or_white_fringe = brightness >= 176 and saturation <= 62
             pale_warm_fringe = (
                 red >= 218
                 and green >= 188
                 and blue >= 135
                 and saturation <= 98
             )
-            is_halo_candidate = gray_or_white_fringe or pale_warm_fringe
+            is_halo_candidate = (
+                removable_neutral_fringe
+                or gray_or_white_fringe
+                or pale_warm_fringe
+            )
             if not is_halo_candidate:
                 continue
 
-            if not touches_alpha(x, y):
-                continue
-
-            if has_nearby_outline(x, y):
+            if removable_neutral_fringe and has_nearby_outline(x, y):
                 pixels[x, y] = (0, 0, 0, 0)
                 removed += 1
             else:
@@ -807,6 +820,7 @@ def run_animation_harness(
     palette_reference_path: Path | None = None,
     style_profile: dict[str, object] | None = None,
     style_profile_path: Path | None = None,
+    working_grid: tuple[int, int] | None = None,
     preserve_source_palette: bool = False,
     size_reference_path: Path | None = None,
     scale_to_reference: bool = False,
@@ -814,7 +828,7 @@ def run_animation_harness(
 ) -> Path:
     spec = SPECS[asset_type]
     theme_spec = THEMES[theme]
-    target = spec["target"]
+    target = working_grid or spec["target"]
     color_count = max(8, round(spec["colors"] * theme_spec["palette_scale"]))
 
     with Image.open(raw_path) as source:
@@ -1121,10 +1135,18 @@ def run_harness(
         raise ValueError("Frame count must be at least 1")
     if fps < 1 or fps > 60:
         raise ValueError("FPS must be between 1 and 60")
-    if working_grid is not None and asset_type not in {"bg", "scene"}:
-        raise ValueError("Custom working grids are supported only for bg and scene")
-    if working_grid is not None and frame_count != 1:
-        raise ValueError("Custom working grids are supported only in static mode")
+    if (
+        working_grid is not None
+        and frame_count == 1
+        and asset_type not in {"bg", "scene"}
+    ):
+        raise ValueError("Custom working grids are supported only for static bg and scene")
+    if (
+        working_grid is not None
+        and frame_count > 1
+        and asset_type not in {"char", "object"}
+    ):
+        raise ValueError("Custom animation working grids are supported only for char and object")
     if scale_to_reference and frame_count == 1:
         raise ValueError("Reference scaling is supported only in animation mode")
     if scale_to_reference and size_reference is None:
@@ -1232,6 +1254,7 @@ def run_harness(
         palette_reference_path,
         style_profile,
         style_profile_path,
+        working_grid,
         preserve_source_palette,
         size_reference_path,
         scale_to_reference,

@@ -30,7 +30,7 @@ Follow `.codex/common/patterns/image-assets.md` before choosing the output root.
 
 The listed final sizes use each asset's default scale: `4x` for `char`, `object`, `bg`, and `icon`, and `2x` for `scene`. Use `--scale 1` when the user requests native working-grid dimensions.
 
-For a supplied portrait or panoramic background whose composition must remain intact, pass `--working-grid WIDTHxHEIGHT` with the source aspect ratio. This override is limited to static `bg` and `scene` assets; it does not change their default grids.
+For a supplied portrait or panoramic background whose composition must remain intact, pass `--working-grid WIDTHxHEIGHT` with the source aspect ratio. This override is limited to static `bg` and `scene` assets. For animation mode only, use `--working-grid WIDTHxHEIGHT --scale 1` with `char` or `object` sheets when an existing source sprite's app cell size must be preserved.
 
 ## Viewpoint Standard
 
@@ -99,6 +99,12 @@ For a supplied portrait or panoramic background whose composition must remain in
 
    ```bash
    python .codex/skills/dot-image/scripts/dot_harness.py char <filename>.png --asset-root <asset-root> --theme <theme> --view side --frames 6 --columns 6 --animation idle --fps 8 --anchor bottom-center --scale 1
+   ```
+
+   If the animation is for an existing app sprite with a non-default cell size, preserve that cell with `--working-grid WIDTHxHEIGHT --scale 1`:
+
+   ```bash
+   python .codex/skills/dot-image/scripts/dot_harness.py char <filename>.png --asset-root <asset-root> --theme <theme> --view front --frames 4 --columns 4 --animation walk --fps 8 --anchor bottom-center --scale 1 --working-grid 158x158 --size-reference assets/pets/hamster-baby.png --preserve-source-palette
    ```
 
    When animating an existing pet or character, pass the original still sprite as the apparent-size reference. Add `--scale-to-reference` only after the animation poses are accepted and the remaining issue is that playback looks smaller than the original pet:

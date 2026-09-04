@@ -11,13 +11,14 @@ Read this reference only when creating animation frames or sprite sheets.
 - Keep one fixed orthographic 2D view across every frame. Never rotate, tilt, zoom, or orbit the camera during an animation.
 - Leave enough empty space for moving ears, tails, weapons, splashes, particles, and anticipation poses.
 - Describe distinct key poses in the generation prompt. Do not ask only for several nearly identical copies.
-- Do not leave white, cream, or pale gray halo pixels on the transparent silhouette edge. Bright edge pixels must either belong to the character's intentional interior fur/highlight area or be replaced with the sprite's dark outline color.
+- Do not leave white, cream, or pale gray halo pixels on the transparent silhouette edge. Bright edge pixels must either belong to the character's intentional interior fur/highlight area or be removed or replaced with the sprite's dark outline color by the harness.
 
 ## Source Character Size Contract
 
 Use this contract whenever animating an existing character image.
 
 - Preserve the source image's cell size unless the user explicitly asks for a new runtime grid. If the source character is `156 x 156`, each animation frame cell must also be `156 x 156`.
+- When the source cell size is not the default harness grid, pass `--working-grid WIDTHxHEIGHT --scale 1` in animation mode so the harness validates and writes the app-sized cells directly.
 - Treat apparent runtime size as the highest-priority acceptance criterion. Matching the cell size is not enough: if the visible character pixels shrink, grow, flatten, or widen during playback, the animation is not acceptable.
 - Measure the source character's visible alpha bounding box before processing. Each frame should keep the visible body height, head size, torso volume, eye size, ear height, paw size, and tail thickness close to the source.
 - Measure each finished frame's visible alpha bounding box and compare it to the idle/source frame and, when available, the accepted walk sheet. A frame that has the same canvas size but a much smaller visible bbox will still look wrong in-app.
@@ -61,7 +62,7 @@ Animation mode is enabled by `--frames` greater than 1. The harness:
 3. Removes a connected dark isolation background from each character frame.
 4. Aligns visible content using `--anchor`; `auto` resolves to `bottom-center` for characters and `none` for other asset types.
 5. Quantizes all frames together with one shared palette to reduce color flicker.
-6. Removes bright low-saturation pixels that touch the transparent silhouette edge when they sit next to an existing dark outline, and only darkens remaining bright edge pixels when removal would risk cutting intentional fur or highlights.
+6. Removes only near-white or neutral-gray fringe pixels that have strong transparent-edge contact, and darkens remaining bright edge pixels when removal would risk cutting intentional fur or highlights.
 7. When `--size-reference` and `--scale-to-reference` are supplied, scales each frame's visible content up toward the original character's visible bounds without changing the frame cell dimensions.
 8. Writes a clean sprite sheet, individual frame PNGs, and an `.animation.json` manifest.
 
@@ -69,6 +70,12 @@ Example:
 
 ```bash
 python .codex/skills/dot-image/scripts/dot_harness.py char cat-idle.png --theme cute --frames 6 --columns 6 --animation idle --fps 8 --playback loop --scale 1
+```
+
+Existing app-sized sprite example:
+
+```bash
+python .codex/skills/dot-image/scripts/dot_harness.py char hamster-baby-roll-spritesheet.png --asset-root assets/pets/animations --theme soft-modern-retro --view front --frames 4 --columns 4 --animation roll --fps 8 --anchor bottom-center --scale 1 --working-grid 158x158 --size-reference assets/pets/hamster-baby.png --preserve-source-palette
 ```
 
 The raw sheet dimensions must divide evenly into the requested columns and calculated rows. The final sheet may contain transparent unused cells only when the last row is incomplete.
