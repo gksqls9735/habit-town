@@ -23,6 +23,10 @@ Read the approved calendar design and date policies before calendar work.
 
 - `.codex/context/calendar.md`
 
+Read the pet care HUD design before changing the home status display or care actions.
+
+- `.codex/context/pet-care-hud.md`
+
 Read the project design reference before making UI design decisions when it exists.
 
 

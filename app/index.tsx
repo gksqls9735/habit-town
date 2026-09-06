@@ -22,6 +22,7 @@ import { useGoalPlanner } from '../src/features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../src/features/goals/utils';
 import { CalendarModal } from '../src/features/calendar/components/CalendarModal';
 import { InventoryModal } from '../src/features/inventory/components/InventoryModal';
+import { PetCareActions, PetStatusHud } from '../src/screens/home/components/PetCareOverlay';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
 const catBabyRollFrames = [
@@ -190,7 +191,7 @@ export default function HomeScreen() {
   const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
   const currentStage: GrowthStage = 'baby';
   const characterSize = Math.round(132 * roomScale);
-  const characterBottom = compactHeight ? '15%' : '18%';
+  const characterBottom = Math.max(100, Math.round(height * (compactHeight ? 0.15 : 0.18)));
   const rightRailActions: RailAction[] = [
     ...rightActions.map((action) =>
       action.label === '가방'
@@ -253,34 +254,8 @@ export default function HomeScreen() {
           </ImageBackground>
         </View>
 
-        <View
-          style={[
-            styles.overlayBlock,
-            styles.hud,
-            {
-              left: Math.max(8, Math.round(Math.min(width, 430) * 0.025)),
-              right: Math.max(8, Math.round(Math.min(width, 430) * 0.025)),
-            },
-          ]}
-        >
-          <View style={styles.hudPanel}>
-            <View style={styles.hudCornerTopLeft} />
-            <View style={styles.hudCornerTopRight} />
-            <View style={styles.hudCornerBottomLeft} />
-            <View style={styles.hudCornerBottomRight} />
-            <View style={styles.levelBadge}>
-              <View style={styles.levelBadgeAccent} />
-              <Text style={styles.levelLabel}>LV. 7</Text>
-            </View>
-            <View style={styles.expTrack}>
-              <View style={styles.expFill}>
-                <View style={styles.expFillHighlight} />
-              </View>
-            </View>
-          </View>
-          <CurrencyPill label="145" variant="gem" />
-          <CurrencyPill label="1,390" variant="coin" />
-        </View>
+        <PetStatusHud petImage={activePet.stages[currentStage]} petName={activePet.name} />
+        <PetCareActions />
 
         <View
           style={[
