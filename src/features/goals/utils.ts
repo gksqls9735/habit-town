@@ -35,6 +35,24 @@ export function getNextRoundForGoal(plans: DailyPlan[], goalId: string) {
   return rounds.length > 0 ? Math.max(...rounds) + 1 : 1;
 }
 
+/** Allows yesterday's repeatable routines while excluding all of today's tasks. */
+export function getExcludedTaskTitles(
+  plans: DailyPlan[],
+  goalId: string,
+  now = Date.now(),
+) {
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = getNextMidnightTimestamp(now);
+  return Array.from(new Set([
+    ...getCompletedNonRepeatableTaskTitles(plans, goalId),
+    ...plans
+      .filter((plan) => plan.goalId === goalId
+        && plan.generatedAt >= dayStart.getTime() && plan.generatedAt < dayEnd)
+      .flatMap((plan) => plan.tasks.map((task) => task.title)),
+  ]));
+}
+
 export function getNextMidnightTimestamp(fromTimestamp: number) {
   const date = new Date(fromTimestamp);
   date.setHours(24, 0, 0, 0);

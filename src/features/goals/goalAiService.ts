@@ -1,4 +1,5 @@
 import { DailyTask, YearlyGoal } from './types';
+import { parseDailyTasks, readGeneratedText } from './goalAiValidation';
 
 const dailyTasksSchema = {
   type: 'OBJECT',
@@ -20,6 +21,7 @@ const dailyTasksSchema = {
   required: ['tasks'],
 };
 
+/** Returns a complete validated task set; failures never produce partial plans. */
 export async function generateDailyTasksForGoal(
   goal: YearlyGoal,
   excludedTaskTitles: string[],
@@ -27,50 +29,78 @@ export async function generateDailyTasksForGoal(
 ): Promise<DailyTask[]> {
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
   const model = process.env.EXPO_PUBLIC_GEMINI_MODEL ?? 'gemini-3.6-flash';
-  const taskCount = Math.max(1, Math.min(count, 3));
+  if (!Number.isInteger(count) || count < 1 || count > 3 || !goal.title.trim()) {
+    throw new Error('목표와 생성할 할 일 개수를 확인해 주세요.');
+  }
+  const taskCount = count;
 
   if (!apiKey) {
     throw new Error('EXPO_PUBLIC_GEMINI_API_KEY를 .env에 설정해 주세요.');
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: buildPrompt(
-                  goal.title,
-                  excludedTaskTitles,
-                  taskCount,
-                ),
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: dailyTasksSchema,
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    // Bound network and response-body reading so the loading state can recover.
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
         },
-      }),
-    },
-  );
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: buildPrompt(
+                    goal.title,
+                    excludedTaskTitles,
+                    taskCount,
+                  ),
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: dailyTasksSchema,
+          },
+        }),
+      },
+    );
 
-  const data = await response.json();
+    if (!response.ok) {
+      const message = response.status === 429
+        ? 'AI 요청이 많아 잠시 사용할 수 없어요. 잠시 후 다시 시도해 주세요.'
+        : response.status === 401 || response.status === 403
+          ? 'AI 서비스 인증 설정을 확인해 주세요.'
+          : 'AI 서비스 요청에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      throw new Error(message);
+    }
 
-  if (!response.ok) {
-    throw new Error(data?.error?.message ?? 'Gemini 요청에 실패했습니다.');
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      if (controller.signal.aborted) throw new Error('timeout');
+      throw new Error('AI 응답을 읽지 못했어요. 다시 시도해 주세요.');
+    }
+    return parseDailyTasks(goal, readGeneratedText(data), taskCount, excludedTaskTitles);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error('AI 응답 시간이 초과됐어요. 다시 시도해 주세요.');
+    }
+    if (error instanceof TypeError) {
+      throw new Error('AI 서비스에 연결하지 못했어요. 네트워크를 확인하고 다시 시도해 주세요.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  return normalizeDailyTasks(goal, JSON.parse(text), taskCount);
 }
 
 function buildPrompt(
@@ -99,23 +129,4 @@ function buildPrompt(
     '한국어로 답하고, 반드시 JSON으로만 답해.',
     `올해 목표: ${yearlyGoal}`,
   ].join('\n');
-}
-
-function normalizeDailyTasks(
-  goal: YearlyGoal,
-  plan: {
-    tasks: Array<Omit<DailyTask, 'id' | 'goalId' | 'goalTitle' | 'done'>>;
-  },
-  count: number,
-): DailyTask[] {
-  return plan.tasks.slice(0, count).map((task, index) => ({
-    id: `${Date.now()}-${goal.id}-${index}`,
-    goalId: goal.id,
-    goalTitle: goal.title,
-    title: String(task.title),
-    description: String(task.description),
-    estimatedMinutes: Number(task.estimatedMinutes) || 10,
-    repeatable: Boolean(task.repeatable),
-    done: false,
-  }));
 }

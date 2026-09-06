@@ -20,6 +20,7 @@ import { TodayTasksModal } from '../src/features/goals/components/TodayTasksModa
 import { YearlyGoalModal } from '../src/features/goals/components/YearlyGoalModal';
 import { useGoalPlanner } from '../src/features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../src/features/goals/utils';
+import { CalendarModal } from '../src/features/calendar/components/CalendarModal';
 import { InventoryModal } from '../src/features/inventory/components/InventoryModal';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
@@ -142,6 +143,7 @@ const pets: PetDefinition[] = [
 export default function HomeScreen() {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
   const goalPlanner = useGoalPlanner();
   const {
@@ -213,6 +215,10 @@ export default function HomeScreen() {
         ...action,
         onPress: openYearlyGoal,
       };
+    }
+
+    if (action.label === '캘린더') {
+      return { ...action, onPress: () => setIsCalendarOpen(true) };
     }
 
     return action;
@@ -314,6 +320,7 @@ export default function HomeScreen() {
           width={popupWidth}
         />
 
+        {isCalendarOpen ? <CalendarModal onClose={() => setIsCalendarOpen(false)} /> : null}
         <YearlyGoalModal
           errorMessage={goalError}
           isGenerating={isGeneratingPlan}

@@ -17,6 +17,10 @@ Read the project description before making implementation decisions.
 
 - `.codex/context/description.md`
 
+Read the approved calendar design and date policies before calendar work.
+
+- `.codex/context/calendar.md`
+
 Read the project design reference before making UI design decisions when it exists.
 
 
@@ -35,6 +39,7 @@ Use the shared rules for comments, reporting, and general coding conventions.
 - Frontend decisions: `.codex/common/rules/frontend-decisions.md`
 - Responsive CSS: `.codex/common/rules/frontend/responsive-css.md`
 - Calendars and date pickers: `.codex/common/rules/frontend/calendar.md`
+- AI task generation: `.codex/common/rules/ai-task-generation.md`
 
 ## Stack Rules
 
