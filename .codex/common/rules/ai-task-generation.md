@@ -8,7 +8,7 @@ Read this when changing the goals AI service, response validation, generation ho
 - Accept only complete, unblocked responses and exactly the requested 1–3 tasks.
 - Require nonempty titles and descriptions, finite numeric estimates of 5–30 minutes, and actual boolean repeatability. Do not coerce invalid fields.
 - Reject the entire batch for invalid or duplicate tasks. Preserve existing tasks and refresh allowance on generation failure.
-- Bound requests to 30 seconds; clear timers on every path. Use Korean recovery messages for network, HTTP, timeout and response failures.
+- Bound requests to 90 seconds; clear timers on every path. Use Korean recovery messages for network, HTTP, timeout and response failures.
 - Do not expose raw provider errors or secrets. Do not silently retry paid requests.
 
 ## Duplicate Policy

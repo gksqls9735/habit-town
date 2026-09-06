@@ -3,6 +3,7 @@ import { generateDailyTasksForGoal } from '../goalAiService';
 import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
 import { DailyPlan, YearlyGoal } from '../types';
 import {
+  canEditPlan,
   getExcludedTaskTitles,
   getNextMidnightTimestamp,
   getNextRoundForGoal,
@@ -253,7 +254,7 @@ export function useGoalPlanner() {
 
   const toggleTask = (planId: string, taskId: string) => {
     const targetPlan = dailyPlans.find((plan) => plan.id === planId);
-    if (!targetPlan || isPlanExpired(targetPlan)) {
+    if (!targetPlan || !canEditPlan(targetPlan) || isLoadingGoalData || isGeneratingPlan) {
       return;
     }
 

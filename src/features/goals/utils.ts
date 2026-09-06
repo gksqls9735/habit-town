@@ -62,3 +62,14 @@ export function getNextMidnightTimestamp(fromTimestamp: number) {
 export function isPlanExpired(plan: DailyPlan) {
   return Date.now() >= plan.expiresAt;
 }
+
+/** Uses local dates consistently for assignment history and completion permissions. */
+export function getLocalDateKey(timestamp: number) {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/** Only today's assigned, unexpired plans may be changed, including from the calendar. */
+export function canEditPlan(plan: DailyPlan, now = Date.now()) {
+  return getLocalDateKey(plan.generatedAt) === getLocalDateKey(now) && now < plan.expiresAt;
+}

@@ -324,7 +324,14 @@ export default function HomeScreen() {
           width={popupWidth}
         />
 
-        {isCalendarOpen ? <CalendarModal onClose={() => setIsCalendarOpen(false)} /> : null}
+        {isCalendarOpen ? <CalendarModal
+          onClose={() => setIsCalendarOpen(false)}
+          plans={dailyPlans}
+          onToggleTask={toggleTask}
+          isLoading={goalPlanner.isLoadingGoalData}
+          isBusy={isGeneratingPlan}
+          errorMessage={goalError}
+        /> : null}
         <YearlyGoalModal
           errorMessage={goalError}
           isGenerating={isGeneratingPlan}

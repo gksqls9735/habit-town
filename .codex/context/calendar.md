@@ -7,9 +7,9 @@ Read this before changing the calendar popup, home entry point, day styling, or 
 - Entry: the calendar button in `app/index.tsx`.
 - Component: `src/features/calendar/components/CalendarModal.tsx`.
 - Library: `react-native-calendars`, using the version pinned in `package.json`.
-- Implemented: month navigation, date selection, today highlighting and return-to-today action, and an empty selected-date detail area.
-- This is a design preview. It does not read task history, display real completion counts, or edit tasks. Its empty state is not evidence that no stored tasks exist.
-- Task integration is subsequent work, not implicitly authorized by a design adjustment or maintenance of this document.
+- Implemented: month navigation, selection, today action, date-based completion counts, full-completion marks, task details, and completion toggles for today.
+- The calendar consumes the home planner dailyPlans and toggleTask callback. Loading and error messages must remain distinct from empty history. Existing generatedAt represents the assigned date; no database migration is required for same-day generation.
+- Aggregation lives in src/features/calendar/calendarHistory.ts. Completion uses the shared planner persistence path. Do not create a separate calendar task store.
 
 ## Approved Design
 
@@ -19,7 +19,7 @@ Read this before changing the calendar popup, home entry point, day styling, or 
 - Follow the current component's Korean copy and spacing when extending the feature.
 - Use Korean month/day labels and Sunday-first weeks. Color Sunday headers and dates muted red, Saturday headers and dates muted blue.
 - Today uses a brown outline and small dot. Selection uses pale green fill and a green outline. Keep the today dot when today is selected.
-- Preserve the simple empty state until data is connected. Do not present fabricated counts as real history.
+- Show an empty state only after loading and when the selected day has no tasks. Do not present fabricated counts as real history.
 - Center the safe-area-aware popup, with horizontal margins, full available width up to 390px, and bounded height. Scroll content on short screens and keep closing reachable.
 
 ## Interaction And Architecture
@@ -32,11 +32,11 @@ Read this before changing the calendar popup, home entry point, day styling, or 
 - Keep feature UI under `src/features/calendar`; the home screen connects its entry point. Keep future history aggregation outside presentation.
 - Preserve accessible date labels, selected state, button names, and keyboard and touch behavior. Do not rely on color alone for important states.
 
-## Agreed Future Task Policy
+## Task Policy
 
 - Group tasks by their assigned calendar date, not completion timestamp. Generation date can represent assignment while tasks are only generated for the same day; use a stable assignment date when scheduling is added.
 - Apply the existing local calendar-day policy consistently with task expiry. Avoid UTC conversions that shift records to another day. Make later timezone-policy changes explicit.
-- Past dates are read-only. Enforce this in mutation logic as well as UI controls.
+- Past dates are read-only. canEditPlan checks local assignment date and expiry in both the calendar UI and shared toggleTask mutation. Refresh the calendar clock at midnight and on app resume; generation/loading also blocks toggles.
 - Display completed count / total assigned count, for example `2/3`.
 - Additional tasks count toward the day's total. A replacement must not count both original and replacement tasks.
 - Days without tasks have no count or completion mark. Mark full completion only when the total is greater than zero and all tasks are complete.
@@ -55,3 +55,10 @@ Read this before changing the calendar popup, home entry point, day styling, or 
 - TypeScript passed. Web layouts were visually inspected at 320px, 390px, 768px, and 1280px widths.
 - Date selection, next-month navigation, and return to today were checked on web.
 - Native-device behavior, real task integration, and full accessibility testing have not been verified. These notes are not permanent test passes.
+
+## Task Integration Verification
+
+- Date aggregation, extra rounds, replacements, empty/full days, local midnight, and past/future edit protection passed isolated checks.
+- An in-memory, nonpersistent browser fixture verified count updates from 1/3 through 3/3 and disabled past-date checkboxes. The temporary fixture and compiled checks were removed afterward.
+- Mobile task rows were checked at 320px for wrapping and scrolling. Native-device persistence has not been tested.
+- Metro includes WASM support and development cross-origin isolation headers for Expo SQLite web. A production web host must provide the same COOP/COEP headers. The CommonJS Metro file is a runtime configuration wrapper; application logic remains TypeScript.

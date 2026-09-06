@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Calendar, CalendarUtils, DateData, LocaleConfig } from 'react-native-calendars';
+import { useEffect, useMemo, useState } from 'react';
+import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Calendar, DateData, LocaleConfig } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DailyPlan } from '../../goals/types';
+import { canEditPlan, getLocalDateKey, getNextMidnightTimestamp } from '../../goals/utils';
+import { CalendarRecord, getCalendarHistory } from '../calendarHistory';
 
 LocaleConfig.locales.ko = {
   monthNames: Array.from({ length: 12 }, (_, index) => `${index + 1}월`),
@@ -27,16 +30,39 @@ const theme = {
   },
 };
 
-/** Displays a local-date calendar preview without reading or changing task history. */
-export function CalendarModal({ onClose }: { onClose: () => void }) {
-  const today = CalendarUtils.getCalendarDateString(new Date());
+/** Shares task history and completion actions with the home task planner. */
+export function CalendarModal({ onClose, plans, onToggleTask, isLoading, isBusy, errorMessage }: {
+  onClose: () => void;
+  plans: DailyPlan[];
+  onToggleTask: (planId: string, taskId: string) => void;
+  isLoading: boolean;
+  isBusy: boolean;
+  errorMessage: string;
+}) {
+  const [now, setNow] = useState(Date.now);
+  const today = getLocalDateKey(now);
   const [selected, setSelected] = useState(today);
   const [calendarKey, setCalendarKey] = useState(0);
+  const [calendarExpanded, setCalendarExpanded] = useState(true);
+  const [tasksExpanded, setTasksExpanded] = useState(true);
   const [year, month, day] = selected.split('-').map(Number);
+  const history = useMemo(() => getCalendarHistory(plans), [plans]);
+  const record = history[selected];
+
+  // Refresh editability at midnight and when returning from the background.
+  useEffect(() => {
+    const timer = setTimeout(() => setNow(Date.now()), Math.max(1, getNextMidnightTimestamp(now) - Date.now()));
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setNow(Date.now());
+    });
+    return () => { clearTimeout(timer); subscription.remove(); };
+  }, [now]);
 
   /** Returns both the visible month and selection to the current local day. */
   const showToday = () => {
-    setSelected(today);
+    const current = Date.now();
+    setNow(current);
+    setSelected(getLocalDateKey(current));
     setCalendarKey((value) => value + 1);
   };
 
@@ -63,6 +89,17 @@ export function CalendarModal({ onClose }: { onClose: () => void }) {
                 <Text style={styles.todayButtonText}>오늘로</Text>
               </Pressable>
             </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="달력 접기 또는 펼치기"
+              accessibilityState={{ expanded: calendarExpanded }}
+              onPress={() => setCalendarExpanded((value) => !value)}
+              style={({ pressed }) => [styles.sectionToggle, pressed && styles.pressed]}>
+              <View style={styles.sectionHeading}>
+                <Text style={styles.dateTitle}>달력</Text>
+                <Text style={styles.dateStatus}>선택 {month}월 {day}일</Text>
+              </View>
+              <Text style={styles.toggleLabel}>{calendarExpanded ? '접기 −' : '펼치기 +'}</Text>
+            </Pressable>
+            <View style={!calendarExpanded && styles.collapsed}>
             <Calendar
               key={calendarKey}
               initialDate={today}
@@ -72,7 +109,7 @@ export function CalendarModal({ onClose }: { onClose: () => void }) {
               accessibilityLabel="월별 할 일 캘린더"
               dayComponent={({ date, state }) => (
                 <CalendarDay date={date} hidden={state === 'disabled'} selected={selected}
-                  today={today} onSelect={setSelected} />
+                  today={today} onSelect={setSelected} record={isLoading ? undefined : history[date?.dateString ?? '']} />
               )}
               renderHeader={(date) => <Text style={styles.monthTitle}>{date?.toString('yyyy년 M월')}</Text>}
               renderArrow={(direction) => <Text style={styles.arrow}>{direction === 'left' ? '‹' : '›'}</Text>}
@@ -80,14 +117,46 @@ export function CalendarModal({ onClose }: { onClose: () => void }) {
             <View style={styles.legend}>
               <View style={styles.legendItem}><View style={styles.todaySwatch} /><Text style={styles.legendText}>오늘</Text></View>
               <View style={styles.legendItem}><View style={styles.selectedSwatch} /><Text style={styles.legendText}>선택한 날</Text></View>
+              <View style={styles.legendItem}><Text style={styles.completeMark}>✓</Text><Text style={styles.legendText}>모두 완료</Text></View>
+            </View>
             </View>
             <View style={styles.detail}>
-              <View style={styles.detailHeader}>
-                <Text style={styles.dateTitle}>{month}월 {day}일</Text>
-                <Text style={styles.dateStatus}>{selected === today ? '오늘' : selected < today ? '지난 기록' : '다가오는 날'}</Text>
-              </View>
-              <Text style={styles.emptyTitle}>아직 표시할 기록이 없어요</Text>
-              <Text style={styles.emptyDescription}>작은 실천이 모이면 이곳에 발자국이 남아요.</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="할 일 목록 접기 또는 펼치기"
+                accessibilityState={{ expanded: tasksExpanded }}
+                onPress={() => setTasksExpanded((value) => !value)}
+                style={({ pressed }) => [styles.sectionToggle, pressed && styles.pressed]}>
+                <View style={styles.sectionHeading}>
+                  <Text style={styles.dateTitle}>{month}월 {day}일 할 일</Text>
+                  <Text style={styles.dateStatus}>{selected === today ? '오늘' : selected < today ? '지난 기록' : '다가오는 날'}</Text>
+                </View>
+                <Text style={styles.toggleLabel}>{tasksExpanded ? '접기 −' : '펼치기 +'}</Text>
+              </Pressable>
+              {errorMessage ? <Text accessibilityRole="alert" style={styles.errorText}>{errorMessage}</Text> : null}
+              {isLoading ? <Text style={styles.emptyTitle}>할 일 기록을 불러오는 중이에요.</Text>
+                : record?.total ? <>
+                  <Text accessibilityLiveRegion="polite" style={styles.summary}>완료 {record.completed} / {record.total}{record.completed === record.total ? ' · 모두 해냈어요!' : ''}</Text>
+                  {tasksExpanded ? <>
+                  {selected < today ? <Text style={styles.readOnly}>지난 날짜의 기록은 수정할 수 없어요.</Text> : null}
+                  {record.tasks.map(({ plan, task }) => {
+                    const editable = canEditPlan(plan, now) && !isBusy;
+                    return <Pressable key={`${plan.id}-${task.id}`}
+                      accessibilityRole="checkbox" accessibilityState={{ checked: task.done, disabled: !editable }}
+                      accessibilityLabel={`${task.goalTitle}, ${task.title}, ${task.done ? '완료' : '미완료'}`}
+                      disabled={!editable} onPress={() => onToggleTask(plan.id, task.id)}
+                      style={({ pressed }) => [styles.taskRow, pressed && styles.pressed]}>
+                      <View style={[styles.checkbox, task.done && styles.checked]}><Text style={styles.checkText}>{task.done ? '✓' : ''}</Text></View>
+                      <View style={styles.taskBody}>
+                        <Text style={styles.taskGoal}>{task.goalTitle}</Text>
+                        <Text style={[styles.taskTitle, task.done && styles.doneTitle]}>{task.title}</Text>
+                        <Text style={styles.taskDescription}>{task.description}</Text>
+                      </View>
+                    </Pressable>;
+                  })}
+                  </> : null}
+                </> : <>
+                  <Text style={styles.emptyTitle}>{errorMessage ? '기록을 표시할 수 없어요' : '배정된 할 일이 없어요'}</Text>
+                  {tasksExpanded ? <Text style={styles.emptyDescription}>{selected === today ? '오늘 할 일에서 목표와 할 일을 만들어보세요.' : '할 일이 배정된 날짜에 기록이 남아요.'}</Text> : null}
+                </>}
             </View>
             <Text style={styles.footnote}>{year}년의 하루하루, 나만의 속도로</Text>
           </ScrollView>
@@ -98,19 +167,23 @@ export function CalendarModal({ onClose }: { onClose: () => void }) {
 }
 
 /** Customizes the library's day cell while keeping date calculation in the library. */
-function CalendarDay({ date, hidden, selected, today, onSelect }: {
+function CalendarDay({ date, hidden, selected, today, onSelect, record }: {
   date?: DateData; hidden: boolean; selected: string; today: string; onSelect: (date: string) => void;
+  record?: CalendarRecord;
 }) {
   if (!date || hidden) return <View style={styles.day} />;
   const weekday = new Date(date.year, date.month - 1, date.day).getDay();
   const isSelected = selected === date.dateString;
   const isToday = today === date.dateString;
+  const complete = !!record?.total && record.completed === record.total;
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`${date.year}년 ${date.month}월 ${date.day}일${isToday ? ', 오늘' : ''}`}
+      accessibilityLabel={`${date.year}년 ${date.month}월 ${date.day}일${isToday ? ', 오늘' : ''}${record?.total ? `, ${record.total}개 중 ${record.completed}개 완료` : ''}${complete ? ', 모두 완료' : ''}`}
       onPress={() => onSelect(date.dateString)}
-      style={({ pressed }) => [styles.day, isToday && styles.todayDay, isSelected && styles.selectedDay, pressed && styles.pressed]}>
+      style={({ pressed }) => [styles.day, complete && styles.completedDay, isToday && styles.todayDay, isSelected && styles.selectedDay, pressed && styles.pressed]}>
       <Text style={[styles.dayText, weekday === 0 && styles.sunday, weekday === 6 && styles.saturday]}>{date.day}</Text>
+      {record?.total ? <Text numberOfLines={1} adjustsFontSizeToFit style={styles.dayCount}>{record.completed}/{record.total}</Text> : null}
+      {complete ? <Text style={styles.dayCheck}>✓</Text> : null}
       {isToday ? <View style={styles.todayDot} /> : null}
     </Pressable>
   );
@@ -138,7 +211,23 @@ const styles = StyleSheet.create({
   saturday: { color: '#456da2' },
   todayDay: { borderColor: '#9b7145' },
   selectedDay: { backgroundColor: '#dce9ca', borderColor: '#708351' },
-  todayDot: { position: 'absolute', bottom: 3, width: 4, height: 4, backgroundColor: '#8e643e' },
+  todayDot: { position: 'absolute', top: 2, left: 2, width: 4, height: 4, backgroundColor: '#8e643e' },
+  completedDay: { backgroundColor: '#f6e8b6' },
+  dayCount: { fontFamily, fontSize: 8, color: '#58683c', marginTop: 2 },
+  dayCheck: { position: 'absolute', right: -2, top: -5, color: '#536a36', fontSize: 11 },
+  completeMark: { color: '#536a36', fontSize: 12 },
+  summary: { fontFamily, fontSize: 12, color: '#536a36', marginTop: 12, lineHeight: 19 },
+  readOnly: { fontFamily, fontSize: 10, color: '#786453', marginTop: 8, lineHeight: 17 },
+  errorText: { fontFamily, fontSize: 11, color: '#b64d48', marginTop: 10, lineHeight: 18 },
+  taskRow: { flexDirection: 'row', gap: 10, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#e4cda7', alignItems: 'flex-start' },
+  checkbox: { width: 24, height: 24, borderWidth: 2, borderColor: '#9b7145', alignItems: 'center', justifyContent: 'center', marginTop: 3 },
+  checked: { backgroundColor: '#dce9ca', borderColor: '#708351' },
+  checkText: { color: '#536a36', fontSize: 16 },
+  taskBody: { flex: 1, minWidth: 0 },
+  taskGoal: { fontFamily, fontSize: 9, color: '#786453', lineHeight: 16 },
+  taskTitle: { fontFamily, fontSize: 12, color: '#35281f', lineHeight: 20, marginTop: 3 },
+  doneTitle: { textDecorationLine: 'line-through', color: '#786453' },
+  taskDescription: { fontFamily, fontSize: 10, color: '#786453', lineHeight: 17, marginTop: 4 },
   pressed: { opacity: 0.65 },
   legend: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingVertical: 14 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -146,7 +235,10 @@ const styles = StyleSheet.create({
   selectedSwatch: { width: 10, height: 10, backgroundColor: '#dce9ca', borderWidth: 1, borderColor: '#708351' },
   legendText: { fontFamily, fontSize: 10, color: '#786453' },
   detail: { borderTopWidth: 2, borderTopColor: '#e4cda7', paddingHorizontal: 8, paddingTop: 16, paddingBottom: 8 },
-  detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  collapsed: { display: 'none' },
+  sectionToggle: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 48, gap: 8, paddingVertical: 8 },
+  sectionHeading: { flex: 1, gap: 6 },
+  toggleLabel: { fontFamily, fontSize: 10, color: '#6b432f' },
   dateTitle: { fontFamily, fontSize: 14, color: '#35281f' },
   dateStatus: { fontFamily, fontSize: 10, color: '#786453' },
   emptyTitle: { fontFamily, fontSize: 12, color: '#6f5947', marginTop: 22, textAlign: 'center' },

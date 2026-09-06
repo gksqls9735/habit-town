@@ -39,7 +39,7 @@ export async function generateDailyTasksForGoal(
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const timeout = setTimeout(() => controller.abort(), 90_000);
   try {
     // Bound network and response-body reading so the loading state can recover.
     const response = await fetch(
