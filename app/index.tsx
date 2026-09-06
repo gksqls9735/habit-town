@@ -20,6 +20,7 @@ import { TodayTasksModal } from '../src/features/goals/components/TodayTasksModa
 import { YearlyGoalModal } from '../src/features/goals/components/YearlyGoalModal';
 import { useGoalPlanner } from '../src/features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../src/features/goals/utils';
+import { InventoryModal } from '../src/features/inventory/components/InventoryModal';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
 const catBabyRollFrames = [
@@ -139,6 +140,7 @@ const pets: PetDefinition[] = [
 ];
 
 export default function HomeScreen() {
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
   const goalPlanner = useGoalPlanner();
@@ -184,7 +186,11 @@ export default function HomeScreen() {
   const characterSize = Math.round(132 * roomScale);
   const characterBottom = compactHeight ? '15%' : '18%';
   const rightRailActions: RailAction[] = [
-    ...rightActions,
+    ...rightActions.map((action) =>
+      action.label === '가방'
+        ? { ...action, onPress: () => setIsInventoryOpen(true) }
+        : action,
+    ),
     {
       image: require('../assets/ui/pet-room-button.png'),
       label: '펫룸',
@@ -301,6 +307,12 @@ export default function HomeScreen() {
             width={popupWidth}
           />
         ) : null}
+
+        <InventoryModal
+          onClose={() => setIsInventoryOpen(false)}
+          visible={isInventoryOpen}
+          width={popupWidth}
+        />
 
         <YearlyGoalModal
           errorMessage={goalError}
