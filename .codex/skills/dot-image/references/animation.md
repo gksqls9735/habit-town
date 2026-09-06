@@ -8,6 +8,8 @@ Read this reference only when creating animation frames or sprite sheets.
 - Arrange frames left to right, then top to bottom. Keep every frame fully inside its cell.
 - Use transparent alpha when reliable. A solid black isolation background is acceptable for `char` sheets because the harness removes border-connected dark pixels per frame.
 - Keep the subject at a consistent scale, facing direction, camera angle, lighting direction, costume, equipment, and palette role.
+- Choose one source-facing direction before drawing frames and keep every source cell facing that direction. A frame fails when only its face points correctly but its torso, hips, near and far limbs, or tail base are horizontally reversed.
+- Never mirror an individual frame to create an alternating pose. Alternate limbs by redrawing or moving the intended near or far limb while preserving the same anatomical orientation. Mirror only the complete sprite sheet or complete rendered character at runtime when movement in the opposite world direction is required.
 - Keep one fixed orthographic 2D view across every frame. Never rotate, tilt, zoom, or orbit the camera during an animation.
 - Leave enough empty space for moving ears, tails, weapons, splashes, particles, and anticipation poses.
 - Describe distinct key poses in the generation prompt. Do not ask only for several nearly identical copies.
@@ -32,6 +34,19 @@ Use this contract whenever animating an existing character image.
 - Anchor character frames at bottom-center by default. Use the original sprite's ground contact line as the baseline unless the animation intentionally leaves the ground.
 - If a generated sheet changes the character size, rebuild the sheet from the accepted source sprite or regenerate with an explicit "same cell size and same apparent height" constraint.
 - Before accepting a sheet, compare a still frame against the source sprite at the runtime display size. Reject it if switching from idle to animation makes the pet visibly grow, shrink, flatten, or widen.
+
+## Facing And Outline Preservation Contract
+
+Use this contract for every animation derived from an accepted pet sprite.
+
+- Treat the original pet PNG as the source of truth for facing direction and silhouette construction. Record whether it faces left, right, or front before editing, then compare every frame against that same orientation.
+- Check more than the eyes and muzzle. Ear overlap, cheek placement, shoulder and chest turn, torso taper, hip placement, near and far paw order, and tail attachment must all agree with the source-facing direction.
+- Keep near-side and far-side limbs semantically stable throughout the cycle. A raised opposite paw must be a new pose in the same view, not a horizontally mirrored body or a rear leg substituted for a front paw.
+- Preserve the original outline palette. Reuse the source pet's exact black, charcoal, cocoa, or other deep outline colors; do not introduce pure black when the source uses a tinted dark color, and do not lighten a black outline into fur shading.
+- Preserve outline topology at the native pixel grid: thickness, connected contour runs, stepped diagonals, intentional corner pixels, and the separation between overlapping body parts. Reject gaps, spikes, isolated dark pixels, doubled contour rows, softened diagonals, or transparent pinholes.
+- When changing a paw, ear, tail, or body segment, rebuild the exposed silhouette with source pixels from the nearest matching contour. Do not paint over the contour with interior fur colors or use antialiasing, blur, feathering, subpixel transforms, or noninteger scaling.
+- `--preserve-source-palette` protects colors but does not prove that the outline shape is intact. Native-size visual comparison against the original pet remains mandatory after the harness runs.
+- Alpha and halo checks are separate from outline integrity. A frame with binary alpha can still fail when its dark contour is broken, uneven, or inconsistent with the original pet.
 
 ## Motion Design
 
@@ -66,6 +81,8 @@ Animation mode is enabled by `--frames` greater than 1. The harness:
 7. When `--size-reference` and `--scale-to-reference` are supplied, scales each frame's visible content up toward the original character's visible bounds without changing the frame cell dimensions.
 8. Writes a clean sprite sheet, individual frame PNGs, and an `.animation.json` manifest.
 
+Facing direction and outline topology require reference-aware visual review; they are not proven by grid, palette, alpha, or visible-bounds checks alone. Do not mark an animation accepted only because the automated harness exits successfully.
+
 Example:
 
 ```bash
@@ -84,9 +101,11 @@ The raw sheet dimensions must divide evenly into the requested columns and calcu
 
 - Inspect each frame at the native working-grid size, not only an enlarged preview.
 - Flip rapidly between adjacent frames to detect outline crawl, palette flicker, volume changes, and anchor jitter.
+- Compare frame 0 and every following frame side by side. Confirm that head, torso, hips, limb depth order, and tail base retain one facing direction; reject a single reversed body part or mirrored frame.
+- Overlay each frame with the original pet at native scale and inspect the full silhouette. Confirm that the source outline colors, contour thickness, stepped clusters, and limb-separation pixels remain connected and deliberate.
 - Check the transparent silhouette edge for white, cream, or pale gray halos. The harness records `edge_halo_cleanup` with removed and darkened edge pixels; treat a visible remaining halo as a blocker even when alpha and grid checks pass.
 - Compare the animation frames against the idle/source character and the accepted walk cycle at the real app display size. The pet should keep a similar visual footprint while changing pose.
 - Check the harness manifest's visible bounds, size ratios, `size_scale`, and recommended runtime scale. Treat low ratios as a blocker unless `--scale-to-reference` was applied successfully or the app integration intentionally applies a matching per-frame display scale.
 - Confirm every frame uses the same recorded 2D view with no perspective or camera drift.
 - Preview at the manifest FPS and playback mode.
-- Reject sheets with cropped motion, inconsistent identity, accidental camera movement, partial alpha, blurred edges, or an unreadable loop boundary.
+- Reject sheets with cropped motion, inconsistent identity, mixed facing directions, mirrored individual frames, broken or recolored outlines, accidental camera movement, partial alpha, blurred edges, or an unreadable loop boundary.

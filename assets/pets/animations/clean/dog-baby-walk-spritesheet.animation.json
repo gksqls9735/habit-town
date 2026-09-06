@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "type": "sprite-animation",
+  "name": "walk",
+  "asset_type": "char",
+  "theme": "soft-modern-retro",
+  "projection": "orthographic-2d",
+  "view": "front",
+  "art_direction": "expressive-modern-pixel",
+  "fps": 8,
+  "playback": "loop",
+  "frame_count": 4,
+  "working_grid": {
+    "width": 163,
+    "height": 163
+  },
+  "output_scale": 1,
+  "anchor": "none",
+  "palette_reference": null,
+  "style_profile": "soft-modern-retro",
+  "palette_mode": "source-preserved",
+  "layout": {
+    "columns": 4,
+    "rows": 1,
+    "frame_width": 163,
+    "frame_height": 163
+  },
+  "size_consistency": {
+    "reference_frame": null,
+    "reference_image": "assets/pets/dog-baby.png",
+    "reference_bounds": {
+      "left": 11,
+      "top": 18,
+      "right": 152,
+      "bottom": 152,
+      "width": 141,
+      "height": 134
+    },
+    "scale_to_reference": false,
+    "max_size_scale": 1.45,
+    "warnings": []
+  },
+  "edge_halo_cleanup": {
+    "enabled": true,
+    "total_removed_edge_pixels": 0,
+    "total_darkened_edge_pixels": 231
+  },
+  "sheet": "assets/pets/animations/clean/dog-baby-walk-spritesheet.png",
+  "frames": [
+    {
+      "index": 0,
+      "file": "assets/pets/animations/clean/dog-baby-walk-spritesheet/frame-000.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 12,
+        "top": 18,
+        "right": 152,
+        "bottom": 152,
+        "width": 140,
+        "height": 134,
+        "index": 0,
+        "width_ratio_to_reference": 0.993,
+        "height_ratio_to_reference": 1.0,
+        "area_ratio_to_reference": 0.993,
+        "recommended_runtime_scale": 1.007
+      },
+      "size_scale": {
+        "frame": 0,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 12,
+          "top": 18,
+          "right": 152,
+          "bottom": 152,
+          "width": 140,
+          "height": 134
+        },
+        "after": {
+          "left": 12,
+          "top": 18,
+          "right": 152,
+          "bottom": 152,
+          "width": 140,
+          "height": 134
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 0,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 76
+      }
+    },
+    {
+      "index": 1,
+      "file": "assets/pets/animations/clean/dog-baby-walk-spritesheet/frame-001.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 12,
+        "top": 18,
+        "right": 151,
+        "bottom": 152,
+        "width": 139,
+        "height": 134,
+        "index": 1,
+        "width_ratio_to_reference": 0.986,
+        "height_ratio_to_reference": 1.0,
+        "area_ratio_to_reference": 0.986,
+        "recommended_runtime_scale": 1.014
+      },
+      "size_scale": {
+        "frame": 1,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 12,
+          "top": 18,
+          "right": 151,
+          "bottom": 152,
+          "width": 139,
+          "height": 134
+        },
+        "after": {
+          "left": 12,
+          "top": 18,
+          "right": 151,
+          "bottom": 152,
+          "width": 139,
+          "height": 134
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 1,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 65
+      }
+    },
+    {
+      "index": 2,
+      "file": "assets/pets/animations/clean/dog-baby-walk-spritesheet/frame-002.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 13,
+        "top": 18,
+        "right": 151,
+        "bottom": 152,
+        "width": 138,
+        "height": 134,
+        "index": 2,
+        "width_ratio_to_reference": 0.979,
+        "height_ratio_to_reference": 1.0,
+        "area_ratio_to_reference": 0.979,
+        "recommended_runtime_scale": 1.022
+      },
+      "size_scale": {
+        "frame": 2,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 13,
+          "top": 18,
+          "right": 151,
+          "bottom": 152,
+          "width": 138,
+          "height": 134
+        },
+        "after": {
+          "left": 13,
+          "top": 18,
+          "right": 151,
+          "bottom": 152,
+          "width": 138,
+          "height": 134
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 2,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 44
+      }
+    },
+    {
+      "index": 3,
+      "file": "assets/pets/animations/clean/dog-baby-walk-spritesheet/frame-003.png",
+      "duration_ms": 125,
+      "offset": {
+        "x": 0,
+        "y": 0
+      },
+      "visible_bounds": {
+        "left": 13,
+        "top": 18,
+        "right": 151,
+        "bottom": 151,
+        "width": 138,
+        "height": 133,
+        "index": 3,
+        "width_ratio_to_reference": 0.979,
+        "height_ratio_to_reference": 0.993,
+        "area_ratio_to_reference": 0.971,
+        "recommended_runtime_scale": 1.022
+      },
+      "size_scale": {
+        "frame": 3,
+        "enabled": false,
+        "applied_scale": 1,
+        "reason": "disabled",
+        "before": {
+          "left": 13,
+          "top": 18,
+          "right": 151,
+          "bottom": 151,
+          "width": 138,
+          "height": 133
+        },
+        "after": {
+          "left": 13,
+          "top": 18,
+          "right": 151,
+          "bottom": 151,
+          "width": 138,
+          "height": 133
+        }
+      },
+      "edge_halo_cleanup": {
+        "frame": 3,
+        "enabled": true,
+        "removed_edge_pixels": 0,
+        "darkened_edge_pixels": 46
+      }
+    }
+  ]
+}

@@ -25,19 +25,23 @@ import { InventoryModal } from '../src/features/inventory/components/InventoryMo
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
 const catBabyRollFrames = [
-  require('../assets/pets/animations/cat-baby-roll-frame-0.png'),
-  require('../assets/pets/animations/cat-baby-roll-frame-1.png'),
-  require('../assets/pets/animations/cat-baby-roll-frame-2.png'),
-  require('../assets/pets/animations/cat-baby-roll-frame-3.png'),
+  require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-0.png'),
+  require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-1.png'),
+  require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-2.png'),
+  require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-3.png'),
 ];
-const hamsterBabyRollFrames = [
-  require('../assets/pets/animations/hamster-baby-roll-frame-0.png'),
-  require('../assets/pets/animations/hamster-baby-roll-frame-1.png'),
-  require('../assets/pets/animations/hamster-baby-roll-frame-2.png'),
-  require('../assets/pets/animations/hamster-baby-roll-frame-3.png'),
-];
-const catBabyWalkSpritesheet = require('../assets/pets/animations/cat-baby-walk-spritesheet.png');
-const hamsterBabyWalkSpritesheet = require('../assets/pets/animations/hamster-baby-walk-spritesheet.png');
+const hamsterBabyRollSpritesheet = require(
+  '../assets/pets/animations/applied/hamster/roll/hamster-baby-roll-spritesheet.png',
+);
+const catBabyWalkSpritesheet = require(
+  '../assets/pets/animations/applied/cat/walk/cat-baby-walk-spritesheet.png',
+);
+const hamsterBabyWalkSpritesheet = require(
+  '../assets/pets/animations/clean/hamster-baby-walk-spritesheet.png',
+);
+const dogBabyWalkSpritesheet = require(
+  '../assets/pets/animations/clean/dog-baby-walk-spritesheet.png',
+);
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'
@@ -236,7 +240,7 @@ export default function HomeScreen() {
             style={styles.roomBackground}
           >
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
-              <AnimatedBabyCat
+              <AnimatedPet
                 movementRange={Math.round(Math.min(width * 0.24, 104) * roomScale)}
                 pet={activePet}
                 stage={currentStage}
@@ -355,7 +359,7 @@ export default function HomeScreen() {
   );
 }
 
-function AnimatedBabyCat({
+function AnimatedPet({
   movementRange,
   pet,
   stage,
@@ -375,8 +379,10 @@ function AnimatedBabyCat({
   const currentX = useRef(0);
   const canUseBabyCatAnimation = pet.id === 'cat' && stage === 'baby';
   const canUseBabyHamsterAnimation = pet.id === 'hamster' && stage === 'baby';
+  const canUseBabyDogAnimation = pet.id === 'dog' && stage === 'baby';
   const canUseRollAnimation = canUseBabyCatAnimation || canUseBabyHamsterAnimation;
-  const canUseWalkAnimation = canUseBabyCatAnimation || canUseBabyHamsterAnimation;
+  const canUseWalkAnimation =
+    canUseBabyCatAnimation || canUseBabyHamsterAnimation || canUseBabyDogAnimation;
 
   useEffect(() => {
     let frameTimer: ReturnType<typeof setInterval> | undefined;
@@ -464,7 +470,9 @@ function AnimatedBabyCat({
     };
   }, [
     canUseBabyCatAnimation,
+    canUseBabyDogAnimation,
     canUseRollAnimation,
+    canUseWalkAnimation,
     movementRange,
     movementX,
     pet.id,
@@ -481,12 +489,12 @@ function AnimatedBabyCat({
     animation.kind === 'roll' ? rollFrameScales[animation.frame] : 1;
   const rollFrameSize = Math.round(size * rollFrameScale);
   const maxFrameSize = Math.round(size * Math.max(...rollFrameScales));
-  const rollFrameSource = canUseBabyHamsterAnimation
-    ? hamsterBabyRollFrames[animation.frame]
-    : catBabyRollFrames[animation.frame];
-  const walkSheetSource = canUseBabyHamsterAnimation
-    ? hamsterBabyWalkSpritesheet
-    : catBabyWalkSpritesheet;
+  const rollFrameSource = catBabyRollFrames[animation.frame];
+  const walkSheetSource = canUseBabyDogAnimation
+    ? dogBabyWalkSpritesheet
+    : canUseBabyHamsterAnimation
+      ? hamsterBabyWalkSpritesheet
+      : catBabyWalkSpritesheet;
 
   return (
     <Animated.View
@@ -529,6 +537,30 @@ function AnimatedBabyCat({
               },
             ]}
           />
+        ) : animation.kind === 'roll' && canUseBabyHamsterAnimation ? (
+          <View
+            style={[
+              styles.spriteViewport,
+              {
+                height: frameHeight,
+                width: frameWidth,
+              },
+            ]}
+          >
+            <Image
+              accessibilityIgnoresInvertColors
+              source={hamsterBabyRollSpritesheet}
+              style={[
+                styles.petSpritesheet,
+                pixelatedImageStyle,
+                {
+                  height: frameHeight,
+                  transform: [{ translateX: -animation.frame * frameWidth }],
+                  width: frameWidth * 4,
+                },
+              ]}
+            />
+          </View>
         ) : animation.kind === 'roll' ? (
           <Image
             accessibilityIgnoresInvertColors

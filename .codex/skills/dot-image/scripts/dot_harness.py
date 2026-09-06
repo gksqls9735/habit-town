@@ -56,6 +56,94 @@ DEFAULT_CATEGORY_DIRS = {
 }
 
 
+def project_path(path: Path, project_root: Path) -> str:
+    try:
+        return path.relative_to(project_root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def default_asset_root(project_root: Path, asset_type: str) -> Path:
+    return (
+        project_root
+        / "src"
+        / "assets"
+        / "dot-image"
+        / DEFAULT_CATEGORY_DIRS[asset_type]
+    )
+
+
+def resolve_asset_root(
+    project_root: Path,
+    asset_type: str,
+    asset_root: Path | None,
+) -> Path:
+    resolved_asset_root = (
+        default_asset_root(project_root, asset_type)
+        if asset_root is None
+        else asset_root
+    )
+    if not resolved_asset_root.is_absolute():
+        resolved_asset_root = project_root / resolved_asset_root
+    return resolved_asset_root.resolve()
+
+
+def resolve_raw_and_clean_paths(
+    filename: str,
+    project_root: Path,
+    resolved_asset_root: Path,
+) -> tuple[Path, Path]:
+    source = Path(filename)
+    if source.suffix.lower() != ".png":
+        raise ValueError("Input image must be a .png file")
+
+    if source.name == filename:
+        return (
+            resolved_asset_root / "raw" / source.name,
+            resolved_asset_root / "clean" / source.name,
+        )
+
+    if source.is_absolute():
+        raw_path = source.resolve()
+    else:
+        project_candidate = (project_root / source).resolve()
+        asset_candidate = (resolved_asset_root / source).resolve()
+        raw_path = (
+            asset_candidate
+            if source.parts and source.parts[0] == "raw"
+            else project_candidate
+        )
+        if not raw_path.is_file() and asset_candidate.is_file():
+            raw_path = asset_candidate
+
+    raw_root = resolved_asset_root / "raw"
+    try:
+        return raw_path, resolved_asset_root / "clean" / raw_path.relative_to(raw_root)
+    except ValueError:
+        pass
+
+    for parent in raw_path.parents:
+        if parent.name == "raw":
+            return raw_path, parent.parent / "clean" / raw_path.relative_to(parent)
+
+    return raw_path, resolved_asset_root / "clean" / raw_path.name
+
+
+def resolve_palette_reference_path(
+    reference: str,
+    project_root: Path,
+    clean_dir: Path,
+) -> Path:
+    reference_path = Path(reference)
+    if reference_path.suffix.lower() != ".png":
+        raise ValueError("Palette reference must be a .png file")
+    if reference_path.name == reference:
+        return clean_dir / reference_path.name
+    if reference_path.is_absolute():
+        return reference_path.resolve()
+    return (project_root / reference_path).resolve()
+
+
 def parse_hex_color(value: str) -> tuple[int, int, int]:
     if len(value) != 7 or not value.startswith("#"):
         raise ValueError(f"Invalid style-profile color: {value}")
@@ -770,12 +858,12 @@ def run_static_harness(
             "projection": PROJECTION,
             "view": view,
             "art_direction": ART_DIRECTION,
-            "raw_path": raw_path.relative_to(project_root).as_posix(),
-            "clean_path": clean_path.relative_to(project_root).as_posix(),
+            "raw_path": project_path(raw_path, project_root),
+            "clean_path": project_path(clean_path, project_root),
             "working_grid": list(target),
             "output_scale": output_scale,
             "palette_reference": (
-                palette_reference_path.relative_to(project_root).as_posix()
+                project_path(palette_reference_path, project_root)
                 if palette_reference_path is not None
                 else None
             ),
@@ -945,7 +1033,7 @@ def run_animation_harness(
         frame_records.append(
             {
                 "index": index,
-                "file": frame_path.relative_to(project_root).as_posix(),
+                "file": project_path(frame_path, project_root),
                 "duration_ms": duration_ms,
                 "offset": offsets[index],
                 "visible_bounds": size_records[index],
@@ -972,7 +1060,7 @@ def run_animation_harness(
         "output_scale": output_scale,
         "anchor": anchor,
         "palette_reference": (
-            palette_reference_path.relative_to(project_root).as_posix()
+            project_path(palette_reference_path, project_root)
             if palette_reference_path is not None
             else None
         ),
@@ -989,9 +1077,8 @@ def run_animation_harness(
         "size_consistency": {
             "reference_frame": 0 if size_reference_path is None else None,
             "reference_image": (
-                size_reference_path.relative_to(project_root).as_posix()
+                project_path(size_reference_path, project_root)
                 if size_reference_path is not None
-                and size_reference_path.is_relative_to(project_root)
                 else str(size_reference_path) if size_reference_path is not None else None
             ),
             "reference_bounds": (
@@ -1016,7 +1103,7 @@ def run_animation_harness(
                 for record in edge_cleanup_records
             ),
         },
-        "sheet": clean_path.relative_to(project_root).as_posix(),
+        "sheet": project_path(clean_path, project_root),
         "frames": frame_records,
     }
     manifest_path.write_text(
@@ -1045,7 +1132,7 @@ def run_animation_harness(
             "working_grid": list(target),
             "output_scale": output_scale,
             "palette_reference": (
-                palette_reference_path.relative_to(project_root).as_posix()
+                project_path(palette_reference_path, project_root)
                 if palette_reference_path is not None
                 else None
             ),
@@ -1053,9 +1140,9 @@ def run_animation_harness(
                 str(style_profile["name"]) if style_profile is not None else None
             ),
             "palette_mode": "source-preserved" if preserve_source_palette else "profile",
-            "raw_path": raw_path.relative_to(project_root).as_posix(),
-            "clean_path": clean_path.relative_to(project_root).as_posix(),
-            "manifest_path": manifest_path.relative_to(project_root).as_posix(),
+            "raw_path": project_path(raw_path, project_root),
+            "clean_path": project_path(clean_path, project_root),
+            "manifest_path": project_path(manifest_path, project_root),
             "frame_width": final_size[0],
             "frame_height": final_size[1],
             "visible_colors": max(item["visible_colors"] for item in verifications),
@@ -1063,9 +1150,8 @@ def run_animation_harness(
             "size_scale": {
                 "enabled": scale_to_reference,
                 "reference_image": (
-                    size_reference_path.relative_to(project_root).as_posix()
+                    project_path(size_reference_path, project_root)
                     if size_reference_path is not None
-                    and size_reference_path.is_relative_to(project_root)
                     else str(size_reference_path)
                     if size_reference_path is not None
                     else None
@@ -1159,24 +1245,12 @@ def run_harness(
         style_profile_requested,
     )
 
-    safe_filename = Path(filename).name
-    if safe_filename != filename or Path(safe_filename).suffix.lower() != ".png":
-        raise ValueError("Filename must be a plain .png filename without directories")
-
-    resolved_asset_root = (
-        project_root
-        / "src"
-        / "assets"
-        / "dot-image"
-        / DEFAULT_CATEGORY_DIRS[asset_type]
-        if asset_root is None
-        else asset_root
+    resolved_asset_root = resolve_asset_root(project_root, asset_type, asset_root)
+    raw_path, clean_path = resolve_raw_and_clean_paths(
+        filename,
+        project_root,
+        resolved_asset_root,
     )
-    if not resolved_asset_root.is_absolute():
-        resolved_asset_root = project_root / resolved_asset_root
-
-    raw_path = resolved_asset_root / "raw" / safe_filename
-    clean_path = resolved_asset_root / "clean" / safe_filename
     if not raw_path.is_file():
         raise FileNotFoundError(f"Raw image not found: {raw_path}")
 
@@ -1191,15 +1265,11 @@ def run_harness(
     palette_reference_path = None
     palette_reference = None
     if palette_reference_filename is not None:
-        safe_reference = Path(palette_reference_filename).name
-        if (
-            safe_reference != palette_reference_filename
-            or Path(safe_reference).suffix.lower() != ".png"
-        ):
-            raise ValueError(
-                "Palette reference must be a plain .png filename without directories"
-            )
-        palette_reference_path = clean_path.parent / safe_reference
+        palette_reference_path = resolve_palette_reference_path(
+            palette_reference_filename,
+            project_root,
+            clean_path.parent,
+        )
         if not palette_reference_path.is_file():
             raise FileNotFoundError(
                 f"Clean palette reference not found: {palette_reference_path}"
@@ -1269,7 +1339,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("asset_type", choices=sorted(SPECS))
     parser.add_argument(
         "filename",
-        help="PNG filename located in <asset-root>/raw/",
+        help=(
+            "PNG filename located in <asset-root>/raw/, or a path to a PNG. "
+            "Paths under a raw/ directory write to the sibling clean/ directory."
+        ),
     )
     parser.add_argument(
         "--asset-root",
@@ -1296,7 +1369,7 @@ def parse_args() -> argparse.Namespace:
         "--palette-reference",
         default=None,
         help=(
-            "Clean PNG filename whose colors should influence the asset palette; "
+            "Clean PNG filename or path whose colors should influence the asset palette; "
             "use the target background for scene-bound characters and objects"
         ),
     )

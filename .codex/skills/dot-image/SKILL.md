@@ -87,6 +87,8 @@ For a supplied portrait or panoramic background whose composition must remain in
    python .codex/skills/dot-image/scripts/dot_harness.py <char|object|bg|scene|icon> <filename>.png --asset-root <asset-root> --style-profile auto --theme <theme> --view <side|front|top-down>
    ```
 
+   The image argument may also be a project-relative, asset-root-relative, or absolute PNG path. If the path is under a `raw/` directory, the harness writes the matching output under that directory's sibling `clean/` directory. Plain filenames keep the existing `<asset-root>/raw/<filename>.png` lookup.
+
    Once a generated image's colors have been accepted, always add `--preserve-source-palette` for that image and every derivative. This skips theme toning and fixed-profile RGB remapping while retaining the asset color cap, binary transparency, nearest-neighbor grid, and all verification checks. Do not use a palette reference or profile remapping to alter an accepted source palette unless the user explicitly requests recoloring.
 
    For an asset that belongs to a specific scene, preserve the reusable master and process a scene-linked variant with the verified background palette:

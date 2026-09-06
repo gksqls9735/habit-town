@@ -1,6 +1,6 @@
 # Project Agent Guide
 
-Always read the project harness documents before making changes.
+Read only the project harness documents that apply to the current task before making changes. Do not preload every linked document by default.
 
 
 ## Reporting Rules
@@ -12,7 +12,9 @@ Follow the reporting workflow for work start, progress updates, and completion r
 
 ## Project Context
 
-Read the project description before making implementation decisions.
+Read the project description only when implementing a new product feature or a new user workflow. Do not read it for bug fixes, adjustments to existing behavior, visual asset work, tests, refactors, formatting, documentation changes, or harness maintenance.
+
+Reading or updating the project description is also allowed when `.codex/context/description.md` is itself an explicit target of the user's planning request.
 
 
 - `.codex/context/description.md`

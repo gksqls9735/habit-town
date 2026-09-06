@@ -15,7 +15,7 @@ The output file is `.codex/context/design-description.md`. Future UI work should
 
 1. Inspect the active project.
    - Read `AGENTS.md` when present and follow its instructions.
-   - Read existing `.codex/context/description.md` when present.
+   - Read existing `.codex/context/description.md` only when the reference is for a new product feature or a new user workflow. Skip it when documenting or refining the visual direction of existing functionality.
    - Read existing `.codex/context/design-description.md` when present.
    - Create `.codex/context/` when it does not exist.
 

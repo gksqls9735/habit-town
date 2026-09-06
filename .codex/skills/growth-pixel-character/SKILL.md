@@ -89,10 +89,13 @@ python .codex/skills/dot-image/scripts/dot_harness.py object pet-food-bowl.png \
 ## Build Pet Animation Sprites
 
 1. Read `../dot-image/references/animation.md` before creating or editing walk, roll, idle, or other pet animation frames.
-2. Preserve the source pet's app cell size and apparent runtime size. For the current native pet assets, keep each frame on the source sprite canvas instead of normalizing to a smaller default grid.
-3. Save a raw sprite sheet under the selected asset root's `raw/` folder and run the animation harness before copying or wiring the output into app-facing assets.
-4. Use `--working-grid WIDTHxHEIGHT --scale 1 --size-reference <source-pet.png> --preserve-source-palette` for existing accepted pets so the harness checks the actual app cell size, visible bounds, binary alpha, halo cleanup, and manifest metadata.
-5. Treat low visible-size ratios, cropped motion, frame-edge halos, alpha fringing, or nonmatching frame dimensions as blockers. Fix the raw sheet and rerun the harness rather than accepting the manually edited file.
+2. Lock the source pet's facing direction before drawing motion. Every source frame must keep the head, torso, hips, near and far limb order, and tail base in that same orientation. Create opposite-paw poses without mirroring an individual frame; flip only the complete sheet or rendered character when runtime movement changes direction.
+3. Preserve the source pet's app cell size and apparent runtime size. For the current native pet assets, keep each frame on the source sprite canvas instead of normalizing to a smaller default grid.
+4. Treat the original pet PNG as the outline reference. Reuse its exact black or tinted-dark contour colors and preserve native contour thickness, connected stepped clusters, limb separation, and silhouette corners whenever a moving part is redrawn.
+5. Save a raw sprite sheet under the selected asset root's `raw/` folder and run the animation harness before copying or wiring the output into app-facing assets. The harness accepts either a plain filename with `--asset-root` or a direct path to the PNG under `raw/`.
+6. Use `--working-grid WIDTHxHEIGHT --scale 1 --size-reference <source-pet.png> --preserve-source-palette` for existing accepted pets so the harness checks the actual app cell size, visible bounds, binary alpha, halo cleanup, and manifest metadata.
+7. Review every clean frame beside and overlaid with the original pet at native size. Automated harness success does not validate anatomical facing or outline topology.
+8. Treat low visible-size ratios, cropped motion, mixed facing directions, mirrored body parts, frame-edge halos, alpha fringing, broken or recolored outlines, or nonmatching frame dimensions as blockers. Fix the raw sheet and rerun the harness rather than accepting the manually edited file.
 
 ```bash
 python .codex/skills/dot-image/scripts/dot_harness.py char hamster-baby-roll-spritesheet.png \
