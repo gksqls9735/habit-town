@@ -35,6 +35,7 @@ Use the shared rules for comments, reporting, and general coding conventions.
 - Frontend decisions: `.codex/common/rules/frontend-decisions.md`
 - Responsive CSS: `.codex/common/rules/frontend/responsive-css.md`
 - Calendars and date pickers: `.codex/common/rules/frontend/calendar.md`
+- AI task generation: `.codex/common/rules/ai-task-generation.md`
 
 ## Stack Rules
 

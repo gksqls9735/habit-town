@@ -3,7 +3,7 @@ import { generateDailyTasksForGoal } from '../goalAiService';
 import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
 import { DailyPlan, YearlyGoal } from '../types';
 import {
-  getCompletedNonRepeatableTaskTitles,
+  getExcludedTaskTitles,
   getNextMidnightTimestamp,
   getNextRoundForGoal,
   isPlanExpired,
@@ -119,7 +119,7 @@ export function useGoalPlanner() {
         targetGoals.map((goal) =>
           generateDailyTasksForGoal(
             goal,
-            getCompletedNonRepeatableTaskTitles(dailyPlans, goal.id),
+            getExcludedTaskTitles(dailyPlans, goal.id),
             generationType === 'basic' ? 3 : 1,
           ),
         ),
@@ -215,15 +215,7 @@ export function useGoalPlanner() {
 
     const target =
       refreshCandidates[Math.floor(Math.random() * refreshCandidates.length)];
-    const existingTaskTitles = dailyPlans
-      .filter((plan) => plan.goalId === selectedGoal.id)
-      .flatMap((plan) => plan.tasks.map((task) => task.title));
-    const excludedTaskTitles = Array.from(
-      new Set([
-        ...getCompletedNonRepeatableTaskTitles(dailyPlans, selectedGoal.id),
-        ...existingTaskTitles,
-      ]),
-    );
+    const excludedTaskTitles = getExcludedTaskTitles(dailyPlans, selectedGoal.id);
 
     setIsGeneratingPlan(true);
     setGoalError('');
