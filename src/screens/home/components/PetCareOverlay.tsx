@@ -1,15 +1,19 @@
 import { Image, ImageSourcePropType, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const fontFamily = 'Galmuri11';
+const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
+const feedBowlFullIcon = require('../../../../assets/ui/action/feed-action-object-icon.png');
+const playBallIcon = require('../../../../assets/ui/action/play-action-object-icon.png');
+
 const previewNeeds = [
   { label: '청', name: '청결도', value: 0.8, color: '#8fbcc0' },
   { label: '굶', name: '굶주림', value: 0.45, color: '#dfb471' },
-  { label: '외', name: '외로움', value: 0.3, color: '#bc9cbd' },
+  { label: '외', name: '외로움', value: 0.3, color: '#e7a28f' },
 ];
 const actions = [
-  { label: '청소하기', color: '#d9ebea' },
-  { label: '밥먹이기', color: '#f6e3bb' },
-  { label: '놀아주기', color: '#ecdeeb' },
+  { label: '청소하기', color: '#d9ebea', icon: cleanBrushIcon },
+  { label: '밥먹이기', color: '#f6e3bb', icon: feedBowlFullIcon },
+  { label: '놀아주기', color: '#f3ded0', icon: playBallIcon },
 ];
 const pixelStyle = Platform.OS === 'web'
   ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle) : undefined;
@@ -73,7 +77,11 @@ export function PetCareActions() {
           accessibilityLabel={`${action.label}, 디자인 미리보기`} accessibilityState={{ disabled: true }} disabled
           style={[styles.action, { backgroundColor: action.color }]}>
           <View style={styles.actionHighlight} />
-          <Text style={styles.actionLabel}>{action.label}</Text>
+          {action.icon ? (
+            <Image source={action.icon} accessibilityLabel={action.label} resizeMode="contain" style={styles.actionIcon} />
+          ) : (
+            <Text style={styles.actionLabel}>{action.label}</Text>
+          )}
         </Pressable>)}
       </View>
     </View>
@@ -103,5 +111,6 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', width: '100%', maxWidth: 390, gap: 10 },
   action: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderBottomWidth: 5, borderColor: '#795c43', paddingVertical: 8 },
   actionHighlight: { position: 'absolute', top: 2, left: 2, right: 2, height: 2, backgroundColor: '#fffaf0' },
+  actionIcon: { width: 48, height: 42 },
   actionLabel: { fontFamily, fontSize: 11, color: '#49372a' },
 });
