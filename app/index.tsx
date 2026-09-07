@@ -175,10 +175,12 @@ export default function HomeScreen() {
     refreshOneIncompleteTaskForSelectedGoal,
     selectedTaskGoalId,
     setSelectedTaskGoalId,
+    setYearlyGoalDifficulty,
     setYearlyGoalDraft,
     togglePlanExpanded,
     toggleTask,
     yearlyGoalDraft,
+    yearlyGoalDifficulty,
     yearlyGoals,
   } = goalPlanner;
   const { height, width } = useWindowDimensions();
@@ -313,8 +315,10 @@ export default function HomeScreen() {
           errorMessage={goalError}
         /> : null}
         <YearlyGoalModal
+          difficulty={yearlyGoalDifficulty}
           errorMessage={goalError}
           isGenerating={isGeneratingPlan}
+          onChangeDifficulty={setYearlyGoalDifficulty}
           onChangeDraft={setYearlyGoalDraft}
           onClose={closeYearlyGoal}
           onSave={addYearlyGoal}

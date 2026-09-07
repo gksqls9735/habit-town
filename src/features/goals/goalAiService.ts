@@ -1,4 +1,4 @@
-import { DailyTask, YearlyGoal } from './types';
+import { DailyTask, goalDifficultyLabels, YearlyGoal } from './types';
 import { parseDailyTasks, readGeneratedText } from './goalAiValidation';
 
 const dailyTasksSchema = {
@@ -58,6 +58,7 @@ export async function generateDailyTasksForGoal(
                 {
                   text: buildPrompt(
                     goal.title,
+                    goal.difficulty,
                     excludedTaskTitles,
                     taskCount,
                   ),
@@ -105,6 +106,7 @@ export async function generateDailyTasksForGoal(
 
 function buildPrompt(
   yearlyGoal: string,
+  difficulty: YearlyGoal['difficulty'],
   excludedTaskTitles: string[],
   count: number,
 ) {
@@ -122,6 +124,8 @@ function buildPrompt(
     `사용자의 올해 목표를 보고 오늘 바로 할 수 있는 작은 할 일 ${count}개를 만들어줘.`,
     '각 할 일은 구체적이고 사용자가 완료 여부를 스스로 판단할 수 있어야 해.',
     '할 일은 5~30분 안에 할 수 있는 크기로 만들어줘.',
+    `사용자가 고른 목표 난이도는 ${goalDifficultyLabels[difficulty]}야.`,
+    getDifficultyInstruction(difficulty),
     '서로 다른 행동으로 구성하고, 같은 의미의 할 일을 중복 생성하지 마.',
     '문제집 1단원 풀기, 교재 2과 끝내기처럼 특정 진도를 완료하는 할 일은 repeatable=false로 표시해.',
     '단어 50개 외우기, 듣기 10분, 복습 15분처럼 매일 반복해도 자연스러운 훈련은 repeatable=true로 표시해.',
@@ -129,4 +133,16 @@ function buildPrompt(
     '한국어로 답하고, 반드시 JSON으로만 답해.',
     `올해 목표: ${yearlyGoal}`,
   ].join('\n');
+}
+
+function getDifficultyInstruction(difficulty: YearlyGoal['difficulty']) {
+  if (difficulty === 'high') {
+    return '난이도 상: 20~30분 정도의 도전적인 할 일을 우선 만들고, 분명한 산출물이 남게 해.';
+  }
+
+  if (difficulty === 'low') {
+    return '난이도 하: 5~10분 정도의 부담 낮은 첫걸음을 우선 만들고, 시작 장벽을 낮춰.';
+  }
+
+  return '난이도 중: 10~20분 정도의 적당한 몰입이 필요한 할 일을 우선 만들어.';
 }

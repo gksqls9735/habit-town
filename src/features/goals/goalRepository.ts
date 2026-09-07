@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { DailyPlan, DailyTask, YearlyGoal } from './types';
+import { DailyPlan, DailyTask, GoalDifficulty, YearlyGoal } from './types';
 
 const databaseName = 'habit-town.db';
 const taskRefreshKey = 'hasUsedTaskRefresh';
@@ -11,6 +11,7 @@ type GoalPlannerData = {
 };
 
 type GoalRow = {
+  difficulty: string | null;
   id: string;
   title: string;
 };
@@ -43,7 +44,7 @@ let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
   const db = await getGoalDatabase();
   const [goalRows, planRows, taskRows, refreshRow] = await Promise.all([
-    db.getAllAsync<GoalRow>('SELECT id, title FROM goals ORDER BY created_at ASC'),
+    db.getAllAsync<GoalRow>('SELECT id, title, difficulty FROM goals ORDER BY created_at ASC'),
     db.getAllAsync<DailyPlanRow>(
       `SELECT id, goal_id, goal_title, title, generated_at, expires_at, round
        FROM daily_plans
@@ -95,6 +96,7 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
     })),
     hasUsedTaskRefresh: refreshRow?.value === 'true',
     yearlyGoals: goalRows.map((row) => ({
+      difficulty: getGoalDifficulty(row.difficulty),
       id: row.id,
       title: row.title,
     })),
@@ -112,9 +114,10 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
 
     for (const [index, goal] of data.yearlyGoals.entries()) {
       await db.runAsync(
-        'INSERT INTO goals (id, title, created_at) VALUES (?, ?, ?)',
+        'INSERT INTO goals (id, title, difficulty, created_at) VALUES (?, ?, ?, ?)',
         goal.id,
         goal.title,
+        goal.difficulty,
         index,
       );
     }
@@ -174,6 +177,7 @@ async function openGoalDatabase() {
     CREATE TABLE IF NOT EXISTS goals (
       id TEXT PRIMARY KEY NOT NULL,
       title TEXT NOT NULL,
+      difficulty TEXT NOT NULL DEFAULT 'medium',
       created_at INTEGER NOT NULL
     );
 
@@ -206,5 +210,24 @@ async function openGoalDatabase() {
     );
   `);
 
+  await ensureGoalDifficultyColumn(db);
+
   return db;
+}
+
+async function ensureGoalDifficultyColumn(db: SQLite.SQLiteDatabase) {
+  const columns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(goals)');
+  const hasDifficultyColumn = columns.some((column) => column.name === 'difficulty');
+
+  if (!hasDifficultyColumn) {
+    await db.execAsync("ALTER TABLE goals ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'medium'");
+  }
+}
+
+function getGoalDifficulty(value: string | null): GoalDifficulty {
+  if (value === 'high' || value === 'medium' || value === 'low') {
+    return value;
+  }
+
+  return 'medium';
 }

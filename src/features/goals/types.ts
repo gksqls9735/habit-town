@@ -1,4 +1,15 @@
+export type GoalDifficulty = 'low' | 'medium' | 'high';
+
+export const goalDifficultyLabels: Record<GoalDifficulty, string> = {
+  high: '상',
+  low: '하',
+  medium: '중',
+};
+
+export const goalDifficultyOptions: GoalDifficulty[] = ['high', 'medium', 'low'];
+
 export type YearlyGoal = {
+  difficulty: GoalDifficulty;
   id: string;
   title: string;
 };

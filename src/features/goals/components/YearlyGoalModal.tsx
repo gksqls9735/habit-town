@@ -11,14 +11,21 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { YearlyGoal } from '../types';
+import {
+  GoalDifficulty,
+  goalDifficultyLabels,
+  goalDifficultyOptions,
+  YearlyGoal,
+} from '../types';
 
 const pixelFontFamily = 'Galmuri11';
 
 type YearlyGoalModalProps = {
   errorMessage: string;
+  difficulty: GoalDifficulty;
   isGenerating: boolean;
   onChangeDraft: (value: string) => void;
+  onChangeDifficulty: (value: GoalDifficulty) => void;
   onClose: () => void;
   onSave: () => void;
   value: string;
@@ -29,7 +36,9 @@ type YearlyGoalModalProps = {
 
 export function YearlyGoalModal({
   errorMessage,
+  difficulty,
   isGenerating,
+  onChangeDifficulty,
   onChangeDraft,
   onClose,
   onSave,
@@ -61,11 +70,41 @@ export function YearlyGoalModal({
               >
                 {yearlyGoals.map((goal) => (
                   <Text key={goal.id} style={styles.goalListText}>
-                    - {goal.title}
+                    - [{goalDifficultyLabels[goal.difficulty]}] {goal.title}
                   </Text>
                 ))}
               </ScrollView>
             ) : null}
+            <Text style={styles.fieldLabel}>난이도</Text>
+            <View style={styles.difficultySegment}>
+              {goalDifficultyOptions.map((option) => {
+                const isSelected = difficulty === option;
+
+                return (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    disabled={isGenerating}
+                    key={option}
+                    onPress={() => onChangeDifficulty(option)}
+                    style={[
+                      styles.difficultyButton,
+                      isSelected ? styles.difficultyButtonSelected : null,
+                      isGenerating ? styles.disabledModalButton : null,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.difficultyButtonText,
+                        isSelected ? styles.difficultyButtonTextSelected : null,
+                      ]}
+                    >
+                      {goalDifficultyLabels[option]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
             <TextInput
               multiline
               onChangeText={onChangeDraft}
@@ -173,6 +212,46 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     marginTop: 3,
   },
+  fieldLabel: {
+    color: '#7a5947',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0,
+    marginTop: 14,
+  },
+  difficultySegment: {
+    backgroundColor: '#fff0cc',
+    borderColor: '#6b432f',
+    borderWidth: 2,
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 7,
+    padding: 5,
+  },
+  difficultyButton: {
+    alignItems: 'center',
+    backgroundColor: '#ead4ad',
+    borderColor: '#d7a36d',
+    borderWidth: 2,
+    flex: 1,
+    height: 36,
+    justifyContent: 'center',
+  },
+  difficultyButtonSelected: {
+    backgroundColor: '#b96335',
+    borderColor: '#6b321f',
+  },
+  difficultyButtonText: {
+    color: '#7a5947',
+    fontFamily: pixelFontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  difficultyButtonTextSelected: {
+    color: '#fff8ea',
+  },
   goalInput: {
     backgroundColor: '#fff0cc',
     borderColor: '#6b432f',
@@ -183,7 +262,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
     lineHeight: 19,
-    marginTop: 14,
+    marginTop: 12,
     minHeight: 104,
     padding: 10,
   },

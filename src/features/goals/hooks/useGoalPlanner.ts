@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { generateDailyTasksForGoal } from '../goalAiService';
 import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
-import { DailyPlan, YearlyGoal } from '../types';
+import { DailyPlan, GoalDifficulty, YearlyGoal } from '../types';
 import {
   canEditPlan,
   getExcludedTaskTitles,
@@ -17,6 +17,7 @@ export function useGoalPlanner() {
   const [isYearlyGoalOpen, setIsYearlyGoalOpen] = useState(false);
   const [yearlyGoals, setYearlyGoals] = useState<YearlyGoal[]>([]);
   const [yearlyGoalDraft, setYearlyGoalDraft] = useState('');
+  const [yearlyGoalDifficulty, setYearlyGoalDifficulty] = useState<GoalDifficulty>('medium');
   const [dailyPlans, setDailyPlans] = useState<DailyPlan[]>([]);
   const [expandedPlanIds, setExpandedPlanIds] = useState<string[]>([]);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
@@ -85,6 +86,7 @@ export function useGoalPlanner() {
 
   const openYearlyGoal = () => {
     setYearlyGoalDraft('');
+    setYearlyGoalDifficulty('medium');
     setIsYearlyGoalOpen(true);
   };
 
@@ -94,6 +96,7 @@ export function useGoalPlanner() {
 
   const openYearlyGoalFromTodayTasks = () => {
     setYearlyGoalDraft('');
+    setYearlyGoalDifficulty('medium');
     setIsTodayTasksOpen(false);
     setIsYearlyGoalOpen(true);
   };
@@ -164,6 +167,7 @@ export function useGoalPlanner() {
     }
 
     const nextGoal: YearlyGoal = {
+      difficulty: yearlyGoalDifficulty,
       id: `${Date.now()}`,
       title: cleanGoal,
     };
@@ -173,6 +177,7 @@ export function useGoalPlanner() {
     setYearlyGoals(nextYearlyGoals);
     setGoalError('');
     setYearlyGoalDraft('');
+    setYearlyGoalDifficulty('medium');
     setIsYearlyGoalOpen(false);
     setSelectedTaskGoalId(nextGoal.id);
     await generateDailyPlan([nextGoal], 'basic', nextYearlyGoals);
@@ -300,10 +305,12 @@ export function useGoalPlanner() {
     refreshOneIncompleteTaskForSelectedGoal,
     selectedTaskGoalId,
     setSelectedTaskGoalId,
+    setYearlyGoalDifficulty,
     setYearlyGoalDraft,
     togglePlanExpanded,
     toggleTask,
     yearlyGoalDraft,
+    yearlyGoalDifficulty,
     yearlyGoals,
   };
 }

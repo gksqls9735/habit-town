@@ -8,7 +8,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { DailyPlan, DailyTask, YearlyGoal } from '../types';
+import { DailyPlan, DailyTask, goalDifficultyLabels, YearlyGoal } from '../types';
 import { isPlanExpired } from '../utils';
 
 const pixelFontFamily = 'Galmuri11';
@@ -74,7 +74,7 @@ export function TodayTasksModal({
                 <Text style={styles.goalSummaryText}>
                   {showGoalList
                     ? '올해 목표를 선택해 할 일을 확인하세요.'
-                    : selectedGoal.title}
+                    : `[${goalDifficultyLabels[selectedGoal.difficulty]}] ${selectedGoal.title}`}
                 </Text>
               </View>
               <Pressable
@@ -241,9 +241,14 @@ function GoalTaskSummary({
         <Text numberOfLines={1} style={styles.goalSummaryTitle}>
           {goal.title}
         </Text>
-        <Text style={styles.goalSummaryCount}>
-          {completedTasks} / {totalTasks}
-        </Text>
+        <View style={styles.goalSummaryMeta}>
+          <Text style={styles.goalDifficultyBadge}>
+            {goalDifficultyLabels[goal.difficulty]}
+          </Text>
+          <Text style={styles.goalSummaryCount}>
+            {completedTasks} / {totalTasks}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -448,6 +453,24 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
     lineHeight: 17,
+  },
+  goalSummaryMeta: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  goalDifficultyBadge: {
+    backgroundColor: '#ead4ad',
+    borderColor: '#d7a36d',
+    borderWidth: 1,
+    color: '#7a5947',
+    fontFamily: pixelFontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0,
+    lineHeight: 15,
+    minWidth: 22,
+    textAlign: 'center',
   },
   planBlock: {
     backgroundColor: '#fff0cc',
