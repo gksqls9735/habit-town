@@ -1,4 +1,9 @@
 import { Image, ImageSourcePropType, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  experiencePerGrowthStage,
+  growthStageLabels,
+  RewardProgress,
+} from '../../../features/rewards/rewardSystem';
 
 const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
@@ -21,36 +26,38 @@ const actions = [
 const pixelStyle = Platform.OS === 'web'
   ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle) : undefined;
 
-/** Shows the selected pet with presentation-only experience and care meters. */
+/** Shows the selected pet with earned experience and presentation-only care meters. */
 export function PetStatusHud({
   petImage,
   petName,
-  stage,
+  progress,
 }: {
   petImage: ImageSourcePropType;
   petName: string;
-  stage: string;
+  progress: RewardProgress;
 }) {
+  const experiencePercent = progress.experience / experiencePerGrowthStage;
+
   return (
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.statusPanel}>
         <View style={styles.portraitColumn}>
           <View style={styles.ring} accessibilityRole="progressbar"
-            accessibilityLabel={`${petName} 경험치, 디자인 미리보기`} accessibilityValue={{ min: 0, max: 100, now: 65 }}>
+            accessibilityLabel={`${petName} 경험치`} accessibilityValue={{ min: 0, max: 100, now: Math.round(experiencePercent * 100) }}>
             {Array.from({ length: 64 }, (_, index) => {
               const angle = index / 64 * Math.PI * 2 - Math.PI / 2;
               return <View key={index} style={[styles.ringSegment, {
                 left: 33 + Math.cos(angle) * 31 - 1.5,
                 top: 33 + Math.sin(angle) * 31 - 1.5,
                 transform: [{ rotate: `${index / 64 * 360}deg` }],
-                backgroundColor: index < 42 ? '#8aab65' : '#e2d8bc',
+                backgroundColor: index < Math.round(experiencePercent * 64) ? '#8aab65' : '#e2d8bc',
               }]} />;
             })}
             <View style={styles.portrait}>
               <Image source={petImage} accessibilityLabel={`선택한 펫 ${petName}`} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
             </View>
           </View>
-          <Text style={styles.stageBadge}>{stage}</Text>
+          <Text style={styles.stageBadge}>{growthStageLabels[progress.stage]}</Text>
         </View>
         <View style={styles.meters}>
           {previewNeeds.map((need) => <View key={need.label} style={styles.meterRow}
@@ -63,9 +70,9 @@ export function PetStatusHud({
           </View>)}
         </View>
       </View>
-      <View style={styles.currency} accessibilityLabel="금색 재화 1,390">
+      <View style={styles.currency} accessibilityLabel={`금색 재화 ${progress.coins}`}>
         <View style={styles.coin}><View style={styles.coinCore} /></View>
-        <Text style={styles.currencyText}>1,390</Text>
+        <Text style={styles.currencyText}>{progress.coins.toLocaleString('ko-KR')}</Text>
       </View>
     </View>
   );

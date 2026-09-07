@@ -1,4 +1,10 @@
 import { useEffect, useState } from 'react';
+import {
+  applyTaskReward,
+  calculateTaskReward,
+  initialRewardProgress,
+  RewardProgress,
+} from '../../rewards/rewardSystem';
 import { generateDailyTasksForGoal } from '../goalAiService';
 import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
 import { DailyPlan, GoalDifficulty, YearlyGoal } from '../types';
@@ -24,6 +30,7 @@ export function useGoalPlanner() {
   const [goalError, setGoalError] = useState('');
   const [hasUsedTaskRefresh, setHasUsedTaskRefresh] = useState(false);
   const [isLoadingGoalData, setIsLoadingGoalData] = useState(true);
+  const [rewardProgress, setRewardProgress] = useState<RewardProgress>(initialRewardProgress);
   const [selectedTaskGoalId, setSelectedTaskGoalId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,6 +45,7 @@ export function useGoalPlanner() {
         setYearlyGoals(savedData.yearlyGoals);
         setDailyPlans(savedData.dailyPlans);
         setHasUsedTaskRefresh(savedData.hasUsedTaskRefresh);
+        setRewardProgress(savedData.rewardProgress);
       })
       .catch((error) => {
         const message =
@@ -62,10 +70,12 @@ export function useGoalPlanner() {
     nextYearlyGoals = yearlyGoals,
     nextDailyPlans = dailyPlans,
     nextHasUsedTaskRefresh = hasUsedTaskRefresh,
+    nextRewardProgress = rewardProgress,
   ) => {
     saveGoalPlannerData({
       dailyPlans: nextDailyPlans,
       hasUsedTaskRefresh: nextHasUsedTaskRefresh,
+      rewardProgress: nextRewardProgress,
       yearlyGoals: nextYearlyGoals,
     }).catch((error) => {
       const message =
@@ -262,20 +272,38 @@ export function useGoalPlanner() {
     if (!targetPlan || !canEditPlan(targetPlan) || isLoadingGoalData || isGeneratingPlan) {
       return;
     }
+    const targetTask = targetPlan.tasks.find((task) => task.id === taskId);
+    const targetGoal = yearlyGoals.find((goal) => goal.id === targetPlan.goalId);
+    if (!targetTask || !targetGoal) {
+      return;
+    }
+    const shouldGrantReward = !targetTask.done && targetTask.rewardGrantedAt === null;
+    const rewardGrantedAt = shouldGrantReward ? Date.now() : targetTask.rewardGrantedAt;
 
     const nextPlans = dailyPlans.map((plan) =>
         plan.id === planId
           ? {
               ...plan,
               tasks: plan.tasks.map((task) =>
-                task.id === taskId ? { ...task, done: !task.done } : task,
+                task.id === taskId
+                  ? { ...task, done: !task.done, rewardGrantedAt }
+                  : task,
               ),
             }
           : plan,
     );
+    const nextRewardProgress = shouldGrantReward
+      ? applyTaskReward(
+          rewardProgress,
+          calculateTaskReward(targetTask, targetGoal.difficulty),
+        )
+      : rewardProgress;
 
     setDailyPlans(nextPlans);
-    persistGoalPlannerData(yearlyGoals, nextPlans);
+    if (shouldGrantReward) {
+      setRewardProgress(nextRewardProgress);
+    }
+    persistGoalPlannerData(yearlyGoals, nextPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
 
   const togglePlanExpanded = (planId: string) => {
@@ -303,6 +331,7 @@ export function useGoalPlanner() {
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
     refreshOneIncompleteTaskForSelectedGoal,
+    rewardProgress,
     selectedTaskGoalId,
     setSelectedTaskGoalId,
     setYearlyGoalDifficulty,

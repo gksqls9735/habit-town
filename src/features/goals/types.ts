@@ -23,6 +23,7 @@ export type DailyTask = {
   estimatedMinutes: number;
   repeatable: boolean;
   done: boolean;
+  rewardGrantedAt: number | null;
 };
 
 export type DailyPlan = {

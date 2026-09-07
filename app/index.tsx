@@ -20,6 +20,7 @@ import { useGoalPlanner } from '../src/features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../src/features/goals/utils';
 import { CalendarModal } from '../src/features/calendar/components/CalendarModal';
 import { InventoryModal } from '../src/features/inventory/components/InventoryModal';
+import { GrowthStage } from '../src/features/rewards/rewardSystem';
 import { PetCareActions, PetStatusHud } from '../src/screens/home/components/PetCareOverlay';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
@@ -67,8 +68,6 @@ type RailMetrics = {
   iconSize: number;
   labelFontSize: number;
 };
-
-type GrowthStage = 'baby' | 'child' | 'teen' | 'adult';
 
 type PetDefinition = {
   id: 'cat' | 'hamster' | 'dog';
@@ -173,6 +172,7 @@ export default function HomeScreen() {
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
     refreshOneIncompleteTaskForSelectedGoal,
+    rewardProgress,
     selectedTaskGoalId,
     setSelectedTaskGoalId,
     setYearlyGoalDifficulty,
@@ -197,7 +197,7 @@ export default function HomeScreen() {
   const railTop = compactHeight ? 126 : Math.round(148 * roomScale);
   const sideInset = Math.max(6, Math.round(width * 0.02));
   const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
-  const currentStage: GrowthStage = 'baby';
+  const currentStage = rewardProgress.stage;
   const characterSize = Math.round(132 * roomScale);
   const characterBottom = Math.max(100, Math.round(height * (compactHeight ? 0.15 : 0.18)));
   const rightRailActions: RailAction[] = [
@@ -261,7 +261,11 @@ export default function HomeScreen() {
           </ImageBackground>
         </View>
 
-        <PetStatusHud petImage={activePet.stages[currentStage]} petName={activePet.name} stage={currentStage} />
+        <PetStatusHud
+          petImage={activePet.stages[currentStage]}
+          petName={activePet.name}
+          progress={rewardProgress}
+        />
         <PetCareActions />
 
         <View

@@ -1,12 +1,15 @@
 import * as SQLite from 'expo-sqlite';
+import { normalizeRewardProgress, RewardProgress } from '../rewards/rewardSystem';
 import { DailyPlan, DailyTask, GoalDifficulty, YearlyGoal } from './types';
 
 const databaseName = 'habit-town.db';
+const rewardProgressKey = 'rewardProgress';
 const taskRefreshKey = 'hasUsedTaskRefresh';
 
 type GoalPlannerData = {
   dailyPlans: DailyPlan[];
   hasUsedTaskRefresh: boolean;
+  rewardProgress: RewardProgress;
   yearlyGoals: YearlyGoal[];
 };
 
@@ -36,6 +39,7 @@ type DailyTaskRow = {
   plan_id: string;
   position: number;
   repeatable: number;
+  reward_granted_at: number | null;
   title: string;
 };
 
@@ -43,7 +47,7 @@ let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
   const db = await getGoalDatabase();
-  const [goalRows, planRows, taskRows, refreshRow] = await Promise.all([
+  const [goalRows, planRows, taskRows, refreshRow, rewardProgressRow] = await Promise.all([
     db.getAllAsync<GoalRow>('SELECT id, title, difficulty FROM goals ORDER BY created_at ASC'),
     db.getAllAsync<DailyPlanRow>(
       `SELECT id, goal_id, goal_title, title, generated_at, expires_at, round
@@ -52,13 +56,17 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
     ),
     db.getAllAsync<DailyTaskRow>(
       `SELECT id, plan_id, goal_id, goal_title, title, description,
-              estimated_minutes, repeatable, done, position
+              estimated_minutes, repeatable, done, reward_granted_at, position
        FROM daily_tasks
        ORDER BY position ASC`,
     ),
     db.getFirstAsync<{ value: string }>(
       'SELECT value FROM app_meta WHERE key = ?',
       taskRefreshKey,
+    ),
+    db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM app_meta WHERE key = ?',
+      rewardProgressKey,
     ),
   ]);
 
@@ -72,6 +80,7 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
         goalTitle: row.goal_title,
         id: row.id,
         repeatable: row.repeatable === 1,
+        rewardGrantedAt: row.reward_granted_at ?? (row.done === 1 ? 0 : null),
         title: row.title,
       };
 
@@ -95,6 +104,7 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
       title: row.title,
     })),
     hasUsedTaskRefresh: refreshRow?.value === 'true',
+    rewardProgress: parseRewardProgress(rewardProgressRow?.value),
     yearlyGoals: goalRows.map((row) => ({
       difficulty: getGoalDifficulty(row.difficulty),
       id: row.id,
@@ -110,7 +120,7 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
     await db.runAsync('DELETE FROM daily_tasks');
     await db.runAsync('DELETE FROM daily_plans');
     await db.runAsync('DELETE FROM goals');
-    await db.runAsync('DELETE FROM app_meta WHERE key = ?', taskRefreshKey);
+    await db.runAsync('DELETE FROM app_meta WHERE key IN (?, ?)', taskRefreshKey, rewardProgressKey);
 
     for (const [index, goal] of data.yearlyGoals.entries()) {
       await db.runAsync(
@@ -140,8 +150,8 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
         await db.runAsync(
           `INSERT INTO daily_tasks
             (id, plan_id, goal_id, goal_title, title, description,
-             estimated_minutes, repeatable, done, position)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             estimated_minutes, repeatable, done, reward_granted_at, position)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           task.id,
           plan.id,
           task.goalId,
@@ -151,6 +161,7 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
           task.estimatedMinutes,
           task.repeatable ? 1 : 0,
           task.done ? 1 : 0,
+          task.rewardGrantedAt,
           position,
         );
       }
@@ -160,6 +171,11 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
       'INSERT INTO app_meta (key, value) VALUES (?, ?)',
       taskRefreshKey,
       data.hasUsedTaskRefresh ? 'true' : 'false',
+    );
+    await db.runAsync(
+      'INSERT INTO app_meta (key, value) VALUES (?, ?)',
+      rewardProgressKey,
+      JSON.stringify(data.rewardProgress),
     );
   });
 }
@@ -201,6 +217,7 @@ async function openGoalDatabase() {
       estimated_minutes INTEGER NOT NULL,
       repeatable INTEGER NOT NULL,
       done INTEGER NOT NULL,
+      reward_granted_at INTEGER,
       position INTEGER NOT NULL
     );
 
@@ -211,6 +228,7 @@ async function openGoalDatabase() {
   `);
 
   await ensureGoalDifficultyColumn(db);
+  await ensureTaskRewardGrantedAtColumn(db);
 
   return db;
 }
@@ -224,10 +242,33 @@ async function ensureGoalDifficultyColumn(db: SQLite.SQLiteDatabase) {
   }
 }
 
+async function ensureTaskRewardGrantedAtColumn(db: SQLite.SQLiteDatabase) {
+  const columns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(daily_tasks)');
+  const hasRewardGrantedAtColumn = columns.some(
+    (column) => column.name === 'reward_granted_at',
+  );
+
+  if (!hasRewardGrantedAtColumn) {
+    await db.execAsync('ALTER TABLE daily_tasks ADD COLUMN reward_granted_at INTEGER');
+  }
+}
+
 function getGoalDifficulty(value: string | null): GoalDifficulty {
   if (value === 'high' || value === 'medium' || value === 'low') {
     return value;
   }
 
   return 'medium';
+}
+
+function parseRewardProgress(value?: string) {
+  if (!value) {
+    return normalizeRewardProgress(null);
+  }
+
+  try {
+    return normalizeRewardProgress(JSON.parse(value));
+  } catch {
+    return normalizeRewardProgress(null);
+  }
 }

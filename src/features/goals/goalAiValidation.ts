@@ -58,6 +58,7 @@ export function parseDailyTasks(
       goalId: goal.id, goalTitle: goal.title,
       title: task.title.trim(), description: task.description.trim(),
       estimatedMinutes: task.estimatedMinutes, repeatable: task.repeatable, done: false,
+      rewardGrantedAt: null,
     };
   });
 }

@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { calculateTaskReward } from '../../rewards/rewardSystem';
 import { DailyPlan, DailyTask, goalDifficultyLabels, YearlyGoal } from '../types';
 import { isPlanExpired } from '../utils';
 
@@ -198,6 +199,7 @@ export function TodayTasksModal({
                       ? plan.tasks.map((task) => (
                           <TaskRow
                             disabled={isPlanExpired(plan)}
+                            goalDifficulty={selectedGoal.difficulty}
                             key={task.id}
                             onPress={() => onToggleTask(plan.id, task.id)}
                             task={task}
@@ -256,13 +258,17 @@ function GoalTaskSummary({
 
 function TaskRow({
   disabled,
+  goalDifficulty,
   onPress,
   task,
 }: {
   disabled: boolean;
+  goalDifficulty: YearlyGoal['difficulty'];
   onPress: () => void;
   task: DailyTask;
 }) {
+  const reward = calculateTaskReward(task, goalDifficulty);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -280,6 +286,9 @@ function TaskRow({
       <View style={styles.taskTextWrap}>
         <Text style={styles.taskGoalText}>{task.goalTitle}</Text>
         <Text style={styles.taskTitleText}>{task.title}</Text>
+        <Text style={styles.taskRewardText}>
+          +{reward.experience} EXP · +{reward.coins} 골드
+        </Text>
         <Text style={styles.taskDescriptionText}>{task.description}</Text>
         {disabled ? <Text style={styles.expiredText}>기한이 지나 완료할 수 없어요.</Text> : null}
       </View>
@@ -547,6 +556,15 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
     lineHeight: 17,
+  },
+  taskRewardText: {
+    color: '#9a6b36',
+    fontFamily: pixelFontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0,
+    lineHeight: 14,
+    marginTop: 4,
   },
   taskDescriptionText: {
     color: '#7a5947',
