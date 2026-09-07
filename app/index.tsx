@@ -254,7 +254,7 @@ export default function HomeScreen() {
           </ImageBackground>
         </View>
 
-        <PetStatusHud petImage={activePet.stages[currentStage]} petName={activePet.name} />
+        <PetStatusHud petImage={activePet.stages[currentStage]} petName={activePet.name} stage={currentStage} />
         <PetCareActions />
 
         <View

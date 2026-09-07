@@ -15,7 +15,15 @@ const pixelStyle = Platform.OS === 'web'
   ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle) : undefined;
 
 /** Shows the selected pet with presentation-only experience and care meters. */
-export function PetStatusHud({ petImage, petName }: { petImage: ImageSourcePropType; petName: string }) {
+export function PetStatusHud({
+  petImage,
+  petName,
+  stage,
+}: {
+  petImage: ImageSourcePropType;
+  petName: string;
+  stage: string;
+}) {
   return (
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.statusPanel}>
@@ -35,7 +43,7 @@ export function PetStatusHud({ petImage, petName }: { petImage: ImageSourcePropT
               <Image source={petImage} accessibilityLabel={`선택한 펫 ${petName}`} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
             </View>
           </View>
-          <Text style={styles.level}>LV. 7</Text>
+          <Text style={styles.stageBadge}>{stage}</Text>
         </View>
         <View style={styles.meters}>
           {previewNeeds.map((need) => <View key={need.label} style={styles.meterRow}
@@ -74,13 +82,13 @@ export function PetCareActions() {
 
 const styles = StyleSheet.create({
   top: { position: 'absolute', top: 10, left: 10, right: 10, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, zIndex: 10 },
-  statusPanel: { flex: 1, maxWidth: 390, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, backgroundColor: '#fff0cd', borderWidth: 3, borderColor: '#624936', borderBottomWidth: 5 },
+  statusPanel: { width: '50%', maxWidth: 390, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   portraitColumn: { alignItems: 'center', width: 68, paddingBottom: 6 },
   ring: { width: 68, height: 68, borderRadius: 34, borderWidth: 1, borderColor: '#624936', backgroundColor: '#e2d8bc' },
   ringSegment: { position: 'absolute', width: 3, height: 3 },
   portrait: { position: 'absolute', left: 4, top: 4, width: 58, height: 58, borderRadius: 29, borderWidth: 1, borderColor: '#624936', backgroundColor: '#fffaf0', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  petImage: { width: 86, height: 86, flexShrink: 0, transform: [{ translateY: 11 }] },
-  level: { position: 'absolute', bottom: 0, zIndex: 1, fontFamily, fontSize: 9, color: '#624936', backgroundColor: '#fff0cd', borderColor: '#795c43', borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },
+  petImage: { width: 86, height: 86, flexShrink: 0, transform: [{ translateX: 3 }, { translateY: 11 }] },
+  stageBadge: { position: 'absolute', bottom: 0, zIndex: 1, fontFamily, fontSize: 9, color: '#624936', backgroundColor: '#fff0cd', borderColor: '#795c43', borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },
   meters: { flex: 1, minWidth: 0, gap: 8 },
   meterRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   meterLabel: { fontFamily, fontSize: 11, color: '#624936', width: 14 },
