@@ -4,11 +4,14 @@ const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
 const feedBowlFullIcon = require('../../../../assets/ui/action/feed-action-object-icon.png');
 const playBallIcon = require('../../../../assets/ui/action/play-action-object-icon.png');
+const cleanlinessBubblesIcon = require('../../../../assets/ui/needs/cleanliness/raw/cleanliness-bubbles-icon.png');
+const hungerBoltIcon = require('../../../../assets/ui/needs/hunger/raw/hunger-bolt-icon.png');
+const lonelinessHeartBubbleIcon = require('../../../../assets/ui/needs/loneliness/raw/loneliness-heart-bubble-icon.png');
 
 const previewNeeds = [
-  { label: '청', name: '청결도', value: 0.8, color: '#8fbcc0' },
-  { label: '굶', name: '굶주림', value: 0.45, color: '#dfb471' },
-  { label: '외', name: '외로움', value: 0.3, color: '#e7a28f' },
+  { label: '청', name: '청결도', value: 0.8, color: '#8fbcc0', icon: cleanlinessBubblesIcon },
+  { label: '굶', name: '굶주림', value: 0.45, color: '#dfb471', icon: hungerBoltIcon },
+  { label: '외', name: '외로움', value: 0.3, color: '#e7a28f', icon: lonelinessHeartBubbleIcon },
 ];
 const actions = [
   { label: '청소하기', color: '#d9ebea', icon: cleanBrushIcon },
@@ -53,7 +56,7 @@ export function PetStatusHud({
           {previewNeeds.map((need) => <View key={need.label} style={styles.meterRow}
             accessibilityRole="progressbar" accessibilityLabel={`${need.name}, 디자인 미리보기`}
             accessibilityValue={{ min: 0, max: 100, now: need.value * 100 }}>
-            <Text style={styles.meterLabel}>{need.label}</Text>
+            <Image source={need.icon} resizeMode="contain" style={styles.meterIcon} />
             <View style={styles.track}><View style={[styles.fill, { width: `${need.value * 100}%`, backgroundColor: need.color }]}>
               <View style={styles.highlight} />
             </View></View>
@@ -99,7 +102,7 @@ const styles = StyleSheet.create({
   stageBadge: { position: 'absolute', bottom: 0, zIndex: 1, fontFamily, fontSize: 9, color: '#624936', backgroundColor: '#fff0cd', borderColor: '#795c43', borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },
   meters: { flex: 1, minWidth: 0, gap: 8 },
   meterRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  meterLabel: { fontFamily, fontSize: 11, color: '#624936', width: 14 },
+  meterIcon: { width: 14, height: 14 },
   track: { flex: 1, height: 14, borderWidth: 1, borderColor: '#795c43', backgroundColor: '#fffaf0', padding: 2 },
   fill: { height: '100%' },
   highlight: { height: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
