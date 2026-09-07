@@ -73,8 +73,8 @@ export function PetCareActions() {
 }
 
 const styles = StyleSheet.create({
-  top: { position: 'absolute', top: 10, left: 10, right: 10, flexDirection: 'row', alignItems: 'flex-start', gap: 8, zIndex: 10, maxWidth: 480, alignSelf: 'center' },
-  statusPanel: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, backgroundColor: '#fff0cd', borderWidth: 3, borderColor: '#624936', borderBottomWidth: 5 },
+  top: { position: 'absolute', top: 10, left: 10, right: 10, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, zIndex: 10 },
+  statusPanel: { flex: 1, maxWidth: 390, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, backgroundColor: '#fff0cd', borderWidth: 3, borderColor: '#624936', borderBottomWidth: 5 },
   portraitColumn: { alignItems: 'center', width: 68, paddingBottom: 6 },
   ring: { width: 68, height: 68, borderRadius: 34, borderWidth: 1, borderColor: '#624936', backgroundColor: '#e2d8bc' },
   ringSegment: { position: 'absolute', width: 3, height: 3 },
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   track: { flex: 1, height: 14, borderWidth: 1, borderColor: '#795c43', backgroundColor: '#fffaf0', padding: 2 },
   fill: { height: '100%' },
   highlight: { height: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
-  currency: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 7, height: 34, backgroundColor: '#a3907a', borderWidth: 2, borderColor: '#624936', marginTop: 4 },
+  currency: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 7, height: 34, backgroundColor: '#a3907a', borderWidth: 2, borderColor: '#624936', marginTop: 4 },
   currencyText: { fontFamily, fontSize: 11, color: '#fff8ea' },
   coin: { width: 15, height: 17, borderWidth: 2, borderColor: '#8f582c', backgroundColor: '#efc76d', padding: 2 },
   coinCore: { flex: 1, backgroundColor: '#bd813b' },
