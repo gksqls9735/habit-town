@@ -17,6 +17,7 @@ import { PetCareActions, PetStatusHud } from './components/PetCareOverlay';
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
 import { PetRoomPopup } from './components/PetRoomPopup';
+import { RewardDeliveryEvent } from './components/RewardDeliveryEvent';
 import { StaticPet } from './components/StaticPet';
 import { leftActions, pets, rightActions } from './homeData';
 import { clamp, isLocalhostDevWeb } from './homeUtils';
@@ -63,6 +64,7 @@ export function HomeScreen() {
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isLocalDevMenuOpen, setIsLocalDevMenuOpen] = useState(false);
+  const [rewardDeliveryEventKey, setRewardDeliveryEventKey] = useState(0);
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
   const goalPlanner = useGoalPlanner();
   const {
@@ -146,6 +148,11 @@ export function HomeScreen() {
 
     return action;
   });
+  const handleLocalDevAction = (label: string) => {
+    if (label === '보상') {
+      setRewardDeliveryEventKey((current) => current + 1);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -181,9 +188,17 @@ export function HomeScreen() {
         {showLocalDevButton ? (
           <LocalDevControls
             isOpen={isLocalDevMenuOpen}
+            onAction={handleLocalDevAction}
             onToggle={() => setIsLocalDevMenuOpen((current) => !current)}
           />
         ) : null}
+
+        <RewardDeliveryEvent
+          bottom={characterBottom}
+          eventKey={rewardDeliveryEventKey}
+          height={height}
+          width={width}
+        />
 
         <HomeActionRail
           actions={leftRailActions}

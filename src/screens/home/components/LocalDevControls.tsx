@@ -5,10 +5,15 @@ const pixelFontFamily = 'Galmuri11';
 
 type LocalDevControlsProps = {
   isOpen: boolean;
+  onAction: (label: string) => void;
   onToggle: () => void;
 };
 
-export function LocalDevControls({ isOpen, onToggle }: LocalDevControlsProps) {
+export function LocalDevControls({
+  isOpen,
+  onAction,
+  onToggle,
+}: LocalDevControlsProps) {
   return (
     <View style={styles.localDevControls}>
       {isOpen ? (
@@ -17,7 +22,7 @@ export function LocalDevControls({ isOpen, onToggle }: LocalDevControlsProps) {
             <Pressable
               accessibilityRole="button"
               key={label}
-              onPress={() => undefined}
+              onPress={() => onAction(label)}
               style={styles.localDevMenuButton}
             >
               <Text style={styles.localDevMenuButtonText}>{label}</Text>
