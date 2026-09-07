@@ -4,9 +4,9 @@ const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
 const feedBowlFullIcon = require('../../../../assets/ui/action/feed-action-object-icon.png');
 const playBallIcon = require('../../../../assets/ui/action/play-action-object-icon.png');
-const cleanlinessBubblesIcon = require('../../../../assets/ui/needs/cleanliness/raw/cleanliness-bubbles-icon.png');
-const hungerBoltIcon = require('../../../../assets/ui/needs/hunger/raw/hunger-bolt-icon.png');
-const lonelinessHeartBubbleIcon = require('../../../../assets/ui/needs/loneliness/raw/loneliness-heart-bubble-icon.png');
+const cleanlinessBubblesIcon = require('../../../../assets/ui/needs/cleanliness-bubbles-icon.png');
+const hungerBoltIcon = require('../../../../assets/ui/needs/hunger-bolt-icon.png');
+const lonelinessHeartBubbleIcon = require('../../../../assets/ui/needs/loneliness-heart-bubble-icon.png');
 
 const previewNeeds = [
   { label: '청', name: '청결도', value: 0.8, color: '#8fbcc0', icon: cleanlinessBubblesIcon },
