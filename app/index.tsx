@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  Animated,
-  Easing,
   Image,
   ImageBackground,
   ImageStyle,
@@ -25,29 +23,35 @@ import { InventoryModal } from '../src/features/inventory/components/InventoryMo
 import { PetCareActions, PetStatusHud } from '../src/screens/home/components/PetCareOverlay';
 
 const roomBackgroundImage = require('../assets/rooms/basic-room-background.png');
-const catBabyRollFrames = [
-  require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-0.png'),
-  require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-1.png'),
-  require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-2.png'),
-  require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-3.png'),
-];
-const hamsterBabyRollSpritesheet = require(
-  '../assets/pets/animations/applied/hamster/roll/hamster-baby-roll-spritesheet.png',
-);
-const catBabyWalkSpritesheet = require(
-  '../assets/pets/animations/applied/cat/walk/cat-baby-walk-spritesheet.png',
-);
-const hamsterBabyWalkSpritesheet = require(
-  '../assets/pets/animations/clean/hamster-baby-walk-spritesheet.png',
-);
-const dogBabyWalkSpritesheet = require(
-  '../assets/pets/animations/clean/dog-baby-walk-spritesheet.png',
-);
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
     : null;
+
+/*
+ * Animation assets are temporarily disabled. Keep these requires here so the
+ * pet animations can be restored without hunting down asset paths later.
+ *
+ * const catBabyRollFrames = [
+ *   require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-0.png'),
+ *   require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-1.png'),
+ *   require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-2.png'),
+ *   require('../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-3.png'),
+ * ];
+ * const hamsterBabyRollSpritesheet = require(
+ *   '../assets/pets/animations/applied/hamster/roll/hamster-baby-roll-spritesheet.png',
+ * );
+ * const catBabyWalkSpritesheet = require(
+ *   '../assets/pets/animations/applied/cat/walk/cat-baby-walk-spritesheet.png',
+ * );
+ * const hamsterBabyWalkSpritesheet = require(
+ *   '../assets/pets/animations/clean/hamster-baby-walk-spritesheet.png',
+ * );
+ * const dogBabyWalkSpritesheet = require(
+ *   '../assets/pets/animations/clean/dog-baby-walk-spritesheet.png',
+ * );
+ */
 
 type RailAction = {
   badge?: string;
@@ -73,6 +77,7 @@ type PetDefinition = {
   stages: Record<GrowthStage, ImageSourcePropType>;
 };
 
+/*
 type PetAnimationKind = 'idle' | 'roll' | 'walk';
 
 type PetAnimationState = {
@@ -80,6 +85,7 @@ type PetAnimationState = {
   frame: number;
   kind: PetAnimationKind;
 };
+*/
 
 const leftActions: RailAction[] = [
   {
@@ -241,8 +247,7 @@ export default function HomeScreen() {
             style={styles.roomBackground}
           >
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
-              <AnimatedPet
-                movementRange={Math.round(Math.min(width * 0.24, 104) * roomScale)}
+              <StaticPet
                 pet={activePet}
                 stage={currentStage}
                 size={characterSize}
@@ -341,6 +346,53 @@ export default function HomeScreen() {
   );
 }
 
+function StaticPet({
+  pet,
+  stage,
+  size,
+}: {
+  pet: PetDefinition;
+  stage: GrowthStage;
+  size: number;
+}) {
+  const petSource = pet.stages[stage];
+
+  return (
+    <View
+      style={[
+        styles.staticPetWrap,
+        {
+          height: size,
+          width: size,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.characterShadow,
+          {
+            top: Math.round(size * 0.76),
+            width: Math.round(size * 0.9),
+          },
+        ]}
+      />
+      <Image
+        accessibilityIgnoresInvertColors
+        source={petSource}
+        style={[
+          styles.activePetSprite,
+          pixelatedImageStyle,
+          {
+            height: size,
+            width: size,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+/*
 function AnimatedPet({
   movementRange,
   pet,
@@ -585,14 +637,17 @@ function AnimatedPet({
     </Animated.View>
   );
 }
+*/
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+/*
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
+*/
 
 
 function CurrencyPill({
@@ -1020,6 +1075,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
   },
+  staticPetWrap: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    position: 'relative',
+  },
+  /*
   animatedPetWrap: {
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -1029,6 +1090,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
+  */
   characterShadow: {
     backgroundColor: '#73504b',
     height: 18,
@@ -1038,6 +1100,7 @@ const styles = StyleSheet.create({
   activePetSprite: {
     resizeMode: 'contain',
   },
+  /*
   spriteViewport: {
     alignItems: 'flex-start',
     justifyContent: 'center',
@@ -1046,6 +1109,7 @@ const styles = StyleSheet.create({
   petSpritesheet: {
     resizeMode: 'stretch',
   },
+  */
   roomNameTag: {
     alignItems: 'center',
     backgroundColor: '#fff2d8',
