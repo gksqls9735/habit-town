@@ -34,10 +34,10 @@ export const pets: PetDefinition[] = [
     name: '고양이',
     roomName: '고양이 방',
     stages: {
-      adult: require('../../../assets/pets/cat-adult.png'),
-      baby: require('../../../assets/pets/cat-baby.png'),
-      child: require('../../../assets/pets/cat-child.png'),
-      teen: require('../../../assets/pets/cat-teen.png'),
+      adult: require('../../../assets/png/animals/cat-adult.png'),
+      baby: require('../../../assets/png/animals/cat-baby.png'),
+      child: require('../../../assets/png/animals/cat-child.png'),
+      teen: require('../../../assets/png/animals/cat-teen.png'),
     },
   },
   {
@@ -45,10 +45,10 @@ export const pets: PetDefinition[] = [
     name: '햄스터',
     roomName: '햄스터 방',
     stages: {
-      adult: require('../../../assets/pets/hamster-adult.png'),
-      baby: require('../../../assets/pets/hamster-baby.png'),
-      child: require('../../../assets/pets/hamster-child.png'),
-      teen: require('../../../assets/pets/hamster-teen.png'),
+      adult: require('../../../assets/png/animals/hamster-adult.png'),
+      baby: require('../../../assets/png/animals/hamster-baby.png'),
+      child: require('../../../assets/png/animals/hamster-child.png'),
+      teen: require('../../../assets/png/animals/hamster-teen.png'),
     },
   },
   {
@@ -56,10 +56,10 @@ export const pets: PetDefinition[] = [
     name: '강아지',
     roomName: '강아지 방',
     stages: {
-      adult: require('../../../assets/pets/dog-adult.png'),
-      baby: require('../../../assets/pets/dog-baby.png'),
-      child: require('../../../assets/pets/dog-child.png'),
-      teen: require('../../../assets/pets/dog-teen.png'),
+      adult: require('../../../assets/png/animals/dog-adult.png'),
+      baby: require('../../../assets/png/animals/dog-baby.png'),
+      child: require('../../../assets/png/animals/dog-child.png'),
+      teen: require('../../../assets/png/animals/dog-teen.png'),
     },
   },
 ];

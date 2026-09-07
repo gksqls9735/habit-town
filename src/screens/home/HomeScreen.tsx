@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  ImageBackground,
+  Image,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -13,6 +13,7 @@ import { useGoalPlanner } from '../../features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
 import { InventoryModal } from '../../features/inventory/components/InventoryModal';
+import { ShopModal } from '../../features/shop/components/ShopModal';
 import { PetCareActions, PetStatusHud } from './components/PetCareOverlay';
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
@@ -23,29 +24,30 @@ import { leftActions, pets, rightActions } from './homeData';
 import { clamp, isLocalhostDevWeb } from './homeUtils';
 import { GrowthStage, PetDefinition, RailAction, RailMetrics } from './types';
 
-const roomBackgroundImage = require('../../../assets/rooms/basic-room-background.png');
+const roomWallpaperImage = require('../../../assets/png/backgrounds/basic-room-wallpaper.png');
+const roomFloorImage = require('../../../assets/png/backgrounds/basic-room-floor.png');
 const pixelFontFamily = 'Galmuri11';
 /*
  * Animation assets are temporarily disabled. Keep these requires here so the
  * pet animations can be restored without hunting down asset paths later.
  *
  * const catBabyRollFrames = [
- *   require('../../../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-0.png'),
- *   require('../../../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-1.png'),
- *   require('../../../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-2.png'),
- *   require('../../../assets/pets/animations/applied/cat/roll/cat-baby-roll-frame-3.png'),
+ *   require('../../../assets/png/animals/animations/applied/cat/roll/cat-baby-roll-frame-0.png'),
+ *   require('../../../assets/png/animals/animations/applied/cat/roll/cat-baby-roll-frame-1.png'),
+ *   require('../../../assets/png/animals/animations/applied/cat/roll/cat-baby-roll-frame-2.png'),
+ *   require('../../../assets/png/animals/animations/applied/cat/roll/cat-baby-roll-frame-3.png'),
  * ];
  * const hamsterBabyRollSpritesheet = require(
- *   '../../../assets/pets/animations/applied/hamster/roll/hamster-baby-roll-spritesheet.png',
+ *   '../../../assets/png/animals/animations/applied/hamster/roll/hamster-baby-roll-spritesheet.png',
  * );
  * const catBabyWalkSpritesheet = require(
- *   '../../../assets/pets/animations/applied/cat/walk/cat-baby-walk-spritesheet.png',
+ *   '../../../assets/png/animals/animations/applied/cat/walk/cat-baby-walk-spritesheet.png',
  * );
  * const hamsterBabyWalkSpritesheet = require(
- *   '../../../assets/pets/animations/clean/hamster-baby-walk-spritesheet.png',
+ *   '../../../assets/png/animals/animations/clean/hamster-baby-walk-spritesheet.png',
  * );
  * const dogBabyWalkSpritesheet = require(
- *   '../../../assets/pets/animations/clean/dog-baby-walk-spritesheet.png',
+ *   '../../../assets/png/animals/animations/clean/dog-baby-walk-spritesheet.png',
  * );
  */
 
@@ -63,6 +65,8 @@ export function HomeScreen() {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false);
+  const [coins, setCoins] = useState(1390);
   const [isLocalDevMenuOpen, setIsLocalDevMenuOpen] = useState(false);
   const [rewardDeliveryEventKey, setRewardDeliveryEventKey] = useState(0);
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
@@ -146,6 +150,10 @@ export function HomeScreen() {
       return { ...action, onPress: () => setIsCalendarOpen(true) };
     }
 
+    if (action.label === '상점') {
+      return { ...action, onPress: () => setIsShopOpen(true) };
+    }
+
     return action;
   });
   const handleLocalDevAction = (label: string) => {
@@ -158,13 +166,19 @@ export function HomeScreen() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.shell}>
         <View style={styles.room}>
-          <ImageBackground
-            accessibilityIgnoresInvertColors
-            imageStyle={styles.roomBackgroundImage}
-            resizeMode="cover"
-            source={roomBackgroundImage}
-            style={styles.roomBackground}
-          >
+          <View accessibilityIgnoresInvertColors style={styles.roomBackground}>
+            <Image
+              accessibilityIgnoresInvertColors
+              resizeMode="stretch"
+              source={roomWallpaperImage}
+              style={styles.roomWallpaperImage}
+            />
+            <Image
+              accessibilityIgnoresInvertColors
+              resizeMode="stretch"
+              source={roomFloorImage}
+              style={styles.roomFloorImage}
+            />
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
               <StaticPet
                 pet={activePet}
@@ -175,7 +189,7 @@ export function HomeScreen() {
                 <Text style={styles.roomNameText}>{activePet.roomName}</Text>
               </View>
             </View>
-          </ImageBackground>
+          </View>
         </View>
 
         <PetStatusHud
@@ -231,6 +245,17 @@ export function HomeScreen() {
           onClose={() => setIsInventoryOpen(false)}
           visible={isInventoryOpen}
           width={popupWidth}
+        />
+
+        <ShopModal
+          coinBalance={coins}
+          onClose={() => setIsShopOpen(false)}
+          onPurchase={(price) => {
+            if (coins < price) return false;
+            setCoins((current) => current - price);
+            return true;
+          }}
+          visible={isShopOpen}
         />
 
         {isCalendarOpen ? <CalendarModal
@@ -554,9 +579,22 @@ const styles = StyleSheet.create({
   },
   roomBackground: {
     flex: 1,
+    position: 'relative',
   },
-  roomBackgroundImage: {
-    height: '100%',
+  roomWallpaperImage: {
+    height: '72%',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: '100%',
+  },
+  roomFloorImage: {
+    bottom: 0,
+    height: '28%',
+    left: 0,
+    position: 'absolute',
+    right: 0,
     width: '100%',
   },
   characterStage: {
