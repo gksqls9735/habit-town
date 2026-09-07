@@ -2,6 +2,12 @@
 
 Read this reference only when creating animation frames or sprite sheets.
 
+## User Requirements Priority
+
+- Treat explicit user requirements for animation edits as the primary acceptance criteria. Apply those requirements before default harness preferences, recommended timing ranges, cleanup behavior, palette normalization, or stylistic defaults.
+- When a user requirement conflicts with an automated harness result, revise the source or processed frames manually as needed, then verify the result against the user's requirement instead of accepting the harness output unchanged.
+- Preserve the harness's mechanical checks where they still support the request, but document any intentional deviation from the default rules in the work report.
+
 ## Source Sheet Contract
 
 - Generate one PNG containing equal-size cells with no gutters, labels, borders, guide lines, or frame numbers.
@@ -13,7 +19,7 @@ Read this reference only when creating animation frames or sprite sheets.
 - Keep one fixed orthographic 2D view across every frame. Never rotate, tilt, zoom, or orbit the camera during an animation.
 - Leave enough empty space for moving ears, tails, weapons, splashes, particles, and anticipation poses.
 - Describe distinct key poses in the generation prompt. Do not ask only for several nearly identical copies.
-- Do not leave white, cream, or pale gray halo pixels on the transparent silhouette edge. Bright edge pixels must either belong to the character's intentional interior fur/highlight area or be removed or replaced with the sprite's dark outline color by the harness.
+- Do not leave white, cream, pale gray, or neutral-gray outline fringe pixels on the transparent silhouette edge. Bright edge pixels must either belong to the character's intentional interior fur/highlight area or be removed or replaced with the sprite's dark outline color by the harness.
 
 ## Source Character Size Contract
 
@@ -44,6 +50,7 @@ Use this contract for every animation derived from an accepted pet sprite.
 - Keep near-side and far-side limbs semantically stable throughout the cycle. A raised opposite paw must be a new pose in the same view, not a horizontally mirrored body or a rear leg substituted for a front paw.
 - Preserve the original outline palette. Reuse the source pet's exact black, charcoal, cocoa, or other deep outline colors; do not introduce pure black when the source uses a tinted dark color, and do not lighten a black outline into fur shading.
 - Preserve outline topology at the native pixel grid: thickness, connected contour runs, stepped diagonals, intentional corner pixels, and the separation between overlapping body parts. Reject gaps, spikes, isolated dark pixels, doubled contour rows, softened diagonals, or transparent pinholes.
+- When a processed sheet has excessive black contour pixels touching the external transparent background, lower only those external-edge contour pixels toward the source pet's outline palette. Remove messy outline burrs, spurs, and unsupported protruding edge pixels while preserving interior eye, mouth, fur, and limb-detail pixels.
 - When changing a paw, ear, tail, or body segment, rebuild the exposed silhouette with source pixels from the nearest matching contour. Do not paint over the contour with interior fur colors or use antialiasing, blur, feathering, subpixel transforms, or noninteger scaling.
 - `--preserve-source-palette` protects colors but does not prove that the outline shape is intact. Native-size visual comparison against the original pet remains mandatory after the harness runs.
 - Alpha and halo checks are separate from outline integrity. A frame with binary alpha can still fail when its dark contour is broken, uneven, or inconsistent with the original pet.
@@ -103,7 +110,8 @@ The raw sheet dimensions must divide evenly into the requested columns and calcu
 - Flip rapidly between adjacent frames to detect outline crawl, palette flicker, volume changes, and anchor jitter.
 - Compare frame 0 and every following frame side by side. Confirm that head, torso, hips, limb depth order, and tail base retain one facing direction; reject a single reversed body part or mirrored frame.
 - Overlay each frame with the original pet at native scale and inspect the full silhouette. Confirm that the source outline colors, contour thickness, stepped clusters, and limb-separation pixels remain connected and deliberate.
-- Check the transparent silhouette edge for white, cream, or pale gray halos. The harness records `edge_halo_cleanup` with removed and darkened edge pixels; treat a visible remaining halo as a blocker even when alpha and grid checks pass.
+- Check the transparent silhouette edge for white, cream, pale gray, or neutral-gray outline fringe pixels. The harness records `edge_halo_cleanup` with removed and darkened edge pixels; treat any visible remaining light fringe as a blocker even when alpha and grid checks pass.
+- Check external-background-touching black contour pixels against the source pet's outline palette. Treat heavy black edge buildup, noisy burrs, unsupported protrusions, and sticker-like contour edges as blockers; fix only the external edge unless the user's request explicitly asks for interior line edits.
 - Compare the animation frames against the idle/source character and the accepted walk cycle at the real app display size. The pet should keep a similar visual footprint while changing pose.
 - Check the harness manifest's visible bounds, size ratios, `size_scale`, and recommended runtime scale. Treat low ratios as a blocker unless `--scale-to-reference` was applied successfully or the app integration intentionally applies a matching per-frame display scale.
 - Confirm every frame uses the same recorded 2D view with no perspective or camera drift.

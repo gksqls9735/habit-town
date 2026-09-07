@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 
 const deliveryTruckImage = require('../../../../assets/event/animal-rescue-reward-truck.png');
-const deliveryParcelImage = require('../../../../assets/event/reward-parcel-box.png');
+const deliveryParcelImage = require('../../../../assets/event/animal-rescue-reward-gift-box.png');
 const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
