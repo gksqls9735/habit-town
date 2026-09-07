@@ -32,6 +32,10 @@ Read the project design reference before making UI design decisions when it exis
 
 - `.codex/context/design-description.md`
 
+Read the folder structure guide before adding new app code, creating new screens/components/features, or moving code between folders.
+
+- `.codex/context/folder-structure.md`
+
 ## Common Rules
 
 Use the shared rules for comments, reporting, and general coding conventions.
