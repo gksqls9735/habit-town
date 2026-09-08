@@ -4,6 +4,7 @@ import {
   Easing,
   ImageStyle,
   Platform,
+  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
@@ -17,8 +18,10 @@ const pixelatedImageStyle =
 
 type RewardDeliveryEventProps = {
   bottom: number;
+  isParcelAvailable: boolean;
   eventKey: number;
   height: number;
+  onOpenParcel: () => void;
   width: number;
 };
 
@@ -26,9 +29,12 @@ export function RewardDeliveryEvent({
   bottom,
   eventKey,
   height,
+  isParcelAvailable,
+  onOpenParcel,
   width,
 }: RewardDeliveryEventProps) {
   const [isVisible, setIsVisible] = useState(eventKey > 0);
+  const [isTruckVisible, setIsTruckVisible] = useState(eventKey > 0);
   const truckWidth = Math.round(Math.min(230, Math.max(148, width * 0.46)));
   const truckHeight = truckWidth;
   const truckBottom = Math.min(
@@ -53,6 +59,7 @@ export function RewardDeliveryEvent({
     }
 
     setIsVisible(true);
+    setIsTruckVisible(true);
     translateX.setValue(width + truckWidth);
     parcelOpacity.setValue(0);
     parcelTranslateY.setValue(0);
@@ -89,7 +96,7 @@ export function RewardDeliveryEvent({
 
     animation.start(({ finished }) => {
       if (finished) {
-        setIsVisible(false);
+        setIsTruckVisible(false);
       }
     });
 
@@ -106,32 +113,38 @@ export function RewardDeliveryEvent({
     width,
   ]);
 
-  if (!isVisible) {
+  useEffect(() => {
+    if (!isParcelAvailable && eventKey > 0) {
+      setIsVisible(false);
+    }
+  }, [eventKey, isParcelAvailable]);
+
+  if (!isVisible || (!isTruckVisible && !isParcelAvailable)) {
     return null;
   }
 
   return (
-    <View pointerEvents="none" style={styles.deliveryLayer}>
-      <Animated.Image
-        accessibilityIgnoresInvertColors
-        source={deliveryTruckImage}
-        style={[
-          styles.deliveryTruck,
-          pixelatedImageStyle,
-          {
-            bottom: truckBottom,
-            height: truckHeight,
-            transform: [{ translateX }],
-            width: truckWidth,
-          },
-        ]}
-      />
-      <Animated.Image
-        accessibilityIgnoresInvertColors
-        source={deliveryParcelImage}
+    <View pointerEvents="box-none" style={styles.deliveryLayer}>
+      {isTruckVisible ? (
+        <Animated.Image
+          accessibilityIgnoresInvertColors
+          source={deliveryTruckImage}
+          style={[
+            styles.deliveryTruck,
+            pixelatedImageStyle,
+            {
+              bottom: truckBottom,
+              height: truckHeight,
+              transform: [{ translateX }],
+              width: truckWidth,
+            },
+          ]}
+        />
+      ) : null}
+      <Animated.View
+        pointerEvents={isParcelAvailable ? 'auto' : 'none'}
         style={[
           styles.deliveryParcel,
-          pixelatedImageStyle,
           {
             bottom: parcelStartBottom,
             height: parcelWidth,
@@ -141,7 +154,21 @@ export function RewardDeliveryEvent({
             width: parcelWidth,
           },
         ]}
-      />
+      >
+        <Pressable
+          accessibilityLabel="동물보호협회 택배 선물 열기"
+          accessibilityRole="button"
+          disabled={!isParcelAvailable}
+          onPress={onOpenParcel}
+          style={styles.parcelButton}
+        >
+          <Animated.Image
+            accessibilityIgnoresInvertColors
+            source={deliveryParcelImage}
+            style={[styles.parcelImage, pixelatedImageStyle]}
+          />
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -163,6 +190,14 @@ const styles = StyleSheet.create({
   },
   deliveryParcel: {
     position: 'absolute',
+  },
+  parcelButton: {
+    height: '100%',
+    width: '100%',
+  },
+  parcelImage: {
+    height: '100%',
     resizeMode: 'contain',
+    width: '100%',
   },
 });

@@ -13,7 +13,10 @@ import { useGoalPlanner } from '../../features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
 import { InventoryModal } from '../../features/inventory/components/InventoryModal';
+import { saveInventoryItem } from '../../features/inventory/inventoryRepository';
+import { DeliveryReward, drawDeliveryReward } from '../../features/rewards/eventRewards';
 import { ShopModal } from '../../features/shop/components/ShopModal';
+import { DeliveryRewardPopup } from './components/DeliveryRewardPopup';
 import { PetCareActions, PetStatusHud } from './components/PetCareOverlay';
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
@@ -69,6 +72,11 @@ export function HomeScreen() {
   const [coins, setCoins] = useState(1390);
   const [isLocalDevMenuOpen, setIsLocalDevMenuOpen] = useState(false);
   const [rewardDeliveryEventKey, setRewardDeliveryEventKey] = useState(0);
+  const [isRewardParcelAvailable, setIsRewardParcelAvailable] = useState(false);
+  const [deliveryReward, setDeliveryReward] = useState<DeliveryReward | null>(null);
+  const [isDeliveryRewardPopupOpen, setIsDeliveryRewardPopupOpen] = useState(false);
+  const [isClaimingDeliveryReward, setIsClaimingDeliveryReward] = useState(false);
+  const [deliveryRewardError, setDeliveryRewardError] = useState('');
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
   const goalPlanner = useGoalPlanner();
   const {
@@ -77,6 +85,7 @@ export function HomeScreen() {
     closeYearlyGoal,
     dailyPlans,
     expandedPlanIds,
+    grantCurrencyReward,
     generateAdditionalTaskForSelectedGoal,
     goalError,
     hasUsedTaskRefresh,
@@ -117,11 +126,17 @@ export function HomeScreen() {
   const characterBottom = Math.max(100, Math.round(height * (compactHeight ? 0.15 : 0.18)));
   const showLocalDevButton = isLocalhostDevWeb();
   const rightRailActions: RailAction[] = [
-    ...rightActions.map((action) =>
-      action.label === '가방'
-        ? { ...action, onPress: () => setIsInventoryOpen(true) }
-        : action,
-    ),
+    ...rightActions.map((action) => {
+      if (action.label === '보상') {
+        return { ...action, onPress: () => startRewardDelivery() };
+      }
+
+      if (action.label === '가방') {
+        return { ...action, onPress: () => setIsInventoryOpen(true) };
+      }
+
+      return action;
+    }),
     {
       image: require('../../../assets/ui/pet-room-button.png'),
       label: '펫룸',
@@ -156,9 +171,55 @@ export function HomeScreen() {
 
     return action;
   });
+  const startRewardDelivery = () => {
+    setDeliveryReward(null);
+    setDeliveryRewardError('');
+    setIsDeliveryRewardPopupOpen(false);
+    setIsRewardParcelAvailable(true);
+    setRewardDeliveryEventKey((current) => current + 1);
+  };
   const handleLocalDevAction = (label: string) => {
     if (label === '보상') {
-      setRewardDeliveryEventKey((current) => current + 1);
+      startRewardDelivery();
+    }
+  };
+  const closeDeliveryReward = () => {
+    if (isClaimingDeliveryReward) return;
+    setIsDeliveryRewardPopupOpen(false);
+  };
+  const discardDeliveryReward = () => {
+    if (isClaimingDeliveryReward) return;
+    setDeliveryReward(null);
+    setDeliveryRewardError('');
+    setIsDeliveryRewardPopupOpen(false);
+    setIsRewardParcelAvailable(false);
+  };
+  const openDeliveryReward = () => {
+    setDeliveryReward((current) => current ?? drawDeliveryReward());
+    setDeliveryRewardError('');
+    setIsDeliveryRewardPopupOpen(true);
+  };
+  const acceptDeliveryReward = async () => {
+    if (!deliveryReward || isClaimingDeliveryReward) return;
+
+    setIsClaimingDeliveryReward(true);
+    setDeliveryRewardError('');
+
+    try {
+      if (deliveryReward.kind === 'currency') {
+        grantCurrencyReward(deliveryReward.amount);
+        setCoins((current) => current + deliveryReward.amount);
+      } else {
+        await saveInventoryItem(deliveryReward.item);
+      }
+
+      setDeliveryReward(null);
+      setIsDeliveryRewardPopupOpen(false);
+      setIsRewardParcelAvailable(false);
+    } catch {
+      setDeliveryRewardError('선물을 저장하지 못했어요. 다시 눌러 주세요.');
+    } finally {
+      setIsClaimingDeliveryReward(false);
     }
   };
 
@@ -211,6 +272,8 @@ export function HomeScreen() {
           bottom={characterBottom}
           eventKey={rewardDeliveryEventKey}
           height={height}
+          isParcelAvailable={isRewardParcelAvailable}
+          onOpenParcel={openDeliveryReward}
           width={width}
         />
 
@@ -266,6 +329,20 @@ export function HomeScreen() {
           isBusy={isGeneratingPlan}
           errorMessage={goalError}
         /> : null}
+        <DeliveryRewardPopup
+          isBusy={isClaimingDeliveryReward}
+          onAccept={acceptDeliveryReward}
+          onClose={closeDeliveryReward}
+          onDiscard={discardDeliveryReward}
+          reward={deliveryReward}
+          visible={isDeliveryRewardPopupOpen}
+          width={popupWidth}
+        />
+        {deliveryRewardError ? (
+          <View style={styles.deliveryRewardError}>
+            <Text style={styles.deliveryRewardErrorText}>{deliveryRewardError}</Text>
+          </View>
+        ) : null}
         <YearlyGoalModal
           difficulty={yearlyGoalDifficulty}
           errorMessage={goalError}
@@ -602,6 +679,27 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     right: 0,
+  },
+  deliveryRewardError: {
+    alignSelf: 'center',
+    backgroundColor: '#ffe2c0',
+    borderColor: '#a34c39',
+    borderWidth: 2,
+    bottom: 24,
+    maxWidth: '88%',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    position: 'absolute',
+    zIndex: 50,
+  },
+  deliveryRewardErrorText: {
+    color: '#693c31',
+    fontFamily: pixelFontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0,
+    lineHeight: 15,
+    textAlign: 'center',
   },
   roomNameTag: {
     alignItems: 'center',

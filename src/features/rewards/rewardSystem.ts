@@ -74,6 +74,16 @@ export function applyTaskReward(
   };
 }
 
+export function applyCurrencyReward(
+  progress: RewardProgress,
+  coins: number,
+): RewardProgress {
+  return {
+    ...progress,
+    coins: progress.coins + Math.max(0, Math.floor(coins)),
+  };
+}
+
 export function normalizeRewardProgress(value: unknown): RewardProgress {
   if (!isRecord(value)) {
     return initialRewardProgress;

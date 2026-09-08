@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  applyCurrencyReward,
   applyTaskReward,
   calculateTaskReward,
   initialRewardProgress,
@@ -314,12 +315,20 @@ export function useGoalPlanner() {
     );
   };
 
+  const grantCurrencyReward = (coins: number) => {
+    const nextRewardProgress = applyCurrencyReward(rewardProgress, coins);
+
+    setRewardProgress(nextRewardProgress);
+    persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
+  };
+
   return {
     addYearlyGoal,
     closeTodayTasks,
     closeYearlyGoal,
     dailyPlans,
     expandedPlanIds,
+    grantCurrencyReward,
     generateAdditionalTaskForSelectedGoal,
     goalError,
     hasUsedTaskRefresh,
