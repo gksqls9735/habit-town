@@ -1,0 +1,154 @@
+{
+  "starter-hammer": {
+    "name": "튼튼한 망치",
+    "imageUrl": null,
+    "category": "tool",
+    "description": "작은 수리에 사용할 수 있는 기본 도구예요.",
+    "symbol": "T",
+    "inventory": {
+      "starterQuantity": 1,
+      "startsAsNew": true
+    }
+  },
+  "starter-snack": {
+    "name": "별사탕 간식",
+    "imageUrl": null,
+    "category": "pet-care",
+    "description": "펫의 기분을 조금 회복시켜 주는 간식이에요.",
+    "symbol": "*",
+    "inventory": {
+      "starterQuantity": 3,
+      "startsAsNew": true
+    }
+  },
+  "starter-crystal": {
+    "name": "하늘빛 결정",
+    "imageUrl": null,
+    "category": "material",
+    "description": "방 꾸미기 아이템 제작에 쓰이는 반짝이는 조각이에요.",
+    "symbol": "<>",
+    "inventory": {
+      "starterQuantity": 5,
+      "startsAsNew": false
+    }
+  },
+  "pet-rug": {
+    "name": "포근한 러그",
+    "imageUrl": "assets/png/objects/pet-rug.png",
+    "category": "decor",
+    "description": "방 한가운데 포근한 자리를 만들어 줘요.",
+    "symbol": "R",
+    "shop": {
+      "category": "object",
+      "price": 320
+    }
+  },
+  "toy-ball": {
+    "name": "장난감 공",
+    "imageUrl": "assets/png/objects/toy-ball.png",
+    "category": "pet-care",
+    "description": "친구와 함께 데굴데굴 놀 수 있어요.",
+    "symbol": "B",
+    "shop": {
+      "category": "object",
+      "price": 180
+    }
+  },
+  "pet-cushion": {
+    "name": "푹신한 쿠션",
+    "imageUrl": "assets/png/objects/pet-cushion.png",
+    "category": "decor",
+    "description": "낮잠 시간을 더 편안하게 만들어 줘요.",
+    "symbol": "C",
+    "shop": {
+      "category": "object",
+      "price": 280
+    }
+  },
+  "pet-food-bowl": {
+    "name": "밥그릇",
+    "imageUrl": "assets/png/objects/pet-food-bowl.png",
+    "category": "pet-care",
+    "description": "친구의 맛있는 한 끼를 담는 그릇이에요.",
+    "symbol": "F",
+    "shop": {
+      "category": "object",
+      "price": 220
+    }
+  },
+  "wall-clock": {
+    "name": "벽시계",
+    "imageUrl": "assets/png/objects/wall-clock.png",
+    "category": "decor",
+    "description": "빈 벽에 귀여운 포인트를 더해 줘요.",
+    "symbol": "W",
+    "shop": {
+      "category": "object",
+      "price": 360
+    }
+  },
+  "ivory-wallpaper": {
+    "name": "아이보리 벽지",
+    "imageUrl": "assets/png/backgrounds/basic-room-wallpaper.png",
+    "category": "decor",
+    "description": "어떤 친구와도 어울리는 밝고 포근한 벽지예요.",
+    "symbol": "I",
+    "shop": {
+      "category": "wallpaper",
+      "price": 540
+    }
+  },
+  "cacao-flooring": {
+    "name": "카카오 바닥재",
+    "imageUrl": "assets/png/backgrounds/basic-room-floor.png",
+    "category": "decor",
+    "description": "정돈된 나무 무늬가 살아 있는 따뜻한 바닥재예요.",
+    "symbol": "F",
+    "shop": {
+      "category": "flooring",
+      "price": 620
+    }
+  },
+  "animal-rescue-snack": {
+    "name": "보호소 간식",
+    "imageUrl": "assets/event/items/animal-rescue-snack.png",
+    "category": "pet-care",
+    "description": "동물보호협회에서 보내준 마음이 담긴 간식이에요.",
+    "symbol": "S",
+    "reward": {
+      "delivery": {
+        "quantity": 1,
+        "rarity": "common",
+        "weight": 18
+      }
+    }
+  },
+  "animal-rescue-fabric": {
+    "name": "포근한 천 조각",
+    "imageUrl": "assets/event/items/animal-rescue-fabric.png",
+    "category": "material",
+    "description": "방 꾸미기 제작에 쓸 수 있는 포근한 천 조각이에요.",
+    "symbol": "F",
+    "reward": {
+      "delivery": {
+        "quantity": 2,
+        "rarity": "uncommon",
+        "weight": 10
+      }
+    }
+  },
+  "animal-rescue-paw-charm": {
+    "name": "발자국 참",
+    "imageUrl": "assets/event/items/animal-rescue-paw-charm.png",
+    "category": "decor",
+    "description": "작은 발자국 모양의 장식품이에요.",
+    "symbol": "P",
+    "reward": {
+      "delivery": {
+        "quantity": 1,
+        "rarity": "rare",
+        "weight": 4
+      }
+    }
+  }
+}

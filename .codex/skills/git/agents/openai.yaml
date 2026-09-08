@@ -1,6 +1,6 @@
 interface:
   display_name: "Git Sync"
-  short_description: "Pull, commit, and push the current repository."
-  default_prompt: "Use $git to pull, commit current work, and push the current branch."
+  short_description: "Pull, commit, push, and report what changed during sync."
+  default_prompt: "Use $git to pull, commit current work with a sync summary, push the current branch, and report inbound/outbound changes."
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

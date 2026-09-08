@@ -1,4 +1,8 @@
 import { InventoryItem } from '../inventory/types';
+import {
+  ItemCatalogRewardRarity,
+  itemCatalogEntries,
+} from '../items/itemCatalog';
 
 export type DeliveryReward =
   | {
@@ -10,13 +14,14 @@ export type DeliveryReward =
     }
   | {
       id: string;
+      imageUrl: string | null;
       item: InventoryItem;
       kind: 'item';
       name: string;
       rarity: DeliveryRewardRarity;
     };
 
-export type DeliveryRewardRarity = 'common' | 'uncommon' | 'rare';
+export type DeliveryRewardRarity = ItemCatalogRewardRarity;
 
 type WeightedDeliveryReward = {
   reward: DeliveryReward;
@@ -54,63 +59,7 @@ const deliveryRewards: readonly WeightedDeliveryReward[] = [
     },
     weight: 10,
   },
-  {
-    reward: {
-      id: 'animal-rescue-snack',
-      item: {
-        category: 'pet-care',
-        description: '동물보호협회에서 보내준 마음이 담긴 간식이에요.',
-        equipped: false,
-        id: 'animal-rescue-snack',
-        isNew: true,
-        name: '보호소 간식',
-        quantity: 1,
-        symbol: 'S',
-      },
-      kind: 'item',
-      name: '보호소 간식',
-      rarity: 'common',
-    },
-    weight: 18,
-  },
-  {
-    reward: {
-      id: 'animal-rescue-fabric',
-      item: {
-        category: 'material',
-        description: '방 꾸미기 제작에 쓸 수 있는 포근한 천 조각이에요.',
-        equipped: false,
-        id: 'animal-rescue-fabric',
-        isNew: true,
-        name: '포근한 천 조각',
-        quantity: 2,
-        symbol: 'F',
-      },
-      kind: 'item',
-      name: '포근한 천 조각',
-      rarity: 'uncommon',
-    },
-    weight: 10,
-  },
-  {
-    reward: {
-      id: 'animal-rescue-paw-charm',
-      item: {
-        category: 'decor',
-        description: '작은 발자국 모양의 장식품이에요.',
-        equipped: false,
-        id: 'animal-rescue-paw-charm',
-        isNew: true,
-        name: '발자국 참',
-        quantity: 1,
-        symbol: 'P',
-      },
-      kind: 'item',
-      name: '발자국 참',
-      rarity: 'rare',
-    },
-    weight: 4,
-  },
+  ...createDeliveryItemRewardEntries(),
 ];
 
 export function drawDeliveryReward(): DeliveryReward {
@@ -137,4 +86,35 @@ function cloneReward(reward: DeliveryReward): DeliveryReward {
     ...reward,
     item: { ...reward.item },
   };
+}
+
+function createDeliveryItemRewardEntries(): WeightedDeliveryReward[] {
+  return itemCatalogEntries.flatMap(([code, catalogItem]) => {
+    const deliveryReward = catalogItem.reward?.delivery;
+
+    if (!deliveryReward) {
+      return [];
+    }
+
+    return [{
+      reward: {
+        id: code,
+        imageUrl: catalogItem.imageUrl,
+        item: {
+          category: catalogItem.category,
+          description: catalogItem.description,
+          equipped: false,
+          id: code,
+          isNew: true,
+          name: catalogItem.name,
+          quantity: deliveryReward.quantity,
+          symbol: catalogItem.symbol,
+        },
+        kind: 'item',
+        name: catalogItem.name,
+        rarity: deliveryReward.rarity,
+      },
+      weight: deliveryReward.weight,
+    }];
+  });
 }
