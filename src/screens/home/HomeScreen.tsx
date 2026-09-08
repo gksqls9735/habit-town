@@ -17,6 +17,7 @@ import { saveInventoryItem } from '../../features/inventory/inventoryRepository'
 import { DeliveryReward, drawDeliveryReward } from '../../features/rewards/eventRewards';
 import { ShopModal } from '../../features/shop/components/ShopModal';
 import { DeliveryRewardPopup } from './components/DeliveryRewardPopup';
+import { EventPopup } from './components/EventPopup';
 import { PetCareActions, PetStatusHud } from './components/PetCareOverlay';
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
@@ -69,6 +70,7 @@ export function HomeScreen() {
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isEventOpen, setIsEventOpen] = useState(false);
   const [coins, setCoins] = useState(1390);
   const [isLocalDevMenuOpen, setIsLocalDevMenuOpen] = useState(false);
   const [rewardDeliveryEventKey, setRewardDeliveryEventKey] = useState(0);
@@ -142,6 +144,12 @@ export function HomeScreen() {
       label: '펫룸',
       onPress: () => setIsPetRoomOpen(true),
       symbol: 'R',
+    },
+    {
+      image: require('../../../assets/ui/event-button.png'),
+      label: '이벤트',
+      onPress: () => setIsEventOpen(true),
+      symbol: 'E',
     },
   ];
   const popupWidth = Math.min(width - 32, 360);
@@ -319,6 +327,12 @@ export function HomeScreen() {
             return true;
           }}
           visible={isShopOpen}
+        />
+
+        <EventPopup
+          onClose={() => setIsEventOpen(false)}
+          visible={isEventOpen}
+          width={popupWidth}
         />
 
         {isCalendarOpen ? <CalendarModal

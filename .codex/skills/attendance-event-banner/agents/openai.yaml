@@ -1,0 +1,3 @@
+interface:
+  display_name: "Attendance Event Banner"
+  short_description: "Generate 16:5 attendance banner images"
