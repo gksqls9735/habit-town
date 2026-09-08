@@ -129,10 +129,6 @@ export function HomeScreen() {
   const showLocalDevButton = isLocalhostDevWeb();
   const rightRailActions: RailAction[] = [
     ...rightActions.map((action) => {
-      if (action.label === '보상') {
-        return { ...action, onPress: () => startRewardDelivery() };
-      }
-
       if (action.label === '가방') {
         return { ...action, onPress: () => setIsInventoryOpen(true) };
       }
@@ -187,7 +183,7 @@ export function HomeScreen() {
     setRewardDeliveryEventKey((current) => current + 1);
   };
   const handleLocalDevAction = (label: string) => {
-    if (label === '보상') {
+    if (label === '이벤트:택배') {
       startRewardDelivery();
     }
   };
