@@ -13,9 +13,10 @@ import { useGoalPlanner } from '../../features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
 import { InventoryModal } from '../../features/inventory/components/InventoryModal';
-import { saveInventoryItem } from '../../features/inventory/inventoryRepository';
+import { loadInventoryItems, saveInventoryItem } from '../../features/inventory/inventoryRepository';
 import { DeliveryReward, drawDeliveryReward } from '../../features/rewards/eventRewards';
 import { ShopModal } from '../../features/shop/components/ShopModal';
+import type { ShopItem } from '../../features/shop/items';
 import { DeliveryRewardPopup } from './components/DeliveryRewardPopup';
 import { EventPopup } from './components/EventPopup';
 import { PetCareActions, PetStatusHud } from './components/PetCareOverlay';
@@ -71,6 +72,7 @@ export function HomeScreen() {
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [ownedShopItemIds, setOwnedShopItemIds] = useState<string[]>([]);
   const [isEventOpen, setIsEventOpen] = useState(false);
   const [isLocalDevMenuOpen, setIsLocalDevMenuOpen] = useState(false);
   const [rewardDeliveryEventKey, setRewardDeliveryEventKey] = useState(0);
@@ -171,7 +173,15 @@ export function HomeScreen() {
     }
 
     if (action.label === '상점') {
-      return { ...action, onPress: () => setIsShopOpen(true) };
+      return {
+        ...action,
+        onPress: () => {
+          setIsShopOpen(true);
+          void loadInventoryItems().then((items) => {
+            setOwnedShopItemIds(items.map((item) => item.id));
+          });
+        },
+      };
     }
 
     return action;
@@ -229,6 +239,30 @@ export function HomeScreen() {
       setDeliveryRewardError('선물을 저장하지 못했어요. 다시 눌러 주세요.');
     } finally {
       setIsClaimingDeliveryReward(false);
+    }
+  };
+  const purchaseShopItem = async (item: ShopItem): Promise<boolean> => {
+    if (rewardProgress.coins < item.price) return false;
+
+    try {
+      await saveInventoryItem({
+        category: item.inventoryCategory,
+        description: item.description,
+        equipped: false,
+        id: item.id,
+        isNew: true,
+        name: item.name,
+        quantity: 1,
+        symbol: item.symbol,
+      });
+      const purchased = spendCurrencyReward(item.price);
+
+      if (!purchased) return false;
+
+      setOwnedShopItemIds((current) => current.includes(item.id) ? current : [...current, item.id]);
+      return true;
+    } catch {
+      return false;
     }
   };
 
@@ -322,7 +356,8 @@ export function HomeScreen() {
         <ShopModal
           coinBalance={rewardProgress.coins}
           onClose={() => setIsShopOpen(false)}
-          onPurchase={spendCurrencyReward}
+          onPurchase={purchaseShopItem}
+          ownedItemIds={ownedShopItemIds}
           visible={isShopOpen}
         />
 

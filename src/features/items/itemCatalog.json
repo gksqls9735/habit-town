@@ -87,6 +87,61 @@
       "price": 360
     }
   },
+  "potted-sprout": {
+    "name": "새싹 화분",
+    "imageUrl": "assets/png/objects/potted-sprout.png",
+    "category": "decor",
+    "description": "싱그러운 새싹으로 방에 생기를 더해 줘요.",
+    "symbol": "G",
+    "shop": {
+      "category": "object",
+      "price": 420
+    }
+  },
+  "coral-floor-lamp": {
+    "name": "코랄 플로어 램프",
+    "imageUrl": "assets/png/objects/coral-floor-lamp.png",
+    "category": "decor",
+    "description": "포근한 빛과 산뜻한 색감을 더하는 조명이에요.",
+    "symbol": "L",
+    "shop": {
+      "category": "object",
+      "price": 560
+    }
+  },
+  "low-bookshelf": {
+    "name": "낮은 원목 책장",
+    "imageUrl": "assets/png/objects/low-bookshelf.png",
+    "category": "decor",
+    "description": "책과 작은 소품을 단정하게 정리해 줘요.",
+    "symbol": "K",
+    "shop": {
+      "category": "object",
+      "price": 680
+    }
+  },
+  "sprout-wall-art": {
+    "name": "새싹 액자",
+    "imageUrl": "assets/png/objects/sprout-wall-art.png",
+    "category": "decor",
+    "description": "GROMI의 성장 메시지를 담은 벽 장식이에요.",
+    "symbol": "A",
+    "shop": {
+      "category": "object",
+      "price": 390
+    }
+  },
+  "toy-storage-basket": {
+    "name": "장난감 수납 바구니",
+    "imageUrl": "assets/png/objects/toy-storage-basket.png",
+    "category": "pet-care",
+    "description": "알록달록한 장난감을 깔끔하게 보관해 줘요.",
+    "symbol": "T",
+    "shop": {
+      "category": "object",
+      "price": 480
+    }
+  },
   "ivory-wallpaper": {
     "name": "아이보리 벽지",
     "imageUrl": "assets/png/backgrounds/basic-room-wallpaper.png",

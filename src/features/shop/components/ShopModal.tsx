@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { shopItems, type ShopCategory } from '../items';
+import { shopItems, type ShopCategory, type ShopItem } from '../items';
 
 type ShopModalProps = {
   coinBalance: number;
   onClose: () => void;
-  onPurchase: (price: number) => boolean;
+  onPurchase: (item: ShopItem) => Promise<boolean>;
+  ownedItemIds: readonly string[];
   visible: boolean;
 };
 
@@ -17,23 +18,30 @@ const filters: { id: ShopCategory; label: string }[] = [
   { id: 'flooring', label: '바닥재' },
 ];
 
-export function ShopModal({ coinBalance, onClose, onPurchase, visible }: ShopModalProps) {
+export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visible }: ShopModalProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<ShopCategory>('object');
-  const [ownedIds, setOwnedIds] = useState<string[]>([]);
+  const [isPurchasingId, setIsPurchasingId] = useState<string | null>(null);
   const [message, setMessage] = useState('마음에 드는 방 꾸미기 아이템을 골라보세요.');
+  const purchaseInFlight = useRef(false);
   const panelWidth = Math.min(width - 32, 520);
   const items = shopItems.filter((item) => item.category === category);
 
-  const buy = (id: string, price: number, name: string) => {
-    if (ownedIds.includes(id)) return;
-    if (!onPurchase(price)) {
+  const buy = async (item: ShopItem) => {
+    if (ownedItemIds.includes(item.id) || purchaseInFlight.current) return;
+
+    purchaseInFlight.current = true;
+    setIsPurchasingId(item.id);
+    const purchased = await onPurchase(item);
+    purchaseInFlight.current = false;
+    setIsPurchasingId(null);
+
+    if (!purchased) {
       setMessage('코인이 조금 부족해요. 할 일을 완료해 코인을 모아보세요!');
       return;
     }
-    setOwnedIds((current) => [...current, id]);
-    setMessage(`${name} 구매 완료! 가방에 담았어요.`);
+    setMessage(`${item.name} 구매 완료! 가방에 담았어요.`);
   };
 
   return (
@@ -65,8 +73,9 @@ export function ShopModal({ coinBalance, onClose, onPurchase, visible }: ShopMod
             </View>
             <ScrollView style={styles.scroll} contentContainerStyle={styles.products}>
               {items.map((item) => {
-                const owned = ownedIds.includes(item.id);
+                const owned = ownedItemIds.includes(item.id);
                 const insufficient = coinBalance < item.price;
+                const isPurchasing = isPurchasingId === item.id;
                 return (
                   <View key={item.id} style={styles.card}>
                     <View style={styles.preview}><Image accessibilityIgnoresInvertColors source={item.image} resizeMode="contain" style={styles.previewImage} /></View>
@@ -74,9 +83,9 @@ export function ShopModal({ coinBalance, onClose, onPurchase, visible }: ShopMod
                       <Text style={styles.itemName}>{item.name}</Text>
                       <Text numberOfLines={2} style={styles.description}>{item.description}</Text>
                     </View>
-                    <Pressable accessibilityRole="button" disabled={owned} onPress={() => buy(item.id, item.price, item.name)}
+                    <Pressable accessibilityRole="button" disabled={owned || isPurchasingId !== null} onPress={() => void buy(item)}
                       style={({ pressed }) => [styles.buyButton, owned && styles.ownedButton, insufficient && !owned && styles.lowBalanceButton, pressed && styles.pressed]}>
-                      <Text style={[styles.buyText, insufficient && !owned && styles.lowBalanceText]}>{owned ? '보유 중' : `◆ ${item.price}`}</Text>
+                      <Text style={[styles.buyText, insufficient && !owned && styles.lowBalanceText]}>{owned ? '보유 중' : isPurchasing ? '담는 중' : `◆ ${item.price}`}</Text>
                     </Pressable>
                   </View>
                 );

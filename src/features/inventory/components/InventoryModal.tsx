@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +11,8 @@ import {
 } from 'react-native';
 import { useInventory } from '../hooks/useInventory';
 import { InventoryItem, InventoryItemCategory } from '../types';
+import { getItemImage } from '../../items/itemImages';
+import { getItemShopCategory } from '../../items/itemCatalog';
 
 const pixelFontFamily = 'Galmuri11';
 const slotCount = 24;
@@ -194,8 +197,7 @@ export function InventoryModal({
                           </Text>
                         </View>
                       </View>
-                      {selectedItem.category === 'tool' ||
-                      selectedItem.category === 'decor' ? (
+                      {canEquipItem(selectedItem) ? (
                         <Pressable
                           accessibilityRole="button"
                           onPress={() => void toggleEquipped(selectedItem.id)}
@@ -262,8 +264,28 @@ function PixelTrashIcon({ disabled }: { disabled: boolean }) {
   );
 }
 
+function canEquipItem(item: InventoryItem): boolean {
+  return item.category === 'tool'
+    || item.category === 'decor'
+    || getItemShopCategory(item.id) === 'object';
+}
+
 function PixelItemIcon({ item, size }: { item: InventoryItem; size: number }) {
   const color = categoryColors[item.category];
+  const image = getItemImage(item.id);
+
+  if (image) {
+    return (
+      <View style={[styles.itemImageBox, { height: size, width: size }]}>
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={image}
+          style={styles.itemImage}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.itemIcon, { backgroundColor: color, height: size, width: size }]}>
@@ -571,6 +593,14 @@ const styles = StyleSheet.create({
     textShadowColor: '#4d3a35',
     textShadowOffset: { height: 1, width: 1 },
     textShadowRadius: 0,
+  },
+  itemImage: {
+    height: '92%',
+    width: '92%',
+  },
+  itemImageBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   itemName: {
     color: '#4b2f25',

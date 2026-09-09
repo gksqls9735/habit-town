@@ -43,3 +43,8 @@ export const itemCatalogEntries = Object.entries(itemsByCode) as [
   ItemCode,
   ItemCatalogEntry,
 ][];
+
+export function getItemShopCategory(itemId: string): ItemCatalogShopCategory | undefined {
+  if (!Object.prototype.hasOwnProperty.call(itemsByCode, itemId)) return undefined;
+  return itemsByCode[itemId as ItemCode].shop?.category;
+}
