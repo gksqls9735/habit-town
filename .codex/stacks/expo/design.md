@@ -48,5 +48,4 @@ When Expo Web is enabled:
 - Check touch target sizes.
 - Check important flows on target platforms when possible.
 - Ensure text does not overflow small screens.
-- When Expo Web is enabled, check the web entry point with `npx expo start --web`.
-
+- When Expo Web is enabled, check the web entry point only when the user has already started a preview and explicitly asks Codex to inspect it. Do not start `npx expo start --web` for verification; follow `.codex/common/rules/local-preview.md`.

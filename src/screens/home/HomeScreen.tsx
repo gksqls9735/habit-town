@@ -31,6 +31,7 @@ import { GrowthStage, PetDefinition, RailAction, RailMetrics } from './types';
 const roomWallpaperImage = require('../../../assets/png/backgrounds/basic-room-wallpaper.png');
 const roomFloorImage = require('../../../assets/png/backgrounds/basic-room-floor.png');
 const pixelFontFamily = 'Galmuri11';
+const localDevCurrencyGrantAmount = 1000;
 /*
  * Animation assets are temporarily disabled. Keep these requires here so the
  * pet animations can be restored without hunting down asset paths later.
@@ -71,7 +72,6 @@ export function HomeScreen() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isEventOpen, setIsEventOpen] = useState(false);
-  const [coins, setCoins] = useState(1390);
   const [isLocalDevMenuOpen, setIsLocalDevMenuOpen] = useState(false);
   const [rewardDeliveryEventKey, setRewardDeliveryEventKey] = useState(0);
   const [isRewardParcelAvailable, setIsRewardParcelAvailable] = useState(false);
@@ -103,6 +103,7 @@ export function HomeScreen() {
     setSelectedTaskGoalId,
     setYearlyGoalDifficulty,
     setYearlyGoalDraft,
+    spendCurrencyReward,
     togglePlanExpanded,
     toggleTask,
     yearlyGoalDraft,
@@ -185,6 +186,11 @@ export function HomeScreen() {
   const handleLocalDevAction = (label: string) => {
     if (label === '이벤트:택배') {
       startRewardDelivery();
+      return;
+    }
+
+    if (label === '데이터:재화 증가') {
+      grantCurrencyReward(localDevCurrencyGrantAmount);
     }
   };
   const closeDeliveryReward = () => {
@@ -212,7 +218,6 @@ export function HomeScreen() {
     try {
       if (deliveryReward.kind === 'currency') {
         grantCurrencyReward(deliveryReward.amount);
-        setCoins((current) => current + deliveryReward.amount);
       } else {
         await saveInventoryItem(deliveryReward.item);
       }
@@ -315,13 +320,9 @@ export function HomeScreen() {
         />
 
         <ShopModal
-          coinBalance={coins}
+          coinBalance={rewardProgress.coins}
           onClose={() => setIsShopOpen(false)}
-          onPurchase={(price) => {
-            if (coins < price) return false;
-            setCoins((current) => current - price);
-            return true;
-          }}
+          onPurchase={spendCurrencyReward}
           visible={isShopOpen}
         />
 

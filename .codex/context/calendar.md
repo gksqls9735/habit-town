@@ -44,7 +44,7 @@ Read this before changing the calendar popup, home entry point, day styling, or 
 
 ## Verification
 
-- For code changes, run `npx tsc --noEmit` and check the Expo Web entry point.
+- For code changes, run `npx tsc --noEmit`. Check the Expo Web entry point only when the user has already started a preview and explicitly asks Codex to inspect it; follow `.codex/common/rules/local-preview.md`.
 - Check opening/closing, month and year boundaries, selection, past-date viewing, and return to today. Report native and web checks separately.
 - Inspect 320px and 390px mobile, 768px tablet, and 1280px desktop widths, including short-screen scrolling and six-row months.
 - When connecting history, check empty days, partial/full completion, additions, replacements, local midnight boundaries, and blocked past-date mutations.

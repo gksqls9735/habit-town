@@ -46,6 +46,7 @@ Use the shared rules for comments, reporting, and general coding conventions.
 - Version selection: `.codex/common/rules/versioning.md`
 - Encoding and text integrity: `.codex/common/rules/encoding.md`
 - Build progress reporting: `.codex/common/rules/build-progress.md`
+- Local preview restrictions: `.codex/common/rules/local-preview.md`
 - Frontend decisions: `.codex/common/rules/frontend-decisions.md`
 - Responsive CSS: `.codex/common/rules/frontend/responsive-css.md`
 - Calendars and date pickers: `.codex/common/rules/frontend/calendar.md`

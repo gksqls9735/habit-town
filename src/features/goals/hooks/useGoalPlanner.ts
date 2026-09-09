@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   applyCurrencyReward,
+  applyCurrencySpend,
   applyTaskReward,
   calculateTaskReward,
   initialRewardProgress,
@@ -322,6 +323,18 @@ export function useGoalPlanner() {
     persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
 
+  const spendCurrencyReward = (coins: number) => {
+    const nextRewardProgress = applyCurrencySpend(rewardProgress, coins);
+
+    if (!nextRewardProgress) {
+      return false;
+    }
+
+    setRewardProgress(nextRewardProgress);
+    persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
+    return true;
+  };
+
   return {
     addYearlyGoal,
     closeTodayTasks,
@@ -345,6 +358,7 @@ export function useGoalPlanner() {
     setSelectedTaskGoalId,
     setYearlyGoalDifficulty,
     setYearlyGoalDraft,
+    spendCurrencyReward,
     togglePlanExpanded,
     toggleTask,
     yearlyGoalDraft,

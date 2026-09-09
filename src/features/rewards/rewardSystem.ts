@@ -16,6 +16,7 @@ export type RewardProgress = {
 };
 
 export const experiencePerGrowthStage = 100;
+export const maxRewardCoins = 99999;
 
 export const growthStages: GrowthStage[] = ['baby', 'child', 'teen', 'adult'];
 
@@ -66,7 +67,7 @@ export function applyTaskReward(
   }
 
   return {
-    coins: progress.coins + reward.coins,
+    coins: clampCoins(progress.coins + reward.coins),
     experience: nextExperience,
     level: nextLevel,
     stage: growthStages[nextStageIndex],
@@ -80,7 +81,23 @@ export function applyCurrencyReward(
 ): RewardProgress {
   return {
     ...progress,
-    coins: progress.coins + Math.max(0, Math.floor(coins)),
+    coins: clampCoins(progress.coins + Math.max(0, Math.floor(coins))),
+  };
+}
+
+export function applyCurrencySpend(
+  progress: RewardProgress,
+  coins: number,
+): RewardProgress | null {
+  const spendCoins = Math.max(0, Math.floor(coins));
+
+  if (progress.coins < spendCoins) {
+    return null;
+  }
+
+  return {
+    ...progress,
+    coins: clampCoins(progress.coins - spendCoins),
   };
 }
 
@@ -90,7 +107,7 @@ export function normalizeRewardProgress(value: unknown): RewardProgress {
   }
 
   const stage = isGrowthStage(value.stage) ? value.stage : initialRewardProgress.stage;
-  const coins = normalizeNumber(value.coins, initialRewardProgress.coins);
+  const coins = clampCoins(normalizeNumber(value.coins, initialRewardProgress.coins));
   const experience = Math.min(
     experiencePerGrowthStage - 1,
     normalizeNumber(value.experience, initialRewardProgress.experience),
@@ -126,6 +143,10 @@ function normalizeNumber(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.max(0, Math.floor(value))
     : fallback;
+}
+
+function clampCoins(coins: number) {
+  return Math.min(maxRewardCoins, Math.max(0, Math.floor(coins)));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

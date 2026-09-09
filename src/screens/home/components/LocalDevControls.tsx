@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-const localDevActions = ['이벤트', '상태', '리셋'];
-const localDevEventActions = ['택배'];
+const localDevActions = ['이벤트', '데이터', '상태', '리셋'] as const;
+const localDevSubActions = {
+  이벤트: ['택배'],
+  데이터: ['재화 증가'],
+} as const;
 const pixelFontFamily = 'Galmuri11';
+const localDevSubMenuRowHeight = 42;
+
+type LocalDevSubMenuKey = keyof typeof localDevSubActions;
 
 type LocalDevControlsProps = {
   isOpen: boolean;
@@ -16,27 +22,26 @@ export function LocalDevControls({
   onAction,
   onToggle,
 }: LocalDevControlsProps) {
-  const [isEventMenuOpen, setIsEventMenuOpen] = useState(false);
+  const [activeSubMenu, setActiveSubMenu] = useState<LocalDevSubMenuKey | null>(null);
 
   const handleActionPress = (label: string) => {
-    if (label === '이벤트') {
-      setIsEventMenuOpen((current) => !current);
+    if (label === '이벤트' || label === '데이터') {
+      setActiveSubMenu((current) => (current === label ? null : label));
       return;
     }
 
-    setIsEventMenuOpen(false);
+    setActiveSubMenu(null);
     onAction(label);
   };
 
-  const handleEventActionPress = (label: string) => {
-    setIsEventMenuOpen(false);
-    onAction(`이벤트:${label}`);
+  const handleSubActionPress = (menuLabel: LocalDevSubMenuKey, label: string) => {
+    onAction(`${menuLabel}:${label}`);
   };
 
   return (
     <View style={styles.localDevControls}>
       {isOpen ? (
-        <View style={styles.localDevMenuRow}>
+        <View style={styles.localDevMenuWrap}>
           <View style={styles.localDevMenu}>
             {localDevActions.map((label) => (
               <Pressable
@@ -45,24 +50,29 @@ export function LocalDevControls({
                 onPress={() => handleActionPress(label)}
                 style={[
                   styles.localDevMenuButton,
-                  label === '이벤트' && isEventMenuOpen ? styles.localDevMenuButtonActive : null,
+                  label === activeSubMenu ? styles.localDevMenuButtonActive : null,
                 ]}
               >
                 <Text style={styles.localDevMenuButtonText}>{label}</Text>
               </Pressable>
             ))}
           </View>
-          {isEventMenuOpen ? (
-            <View style={styles.localDevEventMenu}>
-              {localDevEventActions.map((label) => (
+          {activeSubMenu ? (
+            <View
+              style={[
+                styles.localDevSubMenu,
+                { top: localDevActions.indexOf(activeSubMenu) * localDevSubMenuRowHeight },
+              ]}
+            >
+              {localDevSubActions[activeSubMenu].map((label) => (
                 <Pressable
-                  accessibilityLabel={`${label} 이벤트 시작`}
+                  accessibilityLabel={`${activeSubMenu} ${label}`}
                   accessibilityRole="button"
                   key={label}
-                  onPress={() => handleEventActionPress(label)}
-                  style={styles.localDevEventButton}
+                  onPress={() => handleSubActionPress(activeSubMenu, label)}
+                  style={styles.localDevSubButton}
                 >
-                  <Text style={styles.localDevEventButtonText}>{label}</Text>
+                  <Text style={styles.localDevSubButtonText}>{label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -111,31 +121,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  localDevMenuRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    gap: 7,
+  localDevMenuWrap: {
+    position: 'relative',
   },
-  localDevEventButton: {
+  localDevSubButton: {
     alignItems: 'center',
     backgroundColor: '#fff8ea',
     borderColor: '#7f5940',
     borderWidth: 2,
     height: 36,
     justifyContent: 'center',
-    minWidth: 58,
+    minWidth: 76,
     paddingHorizontal: 9,
   },
-  localDevEventButtonText: {
+  localDevSubButtonText: {
     color: '#5c3529',
     fontFamily: pixelFontFamily,
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0,
   },
-  localDevEventMenu: {
+  localDevSubMenu: {
     alignItems: 'center',
     gap: 6,
+    left: 66,
+    position: 'absolute',
+    top: 0,
   },
   localDevMenuButton: {
     alignItems: 'center',

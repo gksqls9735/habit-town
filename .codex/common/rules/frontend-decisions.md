@@ -22,6 +22,7 @@ When adding this harness to an existing project, treat the existing codebase as 
 - Calendars and date pickers: `.codex/common/rules/frontend/calendar.md`
 - Icons: `.codex/common/rules/frontend/icons.md`
 - Decision reporting: `.codex/common/rules/frontend/reporting.md`
+- Local preview restrictions: `.codex/common/rules/local-preview.md`
 
 
 ## Stack-Specific Defaults

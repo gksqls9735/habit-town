@@ -46,6 +46,6 @@ For existing projects:
 
 ## Verification
 
-When a browser or simulator is available, inspect at mobile and desktop widths before completion.
+When a browser or simulator is available, inspect at mobile and desktop widths before completion only if doing so does not require Codex to start or open a localhost preview. Follow `.codex/common/rules/local-preview.md`.
 
 Report any unverified responsive behavior in the completion summary.
