@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "Habit Town",
+    "name": "GROMI",
     "slug": "habit-town",
     "version": "1.0.0",
+    "icon": "./assets/png/ui/gromi-app-icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
@@ -12,11 +13,26 @@
       "supportsTablet": true
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/png/ui/gromi-app-icon.png",
+      "splash": {
+        "backgroundColor": "#FFF9EE",
+        "resizeMode": "contain",
+        "image": "./assets/png/backgrounds/growmi-splash.png"
+      }
     },
     "plugins": [
       "expo-router",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFF9EE",
+          "image": "./assets/png/backgrounds/growmi-splash.png",
+          "imageWidth": 340,
+          "resizeMode": "contain"
+        }
+      ]
     ]
   }
 }
