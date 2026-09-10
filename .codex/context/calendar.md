@@ -14,7 +14,7 @@ Read this before changing the calendar popup, home entry point, day styling, or 
 ## Approved Design
 
 - Preserve the pixel-room style and Galmuri11 font.
-- Use a cream panel (`#fff8ea`), sand header (`#f2dfb6`), dark brown 4px frame (`#3d2d28`), square corners, and a restrained offset shadow.
+- Use a cream panel (`#fff8ea`), sand header (`#f2dfb6`), dark brown 2px frame (`#3d2d28`), square corners, and a restrained offset shadow. Follow `.codex/context/popup.md` for shared popup-frame rules.
 - Preserve the hierarchy: title and close button; caption and today action; month navigation; weekday labels and dates; state legend; selected-date detail.
 - Follow the current component's Korean copy and spacing when extending the feature.
 - Use Korean month/day labels and Sunday-first weeks. Color Sunday headers and dates muted red, Saturday headers and dates muted blue.

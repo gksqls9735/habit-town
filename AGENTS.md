@@ -23,6 +23,10 @@ Read the approved calendar design and date policies before calendar work.
 
 - `.codex/context/calendar.md`
 
+Read the popup frame policy before changing modals, popups, overlays, or their outer borders.
+
+- `.codex/context/popup.md`
+
 Read the pet care HUD design before changing the home status display or care actions.
 
 - `.codex/context/pet-care-hud.md`
