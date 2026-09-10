@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   simpleModalPanel: {
     backgroundColor: '#fff8ea',
     borderColor: '#3d2d28',
-    borderWidth: 4,
+    borderWidth: 2,
     padding: 14,
   },
   simpleModalTitle: {

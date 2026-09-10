@@ -192,7 +192,7 @@ function CalendarDay({ date, hidden, selected, today, onSelect, record }: {
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(49,42,35,0.58)' },
-  frame: { width: '100%', maxWidth: 390, maxHeight: '94%', backgroundColor: '#fff8ea', borderWidth: 4, borderColor: '#3d2d28', boxShadow: '5px 6px 0 rgba(49,42,35,0.25)' },
+  frame: { width: '100%', maxWidth: 390, maxHeight: '94%', backgroundColor: '#fff8ea', borderWidth: 2, borderColor: '#3d2d28', boxShadow: '4px 5px 0 rgba(49,42,35,0.22)' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, backgroundColor: '#f2dfb6', borderBottomWidth: 2, borderBottomColor: '#c8a47d', gap: 8 },
   eyebrow: { fontFamily, fontSize: 10, color: '#725642', marginBottom: 7 },
   title: { fontFamily, fontSize: 20, color: '#35281f' },

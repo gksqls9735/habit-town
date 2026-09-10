@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   tasksModalPanel: {
     backgroundColor: '#fff8ea',
     borderColor: '#3d2d28',
-    borderWidth: 4,
+    borderWidth: 2,
     maxHeight: '100%',
     padding: 14,
   },

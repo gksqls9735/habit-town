@@ -102,8 +102,8 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
 const styles = StyleSheet.create({
   layer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(43, 32, 28, 0.48)' },
-  pixelShadow: { position: 'absolute', top: 6, bottom: -6, left: 6, right: -6, backgroundColor: '#493b32' },
-  panel: { flexShrink: 1, borderWidth: 3, borderColor: '#705340', backgroundColor: '#fff8ec' },
+  pixelShadow: { position: 'absolute', top: 4, bottom: -4, left: 4, right: -4, backgroundColor: '#493b32' },
+  panel: { flexShrink: 1, borderWidth: 2, borderColor: '#3d2d28', backgroundColor: '#fff8ec' },
   header: { flexDirection: 'row', alignItems: 'center', padding: 10, gap: 7, borderBottomWidth: 3, borderColor: '#d9bf9c', backgroundColor: '#f0dfc6' },
   shopIcon: { width: 40, height: 40 }, heading: { flex: 1 },
   eyebrow: { fontFamily, fontSize: 9, letterSpacing: 1, color: '#80634c', marginBottom: 4 }, title: { fontFamily, fontSize: 16, color: '#49372d' },

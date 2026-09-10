@@ -165,6 +165,7 @@ const styles = StyleSheet.create({
   popupTopCap: {
     alignSelf: 'center',
     backgroundColor: '#9d6b42',
+    display: 'none',
     height: 8,
     position: 'absolute',
     right: -7,
@@ -175,6 +176,7 @@ const styles = StyleSheet.create({
   popupBottomCap: {
     backgroundColor: '#9d6b42',
     bottom: -7,
+    display: 'none',
     position: 'absolute',
     right: -7,
     top: 15,
@@ -182,15 +184,16 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   popupOuterBorder: {
-    backgroundColor: '#a3907a',
+    backgroundColor: '#fff8ea',
     borderColor: '#3d2d28',
-    borderWidth: 3,
-    padding: 8,
+    borderWidth: 2,
+    padding: 0,
     position: 'relative',
     zIndex: 2,
   },
   popupCornerCutTopLeft: {
     backgroundColor: '#3d2d28',
+    display: 'none',
     height: 3,
     left: 0,
     position: 'absolute',
@@ -200,6 +203,7 @@ const styles = StyleSheet.create({
   },
   popupCornerCutTopRight: {
     backgroundColor: '#3d2d28',
+    display: 'none',
     height: 3,
     position: 'absolute',
     right: 0,
@@ -210,6 +214,7 @@ const styles = StyleSheet.create({
   popupCornerCutBottomLeft: {
     backgroundColor: '#3d2d28',
     bottom: 0,
+    display: 'none',
     height: 3,
     left: 0,
     position: 'absolute',
@@ -219,6 +224,7 @@ const styles = StyleSheet.create({
   popupCornerCutBottomRight: {
     backgroundColor: '#3d2d28',
     bottom: 0,
+    display: 'none',
     height: 3,
     position: 'absolute',
     right: 0,
@@ -227,8 +233,8 @@ const styles = StyleSheet.create({
   },
   popupInnerBorder: {
     backgroundColor: '#fff8ea',
-    borderColor: '#6b432f',
-    borderWidth: 3,
+    borderColor: 'transparent',
+    borderWidth: 0,
     overflow: 'hidden',
   },
   popupHeader: {
