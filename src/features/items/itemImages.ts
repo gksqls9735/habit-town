@@ -14,6 +14,10 @@ const itemImagesByCode: Partial<Record<ItemCode, ImageSourcePropType>> = {
   'toy-storage-basket': require('../../../assets/png/objects/toy-storage-basket.png'),
   'ivory-wallpaper': require('../../../assets/png/backgrounds/basic-room-wallpaper.png'),
   'cacao-flooring': require('../../../assets/png/backgrounds/basic-room-floor.png'),
+  'sage-ivory-wallpaper': require('../../../assets/png/backgrounds/sage-ivory-wallpaper.png'),
+  'powder-blue-wallpaper': require('../../../assets/png/backgrounds/powder-blue-wallpaper.png'),
+  'dark-walnut-flooring': require('../../../assets/png/backgrounds/dark-walnut-flooring.png'),
+  'white-oak-flooring': require('../../../assets/png/backgrounds/white-oak-flooring.png'),
 };
 
 export function getItemImage(itemId: string): ImageSourcePropType | undefined {

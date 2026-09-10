@@ -70,6 +70,23 @@ animals:
 
 backgrounds:
   default_preset: premium_detailed
+  coordinated_sets:
+    forest_cocoa:
+      wallpaper:
+        palette: [near-white warm ivory, pale sage, cream highlight]
+        texture: subtle low-contrast woven-linen pixel clusters
+      flooring:
+        material: polished dark walnut pixel planks
+        palette: [dark cocoa, walnut brown, caramel grain, cream highlight]
+      contrast_rule: keep the wall bright and quiet so pets remain readable above the dark floor
+    sky_oak:
+      wallpaper:
+        palette: [near-white powder blue, soft sky blue, ivory highlight]
+        texture: subtle low-contrast paper-fiber pixel clusters
+      flooring:
+        material: pristine pale white-oak pixel planks
+        palette: [pale oat beige, warm cream, light honey, muted caramel seams]
+      contrast_rule: keep both surfaces clean and lightly separated by the layered cream baseboard
   presets:
     premium_detailed:
       working_grid: [288, 512]

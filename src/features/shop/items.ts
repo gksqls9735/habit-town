@@ -28,7 +28,11 @@ const shopItemCodes = [
   'sprout-wall-art',
   'toy-storage-basket',
   'ivory-wallpaper',
+  'sage-ivory-wallpaper',
+  'powder-blue-wallpaper',
   'cacao-flooring',
+  'dark-walnut-flooring',
+  'white-oak-flooring',
 ] as const satisfies readonly ItemCode[];
 
 export const shopItems: ShopItem[] = shopItemCodes.map((id) => {

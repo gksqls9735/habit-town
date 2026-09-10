@@ -164,6 +164,50 @@
       "price": 620
     }
   },
+  "sage-ivory-wallpaper": {
+    "name": "세이지 아이보리 벽지",
+    "imageUrl": "assets/png/backgrounds/sage-ivory-wallpaper.png",
+    "category": "decor",
+    "description": "다크 월넛 바닥과 어울리는 산뜻한 세이지 아이보리 벽지예요.",
+    "symbol": "S",
+    "shop": {
+      "category": "wallpaper",
+      "price": 620
+    }
+  },
+  "powder-blue-wallpaper": {
+    "name": "파우더 블루 벽지",
+    "imageUrl": "assets/png/backgrounds/powder-blue-wallpaper.png",
+    "category": "decor",
+    "description": "화이트 오크 바닥과 어울리는 맑고 화사한 하늘빛 벽지예요.",
+    "symbol": "B",
+    "shop": {
+      "category": "wallpaper",
+      "price": 650
+    }
+  },
+  "dark-walnut-flooring": {
+    "name": "다크 월넛 바닥재",
+    "imageUrl": "assets/png/backgrounds/dark-walnut-flooring.png",
+    "category": "decor",
+    "description": "세이지 아이보리 벽지와 대비되는 깊고 단정한 원목 바닥재예요.",
+    "symbol": "D",
+    "shop": {
+      "category": "flooring",
+      "price": 780
+    }
+  },
+  "white-oak-flooring": {
+    "name": "화이트 오크 바닥재",
+    "imageUrl": "assets/png/backgrounds/white-oak-flooring.png",
+    "category": "decor",
+    "description": "파우더 블루 벽지와 방을 환하게 밝혀 주는 깔끔한 원목 바닥재예요.",
+    "symbol": "O",
+    "shop": {
+      "category": "flooring",
+      "price": 720
+    }
+  },
   "animal-rescue-snack": {
     "name": "보호소 간식",
     "imageUrl": "assets/event/items/animal-rescue-snack.png",
