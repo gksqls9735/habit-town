@@ -17,6 +17,13 @@ import { getItemShopCategory } from '../../items/itemCatalog';
 const pixelFontFamily = 'Galmuri11';
 const slotCount = 24;
 
+type InventorySection = 'general' | 'decor';
+
+const inventorySections: readonly { id: InventorySection; label: string }[] = [
+  { id: 'general', label: '일반 아이템' },
+  { id: 'decor', label: '꾸미기 아이템' },
+];
+
 const categoryColors: Record<InventoryItemCategory, string> = {
   decor: '#9b6bc4',
   material: '#4e9db3',
@@ -35,15 +42,27 @@ export function InventoryModal({
 }) {
   const { deleteItem, errorMessage, isLoading, items, refresh, selectItem, toggleEquipped } =
     useInventory();
+  const [activeSection, setActiveSection] = useState<InventorySection>('general');
   const [pendingDeleteItemId, setPendingDeleteItemId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const sectionItems = useMemo(
+    () => items.filter((item) => getInventorySection(item) === activeSection),
+    [activeSection, items],
+  );
+  const sectionCounts = useMemo(
+    () => ({
+      decor: items.filter((item) => getInventorySection(item) === 'decor').length,
+      general: items.filter((item) => getInventorySection(item) === 'general').length,
+    }),
+    [items],
+  );
   const selectedItem = useMemo(
-    () => items.find((item) => item.id === selectedItemId) ?? null,
-    [items, selectedItemId],
+    () => sectionItems.find((item) => item.id === selectedItemId) ?? null,
+    [sectionItems, selectedItemId],
   );
   const pendingDeleteItem = useMemo(
-    () => items.find((item) => item.id === pendingDeleteItemId) ?? null,
-    [items, pendingDeleteItemId],
+    () => sectionItems.find((item) => item.id === pendingDeleteItemId) ?? null,
+    [pendingDeleteItemId, sectionItems],
   );
   const slotSize = Math.max(38, Math.floor((width - 76) / 6));
 
@@ -54,10 +73,19 @@ export function InventoryModal({
   }, [refresh, visible]);
 
   useEffect(() => {
-    if (!selectedItemId && items[0]) {
-      setSelectedItemId(items[0].id);
+    if (selectedItemId && sectionItems.some((item) => item.id === selectedItemId)) {
+      return;
     }
-  }, [items, selectedItemId]);
+
+    setSelectedItemId(sectionItems[0]?.id ?? null);
+    setPendingDeleteItemId(null);
+  }, [sectionItems, selectedItemId]);
+
+  useEffect(() => {
+    if (pendingDeleteItemId && !sectionItems.some((item) => item.id === pendingDeleteItemId)) {
+      setPendingDeleteItemId(null);
+    }
+  }, [pendingDeleteItemId, sectionItems]);
 
   if (!visible) {
     return null;
@@ -67,6 +95,18 @@ export function InventoryModal({
     setPendingDeleteItemId(null);
     setSelectedItemId(item.id);
     void selectItem(item.id);
+  };
+
+  const handleSectionPress = (section: InventorySection) => {
+    if (activeSection === section) {
+      return;
+    }
+
+    const nextItem = items.find((item) => getInventorySection(item) === section);
+
+    setActiveSection(section);
+    setPendingDeleteItemId(null);
+    setSelectedItemId(nextItem?.id ?? null);
   };
 
   const handleConfirmDelete = async () => {
@@ -126,10 +166,38 @@ export function InventoryModal({
                 </View>
               ) : (
                 <>
+                  <View style={styles.sectionTabs}>
+                    {inventorySections.map((section) => {
+                      const isActive = activeSection === section.id;
+
+                      return (
+                        <Pressable
+                          accessibilityRole="tab"
+                          accessibilityState={{ selected: isActive }}
+                          key={section.id}
+                          onPress={() => handleSectionPress(section.id)}
+                          style={[
+                            styles.sectionTab,
+                            isActive ? styles.sectionTabActive : null,
+                          ]}
+                        >
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              styles.sectionTabText,
+                              isActive ? styles.sectionTabTextActive : null,
+                            ]}
+                          >
+                            {section.label} {sectionCounts[section.id]}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
                   <View style={styles.slotTray}>
                     <View style={styles.slotGrid}>
                       {Array.from({ length: slotCount }, (_, index) => {
-                        const item = items[index];
+                        const item = sectionItems[index];
 
                         if (!item) {
                           return (
@@ -214,7 +282,11 @@ export function InventoryModal({
                     </View>
                   ) : (
                     <View style={styles.emptyDetail}>
-                      <Text style={styles.emptyDetailText}>아이템을 선택해 주세요.</Text>
+                      <Text style={styles.emptyDetailText}>
+                        {sectionItems.length > 0
+                          ? '아이템을 선택해 주세요.'
+                          : `${getInventorySectionLabel(activeSection)}이 비어 있어요.`}
+                      </Text>
                     </View>
                   )}
                   {pendingDeleteItem ? (
@@ -268,6 +340,25 @@ function canEquipItem(item: InventoryItem): boolean {
   return item.category === 'tool'
     || item.category === 'decor'
     || getItemShopCategory(item.id) === 'object';
+}
+
+function getInventorySection(item: InventoryItem): InventorySection {
+  const shopCategory = getItemShopCategory(item.id);
+
+  if (
+    item.category === 'decor'
+    || shopCategory === 'object'
+    || shopCategory === 'wallpaper'
+    || shopCategory === 'flooring'
+  ) {
+    return 'decor';
+  }
+
+  return 'general';
+}
+
+function getInventorySectionLabel(section: InventorySection) {
+  return inventorySections.find((entry) => entry.id === section)?.label ?? '아이템';
 }
 
 function PixelItemIcon({ item, size }: { item: InventoryItem; size: number }) {
@@ -686,6 +777,36 @@ const styles = StyleSheet.create({
     textShadowColor: '#fff2cf',
     textShadowOffset: { height: 1, width: 1 },
     textShadowRadius: 0,
+  },
+  sectionTab: {
+    alignItems: 'center',
+    backgroundColor: '#ead4ad',
+    borderColor: '#8c603e',
+    borderWidth: 2,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 36,
+    minWidth: 0,
+    paddingHorizontal: 8,
+  },
+  sectionTabActive: {
+    backgroundColor: '#b96335',
+    borderColor: '#6b321f',
+  },
+  sectionTabText: {
+    color: '#654333',
+    fontFamily: pixelFontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  sectionTabTextActive: {
+    color: '#fff8ea',
+  },
+  sectionTabs: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 8,
   },
   slot: {
     alignItems: 'center',
