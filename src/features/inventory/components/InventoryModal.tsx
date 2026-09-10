@@ -12,16 +12,22 @@ import {
 import { useInventory } from '../hooks/useInventory';
 import { InventoryItem, InventoryItemCategory } from '../types';
 import { getItemImage } from '../../items/itemImages';
-import { getItemShopCategory } from '../../items/itemCatalog';
+import { getItemShopCategory, type ItemCatalogShopCategory } from '../../items/itemCatalog';
 
 const pixelFontFamily = 'Galmuri11';
-const slotCount = 24;
 
 type InventorySection = 'general' | 'decor';
+type DecorInventoryCategory = 'all' | ItemCatalogShopCategory;
 
 const inventorySections: readonly { id: InventorySection; label: string }[] = [
   { id: 'general', label: '일반 아이템' },
   { id: 'decor', label: '꾸미기 아이템' },
+];
+const decorInventoryCategories: readonly { id: DecorInventoryCategory; label: string }[] = [
+  { id: 'all', label: '전체' },
+  { id: 'object', label: '가구/소품' },
+  { id: 'wallpaper', label: '벽지' },
+  { id: 'flooring', label: '바닥재' },
 ];
 
 const categoryColors: Record<InventoryItemCategory, string> = {
@@ -32,27 +38,44 @@ const categoryColors: Record<InventoryItemCategory, string> = {
 };
 
 export function InventoryModal({
+  onInventoryChanged,
   onClose,
   visible,
   width,
 }: {
+  onInventoryChanged?: () => void;
   onClose: () => void;
   visible: boolean;
   width: number;
 }) {
-  const { deleteItem, errorMessage, isLoading, items, refresh, selectItem, toggleEquipped } =
+  const { capacities, deleteItem, errorMessage, isLoading, items, refresh, selectItem, toggleEquipped } =
     useInventory();
   const [activeSection, setActiveSection] = useState<InventorySection>('general');
+  const [activeDecorCategory, setActiveDecorCategory] = useState<DecorInventoryCategory>('all');
   const [pendingDeleteItemId, setPendingDeleteItemId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const sectionItems = useMemo(
-    () => items.filter((item) => getInventorySection(item) === activeSection),
-    [activeSection, items],
+    () => items.filter((item) => (
+      activeSection === 'decor'
+        ? getInventorySection(item) === 'decor'
+          && matchesDecorInventoryCategory(item, activeDecorCategory)
+        : getInventorySection(item) === 'general'
+    )),
+    [activeDecorCategory, activeSection, items],
   );
   const sectionCounts = useMemo(
     () => ({
       decor: items.filter((item) => getInventorySection(item) === 'decor').length,
       general: items.filter((item) => getInventorySection(item) === 'general').length,
+    }),
+    [items],
+  );
+  const decorCategoryCounts = useMemo(
+    () => ({
+      all: items.filter((item) => getInventorySection(item) === 'decor').length,
+      flooring: items.filter((item) => getDecorInventoryCategory(item) === 'flooring').length,
+      object: items.filter((item) => getDecorInventoryCategory(item) === 'object').length,
+      wallpaper: items.filter((item) => getDecorInventoryCategory(item) === 'wallpaper').length,
     }),
     [items],
   );
@@ -64,6 +87,9 @@ export function InventoryModal({
     () => sectionItems.find((item) => item.id === pendingDeleteItemId) ?? null,
     [pendingDeleteItemId, sectionItems],
   );
+  const activeSectionItemCount = sectionCounts[activeSection];
+  const activeSectionCapacity = capacities[activeSection === 'decor' ? 'decor' : 'general'];
+  const visibleSlotCount = Math.max(activeSectionCapacity, sectionItems.length);
   const slotSize = Math.max(38, Math.floor((width - 76) / 6));
 
   useEffect(() => {
@@ -102,9 +128,28 @@ export function InventoryModal({
       return;
     }
 
-    const nextItem = items.find((item) => getInventorySection(item) === section);
+    const nextItem = items.find((item) => (
+      section === 'decor'
+        ? getInventorySection(item) === 'decor'
+          && matchesDecorInventoryCategory(item, activeDecorCategory)
+        : getInventorySection(item) === 'general'
+    ));
 
     setActiveSection(section);
+    setPendingDeleteItemId(null);
+    setSelectedItemId(nextItem?.id ?? null);
+  };
+
+  const handleDecorCategoryPress = (category: DecorInventoryCategory) => {
+    if (activeDecorCategory === category) {
+      return;
+    }
+
+    const nextItem = items.find((item) =>
+      getInventorySection(item) === 'decor' && matchesDecorInventoryCategory(item, category),
+    );
+
+    setActiveDecorCategory(category);
     setPendingDeleteItemId(null);
     setSelectedItemId(nextItem?.id ?? null);
   };
@@ -115,7 +160,13 @@ export function InventoryModal({
     if (deleted) {
       setPendingDeleteItemId(null);
       setSelectedItemId(null);
+      onInventoryChanged?.();
     }
+  };
+
+  const handleToggleEquipped = async (id: string) => {
+    await toggleEquipped(id);
+    onInventoryChanged?.();
   };
 
   return (
@@ -139,7 +190,7 @@ export function InventoryModal({
               <View style={styles.headerActions}>
                 <View style={styles.capacityBadge}>
                   <Text style={styles.capacityText}>
-                    {items.length}/{slotCount}
+                    {activeSectionItemCount}/{activeSectionCapacity}
                   </Text>
                 </View>
                 <Pressable
@@ -192,9 +243,39 @@ export function InventoryModal({
                       );
                     })}
                   </View>
+                  {activeSection === 'decor' ? (
+                    <View style={styles.decorCategoryTabs}>
+                      {decorInventoryCategories.map((category) => {
+                        const isActive = activeDecorCategory === category.id;
+
+                        return (
+                          <Pressable
+                            accessibilityRole="tab"
+                            accessibilityState={{ selected: isActive }}
+                            key={category.id}
+                            onPress={() => handleDecorCategoryPress(category.id)}
+                            style={[
+                              styles.decorCategoryTab,
+                              isActive ? styles.decorCategoryTabActive : null,
+                            ]}
+                          >
+                            <Text
+                              numberOfLines={1}
+                              style={[
+                                styles.decorCategoryTabText,
+                                isActive ? styles.decorCategoryTabTextActive : null,
+                              ]}
+                            >
+                              {category.label} {decorCategoryCounts[category.id]}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ) : null}
                   <View style={styles.slotTray}>
                     <View style={styles.slotGrid}>
-                      {Array.from({ length: slotCount }, (_, index) => {
+                      {Array.from({ length: visibleSlotCount }, (_, index) => {
                         const item = sectionItems[index];
 
                         if (!item) {
@@ -232,21 +313,6 @@ export function InventoryModal({
                         );
                       })}
                     </View>
-                    <Pressable
-                      accessibilityLabel={
-                        selectedItem ? `${selectedItem.name} 버리기` : '버릴 아이템을 선택해 주세요'
-                      }
-                      accessibilityRole="button"
-                      disabled={!selectedItem}
-                      onPress={() => setPendingDeleteItemId(selectedItem?.id ?? null)}
-                      style={({ pressed }) => [
-                        styles.trashButton,
-                        !selectedItem ? styles.trashButtonDisabled : null,
-                        pressed && selectedItem ? styles.trashButtonPressed : null,
-                      ]}
-                    >
-                      <PixelTrashIcon disabled={!selectedItem} />
-                    </Pressable>
                   </View>
 
                   <View style={styles.divider} />
@@ -263,20 +329,31 @@ export function InventoryModal({
                           </Text>
                         </View>
                       </View>
-                      {canEquipItem(selectedItem) ? (
+                      <View style={styles.detailActions}>
+                        <Pressable
+                          accessibilityLabel={`${selectedItem.name} 버리기`}
+                          accessibilityRole="button"
+                          onPress={() => setPendingDeleteItemId(selectedItem.id)}
+                          style={[styles.detailActionButton, styles.detailDeleteButton]}
+                        >
+                          <Text style={styles.detailDeleteButtonText}>버리기</Text>
+                        </Pressable>
+                        {canEquipItem(selectedItem) ? (
                         <Pressable
                           accessibilityRole="button"
-                          onPress={() => void toggleEquipped(selectedItem.id)}
+                          onPress={() => void handleToggleEquipped(selectedItem.id)}
                           style={[
+                            styles.detailActionButton,
                             styles.equipButton,
                             selectedItem.equipped ? styles.equipButtonActive : null,
                           ]}
                         >
                           <Text style={styles.equipButtonText}>
-                            {selectedItem.equipped ? '장착 해제' : '장착하기'}
+                            {getItemActionLabel(selectedItem)}
                           </Text>
                         </Pressable>
-                      ) : null}
+                        ) : null}
+                      </View>
                     </View>
                   ) : (
                     <View style={styles.emptyDetail}>
@@ -287,29 +364,6 @@ export function InventoryModal({
                       </Text>
                     </View>
                   )}
-                  {pendingDeleteItem ? (
-                    <View style={styles.deleteConfirmPanel}>
-                      <Text style={styles.deleteConfirmText}>
-                        {pendingDeleteItem.name} 아이템을 버릴까요?
-                      </Text>
-                      <View style={styles.deleteConfirmActions}>
-                        <Pressable
-                          accessibilityRole="button"
-                          onPress={() => setPendingDeleteItemId(null)}
-                          style={[styles.confirmButton, styles.cancelButton]}
-                        >
-                          <Text style={styles.cancelButtonText}>취소</Text>
-                        </Pressable>
-                        <Pressable
-                          accessibilityRole="button"
-                          onPress={() => void handleConfirmDelete()}
-                          style={[styles.confirmButton, styles.deleteButton]}
-                        >
-                          <Text style={styles.deleteButtonText}>버리기</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  ) : null}
                   {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
                 </>
               )}
@@ -317,18 +371,63 @@ export function InventoryModal({
           </View>
         </View>
       </View>
+      <DeleteConfirmPopup
+        item={pendingDeleteItem}
+        onCancel={() => setPendingDeleteItemId(null)}
+        onConfirm={handleConfirmDelete}
+        width={width}
+      />
     </View>
   );
 }
 
-function PixelTrashIcon({ disabled }: { disabled: boolean }) {
+function DeleteConfirmPopup({
+  item,
+  onCancel,
+  onConfirm,
+  width,
+}: {
+  item: InventoryItem | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+  width: number;
+}) {
+  if (!item) {
+    return null;
+  }
+
   return (
-    <View style={[styles.trashIcon, disabled ? styles.trashIconDisabled : null]}>
-      <View style={styles.trashHandle} />
-      <View style={styles.trashLid} />
-      <View style={styles.trashBody}>
-        <View style={styles.trashLine} />
-        <View style={styles.trashLine} />
+    <View style={styles.deletePopupLayer}>
+      <Pressable
+        accessibilityLabel="아이템 버리기 취소"
+        accessibilityRole="button"
+        onPress={onCancel}
+        style={styles.deletePopupBackdrop}
+      />
+      <View style={[styles.deletePopupFrame, { width: Math.min(width - 28, 320) }]}>
+        <View style={styles.deletePopupShadow} />
+        <View style={styles.deletePopupPanel}>
+          <Text style={styles.deletePopupTitle}>아이템 버리기</Text>
+          <Text style={styles.deletePopupText}>
+            {item.name} 아이템을 버릴까요?
+          </Text>
+          <View style={styles.deleteConfirmActions}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onCancel}
+              style={[styles.confirmButton, styles.cancelButton]}
+            >
+              <Text style={styles.cancelButtonText}>취소</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onConfirm}
+              style={[styles.confirmButton, styles.deleteButton]}
+            >
+              <Text style={styles.deleteButtonText}>버리기</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -357,6 +456,31 @@ function getInventorySection(item: InventoryItem): InventorySection {
 
 function getInventorySectionLabel(section: InventorySection) {
   return inventorySections.find((entry) => entry.id === section)?.label ?? '아이템';
+}
+
+function getItemActionLabel(item: InventoryItem) {
+  if (getInventorySection(item) === 'decor') {
+    return item.equipped ? '적용 해제' : '적용하기';
+  }
+
+  return item.equipped ? '장착 해제' : '장착하기';
+}
+
+function getDecorInventoryCategory(item: InventoryItem): ItemCatalogShopCategory | undefined {
+  const shopCategory = getItemShopCategory(item.id);
+
+  if (shopCategory === 'wallpaper' || shopCategory === 'flooring') {
+    return shopCategory;
+  }
+
+  return item.category === 'decor' || shopCategory === 'object' ? 'object' : undefined;
+}
+
+function matchesDecorInventoryCategory(
+  item: InventoryItem,
+  category: DecorInventoryCategory,
+): boolean {
+  return category === 'all' || getDecorInventoryCategory(item) === category;
 }
 
 function PixelItemIcon({ item, size }: { item: InventoryItem; size: number }) {
@@ -500,29 +624,88 @@ const styles = StyleSheet.create({
   deleteConfirmActions: {
     flexDirection: 'row',
     gap: 6,
+    justifyContent: 'flex-end',
   },
-  deleteConfirmPanel: {
+  deletePopupBackdrop: {
+    backgroundColor: 'rgba(49, 42, 35, 0.34)',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  deletePopupFrame: {
+    position: 'relative',
+  },
+  deletePopupLayer: {
     alignItems: 'center',
-    backgroundColor: '#ffe2c0',
-    borderColor: '#a34c39',
-    borderWidth: 2,
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'space-between',
-    marginTop: 8,
-    padding: 8,
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    padding: 18,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 50,
   },
-  deleteConfirmText: {
+  deletePopupPanel: {
+    backgroundColor: '#fff8ea',
+    borderColor: '#3d2d28',
+    borderWidth: 2,
+    gap: 10,
+    padding: 14,
+    position: 'relative',
+    zIndex: 2,
+  },
+  deletePopupShadow: {
+    backgroundColor: '#6b432f',
+    bottom: -4,
+    left: 4,
+    position: 'absolute',
+    right: -4,
+    top: 4,
+  },
+  deletePopupText: {
     color: '#693c31',
-    flex: 1,
     fontFamily: pixelFontFamily,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '900',
-    lineHeight: 14,
+    lineHeight: 16,
+  },
+  deletePopupTitle: {
+    color: '#35281f',
+    fontFamily: pixelFontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0,
   },
   detailCopy: {
     flex: 1,
     minWidth: 0,
+  },
+  detailActionButton: {
+    alignItems: 'center',
+    borderWidth: 2,
+    justifyContent: 'center',
+    minHeight: 38,
+    paddingHorizontal: 12,
+  },
+  detailActions: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+    marginTop: 9,
+  },
+  detailDeleteButton: {
+    backgroundColor: '#b94f3c',
+    borderColor: '#6b2f27',
+    minWidth: 86,
+  },
+  detailDeleteButtonText: {
+    color: '#fff8ea',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
+    fontWeight: '900',
   },
   detailIconBox: {
     alignItems: 'center',
@@ -543,6 +726,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 9,
+  },
+  decorCategoryTab: {
+    alignItems: 'center',
+    backgroundColor: '#f8eddd',
+    borderColor: '#d8c4a9',
+    borderWidth: 2,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 34,
+    minWidth: 0,
+    paddingHorizontal: 5,
+  },
+  decorCategoryTabActive: {
+    backgroundColor: '#705340',
+    borderColor: '#705340',
+  },
+  decorCategoryTabText: {
+    color: '#745c47',
+    fontFamily: pixelFontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  decorCategoryTabTextActive: {
+    color: '#fff8ec',
+  },
+  decorCategoryTabs: {
+    flexDirection: 'row',
+    gap: 5,
+    marginBottom: 8,
   },
   divider: {
     borderColor: '#d39a5f',
@@ -565,16 +778,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   equipButton: {
-    alignItems: 'center',
-    alignSelf: 'flex-end',
     backgroundColor: '#b96335',
     borderColor: '#6b321f',
-    borderWidth: 2,
-    justifyContent: 'center',
-    marginTop: 9,
-    minHeight: 38,
     minWidth: 104,
-    paddingHorizontal: 12,
   },
   equipButtonActive: {
     backgroundColor: '#748865',
@@ -820,62 +1026,5 @@ const styles = StyleSheet.create({
     fontFamily: pixelFontFamily,
     fontSize: 19,
     fontWeight: '900',
-  },
-  trashBody: {
-    alignItems: 'center',
-    borderColor: '#fff2d4',
-    borderTopWidth: 0,
-    borderWidth: 3,
-    flexDirection: 'row',
-    gap: 3,
-    height: 17,
-    justifyContent: 'center',
-    width: 18,
-  },
-  trashButton: {
-    alignItems: 'center',
-    backgroundColor: '#b94f3c',
-    borderColor: '#672f27',
-    borderWidth: 2,
-    bottom: 8,
-    height: 38,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 8,
-    width: 38,
-    zIndex: 5,
-  },
-  trashButtonDisabled: {
-    backgroundColor: '#bd8b58',
-    borderColor: '#8b633e',
-    opacity: 0.75,
-  },
-  trashButtonPressed: {
-    bottom: 6,
-  },
-  trashHandle: {
-    backgroundColor: '#fff2d4',
-    height: 3,
-    width: 8,
-  },
-  trashIcon: {
-    alignItems: 'center',
-    height: 25,
-    justifyContent: 'flex-end',
-    width: 24,
-  },
-  trashIconDisabled: {
-    opacity: 0.65,
-  },
-  trashLid: {
-    backgroundColor: '#fff2d4',
-    height: 3,
-    marginBottom: 2,
-    width: 23,
-  },
-  trashLine: {
-    backgroundColor: '#fff2d4',
-    height: 9,
-    width: 2,
   },
 });

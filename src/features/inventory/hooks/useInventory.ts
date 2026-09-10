@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   deleteInventoryItem,
+  loadInventoryCapacity,
   loadInventoryItems,
   markInventoryItemSeen,
   setInventoryItemEquipped,
+  setInventoryItemsEquipped,
 } from '../inventoryRepository';
-import { InventoryItem } from '../types';
+import {
+  initialInventorySlotCount,
+  InventoryCapacityCategory,
+  InventoryItem,
+} from '../types';
+import { getItemShopCategory } from '../../items/itemCatalog';
 
 const inventoryLoadTimeoutMs = 8_000;
 
@@ -16,12 +23,25 @@ export function useInventory() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [capacities, setCapacities] = useState<Record<InventoryCapacityCategory, number>>({
+    decor: initialInventorySlotCount,
+    general: initialInventorySlotCount,
+  });
 
   const refresh = useCallback(async () => {
     try {
       setErrorMessage('');
       setIsLoading(true);
-      setItems(await loadInventoryItemsWithTimeout());
+      const [nextItems, generalCapacity, decorCapacity] = await Promise.all([
+        loadInventoryItemsWithTimeout(),
+        loadInventoryCapacity('general'),
+        loadInventoryCapacity('decor'),
+      ]);
+      setItems(nextItems);
+      setCapacities({
+        decor: decorCapacity,
+        general: generalCapacity,
+      });
     } catch {
       setErrorMessage('가방을 불러오지 못했어요. 다시 열어 주세요.');
     } finally {
@@ -45,9 +65,26 @@ export function useInventory() {
     const item = items.find((candidate) => candidate.id === id);
     if (!item) return;
     const equipped = !item.equipped;
-    setItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, equipped, isNew: false } : candidate));
+    const exclusiveShopCategory = getExclusiveEquipShopCategory(item);
+    const updates = exclusiveShopCategory && equipped
+      ? items
+          .filter((candidate) =>
+            candidate.id === id || getItemShopCategory(candidate.id) === exclusiveShopCategory,
+          )
+          .map((candidate) => ({ id: candidate.id, equipped: candidate.id === id }))
+      : [{ id, equipped }];
+
+    setItems((current) => current.map((candidate) => {
+      const update = updates.find((entry) => entry.id === candidate.id);
+
+      return update ? { ...candidate, equipped: update.equipped, isNew: false } : candidate;
+    }));
     try {
-      await setInventoryItemEquipped(id, equipped);
+      if (updates.length > 1) {
+        await setInventoryItemsEquipped(updates);
+      } else {
+        await setInventoryItemEquipped(id, equipped);
+      }
     } catch {
       setErrorMessage('장착 상태를 저장하지 못했어요.');
       await refresh();
@@ -70,7 +107,7 @@ export function useInventory() {
     }
   }, [items, refresh]);
 
-  return { deleteItem, errorMessage, isLoading, items, refresh, selectItem, toggleEquipped };
+  return { capacities, deleteItem, errorMessage, isLoading, items, refresh, selectItem, toggleEquipped };
 }
 
 async function loadInventoryItemsWithTimeout(): Promise<InventoryItem[]> {
@@ -87,4 +124,12 @@ async function loadInventoryItemsWithTimeout(): Promise<InventoryItem[]> {
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
+}
+
+function getExclusiveEquipShopCategory(item: InventoryItem) {
+  const shopCategory = getItemShopCategory(item.id);
+
+  return shopCategory === 'wallpaper' || shopCategory === 'flooring'
+    ? shopCategory
+    : undefined;
 }

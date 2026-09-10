@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
+  ImageSourcePropType,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -13,7 +14,13 @@ import { useGoalPlanner } from '../../features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
 import { InventoryModal } from '../../features/inventory/components/InventoryModal';
-import { loadInventoryItems, saveInventoryItem } from '../../features/inventory/inventoryRepository';
+import {
+  increaseInventoryCapacity,
+  loadInventoryItems,
+  saveInventoryItem,
+} from '../../features/inventory/inventoryRepository';
+import { getItemImage } from '../../features/items/itemImages';
+import { getItemShopCategory } from '../../features/items/itemCatalog';
 import {
   DeliveryEventReason,
   drawDeliveryMessage,
@@ -39,6 +46,11 @@ const roomFloorImage = require('../../../assets/png/backgrounds/basic-room-floor
 const pixelFontFamily = 'Galmuri11';
 const localDevCurrencyGrantAmount = 1000;
 const localDevExperienceGrantAmount = 10;
+
+type RoomBackgroundImages = {
+  floor: ImageSourcePropType;
+  wallpaper: ImageSourcePropType;
+};
 
 function getGrowthStageIndex(stage: GrowthStage) {
   return growthStages.indexOf(stage);
@@ -94,6 +106,10 @@ export function HomeScreen() {
   const [isClaimingDeliveryReward, setIsClaimingDeliveryReward] = useState(false);
   const [deliveryRewardError, setDeliveryRewardError] = useState('');
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
+  const [roomBackgroundImages, setRoomBackgroundImages] = useState<RoomBackgroundImages>({
+    floor: roomFloorImage,
+    wallpaper: roomWallpaperImage,
+  });
   const goalPlanner = useGoalPlanner();
   const {
     addYearlyGoal,
@@ -210,6 +226,28 @@ export function HomeScreen() {
     setRewardDeliveryEventKey((current) => current + 1);
   }, []);
 
+  const refreshRoomBackgroundImages = useCallback(() => {
+    void loadInventoryItems().then((items) => {
+      const equippedWallpaper = items.find(
+        (item) => item.equipped && getItemShopCategory(item.id) === 'wallpaper',
+      );
+      const equippedFlooring = items.find(
+        (item) => item.equipped && getItemShopCategory(item.id) === 'flooring',
+      );
+
+      setRoomBackgroundImages({
+        floor: equippedFlooring ? getItemImage(equippedFlooring.id) ?? roomFloorImage : roomFloorImage,
+        wallpaper: equippedWallpaper
+          ? getItemImage(equippedWallpaper.id) ?? roomWallpaperImage
+          : roomWallpaperImage,
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    refreshRoomBackgroundImages();
+  }, [refreshRoomBackgroundImages]);
+
   useEffect(() => {
     if (isLoadingGoalData) {
       return;
@@ -298,6 +336,15 @@ export function HomeScreen() {
     if (rewardProgress.coins < item.price) return false;
 
     try {
+      if (item.kind === 'inventory-capacity') {
+        const purchased = spendCurrencyReward(item.price);
+
+        if (!purchased) return false;
+
+        await increaseInventoryCapacity(item.capacityCategory, item.slotIncrease);
+        return true;
+      }
+
       await saveInventoryItem({
         category: item.inventoryCategory,
         description: item.description,
@@ -327,13 +374,13 @@ export function HomeScreen() {
             <Image
               accessibilityIgnoresInvertColors
               resizeMode="stretch"
-              source={roomWallpaperImage}
+              source={roomBackgroundImages.wallpaper}
               style={styles.roomWallpaperImage}
             />
             <Image
               accessibilityIgnoresInvertColors
               resizeMode="stretch"
-              source={roomFloorImage}
+              source={roomBackgroundImages.floor}
               style={styles.roomFloorImage}
             />
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
@@ -401,6 +448,7 @@ export function HomeScreen() {
         ) : null}
 
         <InventoryModal
+          onInventoryChanged={refreshRoomBackgroundImages}
           onClose={() => setIsInventoryOpen(false)}
           visible={isInventoryOpen}
           width={popupWidth}

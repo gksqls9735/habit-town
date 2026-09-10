@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { InventoryCapacityCategory } from '../../inventory/types';
 import { shopItems, type ShopCategory, type ShopItem } from '../items';
 
 type ShopModalProps = {
@@ -13,9 +14,10 @@ type ShopModalProps = {
 
 const fontFamily = 'Galmuri11';
 const filters: { id: ShopCategory; label: string }[] = [
-  { id: 'object', label: '오브젝트' },
+  { id: 'object', label: '가구/소품' },
   { id: 'wallpaper', label: '벽지' },
   { id: 'flooring', label: '바닥재' },
+  { id: 'misc', label: '기타' },
 ];
 
 export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visible }: ShopModalProps) {
@@ -29,7 +31,7 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
   const items = shopItems.filter((item) => item.category === category);
 
   const buy = async (item: ShopItem) => {
-    if (ownedItemIds.includes(item.id) || purchaseInFlight.current) return;
+    if (isOwnedShopItem(item, ownedItemIds) || purchaseInFlight.current) return;
 
     purchaseInFlight.current = true;
     setIsPurchasingId(item.id);
@@ -41,7 +43,9 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
       setMessage('코인이 조금 부족해요. 할 일을 완료해 코인을 모아보세요!');
       return;
     }
-    setMessage(`${item.name} 구매 완료! 가방에 담았어요.`);
+    setMessage(item.kind === 'inventory-capacity'
+      ? `${getCapacityLabel(item.capacityCategory)}이 ${item.slotIncrease}칸 넓어졌어요.`
+      : `${item.name} 구매 완료! 가방에 담았어요.`);
   };
 
   return (
@@ -72,7 +76,7 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
             </View>
             <ScrollView style={styles.scroll} contentContainerStyle={styles.products}>
               {items.map((item) => {
-                const owned = ownedItemIds.includes(item.id);
+                const owned = isOwnedShopItem(item, ownedItemIds);
                 const insufficient = coinBalance < item.price;
                 const isPurchasing = isPurchasingId === item.id;
                 return (
@@ -122,3 +126,11 @@ const styles = StyleSheet.create({
   messageBox: { minHeight: 52, justifyContent: 'center', paddingHorizontal: 14, borderTopWidth: 2, borderColor: '#e4cfb1', backgroundColor: '#fffaf1' }, message: { fontFamily, fontSize: 10, lineHeight: 17, textAlign: 'center', color: '#715944' },
   pressed: { opacity: 0.7 },
 });
+
+function isOwnedShopItem(item: ShopItem, ownedItemIds: readonly string[]): boolean {
+  return item.kind === 'inventory-item' && ownedItemIds.includes(item.id);
+}
+
+function getCapacityLabel(category: InventoryCapacityCategory) {
+  return category === 'decor' ? '꾸미기 가방' : '가방';
+}

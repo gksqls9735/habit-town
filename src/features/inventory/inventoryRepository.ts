@@ -1,8 +1,18 @@
 import * as SQLite from 'expo-sqlite';
 import { starterInventoryItems } from './inventoryCatalog';
-import { InventoryItem, InventoryItemCategory } from './types';
+import {
+  initialInventorySlotCount,
+  InventoryCapacityCategory,
+  InventoryItem,
+  InventoryItemCategory,
+} from './types';
 
 const databaseName = 'habit-town.db';
+const legacyInventoryCapacityMetadataKey = 'inventory_capacity';
+const inventoryCapacityMetadataKeys: Record<InventoryCapacityCategory, string> = {
+  decor: 'inventory_capacity_decor',
+  general: 'inventory_capacity_general',
+};
 
 type InventoryItemRow = {
   category: InventoryItemCategory;
@@ -27,6 +37,44 @@ export async function loadInventoryItems(): Promise<InventoryItem[]> {
      FROM inventory_items ORDER BY owned_at ASC`,
   );
   return rows.map(mapInventoryItemRow);
+}
+
+export async function loadInventoryCapacity(category: InventoryCapacityCategory): Promise<number> {
+  const db = await getInventoryDatabase();
+  const row = await db.getFirstAsync<{ value: string }>(
+    'SELECT value FROM inventory_metadata WHERE key = ?',
+    inventoryCapacityMetadataKeys[category],
+  );
+  const legacyRow = category === 'general' && !row
+    ? await db.getFirstAsync<{ value: string }>(
+        'SELECT value FROM inventory_metadata WHERE key = ?',
+        legacyInventoryCapacityMetadataKey,
+      )
+    : null;
+  const capacity = Number(row?.value ?? legacyRow?.value);
+
+  return Number.isInteger(capacity) && capacity >= initialInventorySlotCount
+    ? capacity
+    : initialInventorySlotCount;
+}
+
+export async function increaseInventoryCapacity(
+  category: InventoryCapacityCategory,
+  amount: number,
+): Promise<number> {
+  const db = await getInventoryDatabase();
+  const currentCapacity = await loadInventoryCapacity(category);
+  const nextCapacity = currentCapacity + amount;
+
+  await db.runAsync(
+    `INSERT INTO inventory_metadata (key, value)
+     VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    inventoryCapacityMetadataKeys[category],
+    String(nextCapacity),
+  );
+
+  return nextCapacity;
 }
 
 /**
@@ -56,6 +104,23 @@ export async function saveInventoryItem(item: InventoryItem) {
 export async function setInventoryItemEquipped(id: string, equipped: boolean) {
   const db = await getInventoryDatabase();
   await db.runAsync('UPDATE inventory_items SET equipped = ?, is_new = 0 WHERE id = ?', equipped ? 1 : 0, id);
+}
+
+export async function setInventoryItemsEquipped(
+  updates: readonly { equipped: boolean; id: string }[],
+) {
+  if (updates.length === 0) return;
+
+  const db = await getInventoryDatabase();
+  await db.withTransactionAsync(async () => {
+    for (const update of updates) {
+      await db.runAsync(
+        'UPDATE inventory_items SET equipped = ?, is_new = 0 WHERE id = ?',
+        update.equipped ? 1 : 0,
+        update.id,
+      );
+    }
+  });
 }
 
 /**

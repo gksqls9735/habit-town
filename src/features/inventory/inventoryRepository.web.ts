@@ -1,6 +1,16 @@
 import { starterInventoryItems } from './inventoryCatalog';
-import { InventoryItem, InventoryItemCategory } from './types';
+import {
+  initialInventorySlotCount,
+  InventoryCapacityCategory,
+  InventoryItem,
+  InventoryItemCategory,
+} from './types';
 
+const legacyInventoryCapacityStorageKey = 'habit-town.inventory.capacity.v1';
+const inventoryCapacityStorageKeys: Record<InventoryCapacityCategory, string> = {
+  decor: 'habit-town.inventory.capacity.decor.v1',
+  general: 'habit-town.inventory.capacity.general.v1',
+};
 const inventoryStorageKey = 'habit-town.inventory.v1';
 const inventoryCategories: readonly InventoryItemCategory[] = [
   'decor',
@@ -10,12 +20,27 @@ const inventoryCategories: readonly InventoryItemCategory[] = [
 ];
 
 let memoryItems: InventoryItem[] | null = null;
+let memoryCapacities: Partial<Record<InventoryCapacityCategory, number>> = {};
 
 /**
  * Loads inventory without pulling the native SQLite worker into the web bundle.
  */
 export async function loadInventoryItems(): Promise<InventoryItem[]> {
   return cloneItems(readInventoryItems());
+}
+
+export async function loadInventoryCapacity(category: InventoryCapacityCategory): Promise<number> {
+  return readInventoryCapacity(category);
+}
+
+export async function increaseInventoryCapacity(
+  category: InventoryCapacityCategory,
+  amount: number,
+): Promise<number> {
+  const nextCapacity = readInventoryCapacity(category) + amount;
+  writeInventoryCapacity(category, nextCapacity);
+
+  return nextCapacity;
 }
 
 /**
@@ -48,6 +73,21 @@ export async function saveInventoryItem(item: InventoryItem): Promise<void> {
  */
 export async function setInventoryItemEquipped(id: string, equipped: boolean): Promise<void> {
   updateInventoryItem(id, (item) => ({ ...item, equipped, isNew: false }));
+}
+
+export async function setInventoryItemsEquipped(
+  updates: readonly { equipped: boolean; id: string }[],
+): Promise<void> {
+  if (updates.length === 0) return;
+
+  const updateById = new Map(updates.map((update) => [update.id, update.equipped]));
+  const items = readInventoryItems().map((item) => {
+    const equipped = updateById.get(item.id);
+
+    return equipped === undefined ? item : { ...item, equipped, isNew: false };
+  });
+
+  writeInventoryItems(items);
 }
 
 /**
@@ -85,6 +125,44 @@ function readInventoryItems(): InventoryItem[] {
   const starterItems = cloneItems(starterInventoryItems);
   writeInventoryItems(starterItems);
   return starterItems;
+}
+
+function readInventoryCapacity(category: InventoryCapacityCategory): number {
+  const memoryCapacity = memoryCapacities[category];
+
+  if (memoryCapacity !== undefined) {
+    return memoryCapacity;
+  }
+
+  const storage = getBrowserStorage();
+  if (storage) {
+    const storedCapacity = Number(storage.getItem(inventoryCapacityStorageKeys[category]));
+    const legacyCapacity = category === 'general'
+      ? Number(storage.getItem(legacyInventoryCapacityStorageKey))
+      : NaN;
+    const capacity = Number.isInteger(storedCapacity) ? storedCapacity : legacyCapacity;
+
+    if (Number.isInteger(capacity) && capacity >= initialInventorySlotCount) {
+      memoryCapacities = { ...memoryCapacities, [category]: capacity };
+      return capacity;
+    }
+  }
+
+  writeInventoryCapacity(category, initialInventorySlotCount);
+  return initialInventorySlotCount;
+}
+
+function writeInventoryCapacity(category: InventoryCapacityCategory, capacity: number): void {
+  memoryCapacities = { ...memoryCapacities, [category]: capacity };
+  const storage = getBrowserStorage();
+
+  if (storage) {
+    try {
+      storage.setItem(inventoryCapacityStorageKeys[category], String(capacity));
+    } catch {
+      // In-memory state keeps the capacity usable when browser persistence is unavailable.
+    }
+  }
 }
 
 function writeInventoryItems(items: readonly InventoryItem[]): void {
