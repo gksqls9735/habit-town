@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -16,7 +17,6 @@ const pixelFontFamily = 'Galmuri11';
 
 type TodayTasksModalProps = {
   errorMessage: string;
-  expandedPlanIds: string[];
   hasUsedTaskRefresh: boolean;
   isGenerating: boolean;
   onClose: () => void;
@@ -24,7 +24,6 @@ type TodayTasksModalProps = {
   onOpenGoal: () => void;
   onRefreshOneTask: () => void;
   onSelectGoal: (goalId: string | null) => void;
-  onTogglePlan: (planId: string) => void;
   onToggleTask: (planId: string, taskId: string) => void;
   plans: DailyPlan[];
   selectedGoalId: string | null;
@@ -35,7 +34,6 @@ type TodayTasksModalProps = {
 
 export function TodayTasksModal({
   errorMessage,
-  expandedPlanIds,
   hasUsedTaskRefresh,
   isGenerating,
   onClose,
@@ -43,7 +41,6 @@ export function TodayTasksModal({
   onOpenGoal,
   onRefreshOneTask,
   onSelectGoal,
-  onTogglePlan,
   onToggleTask,
   plans,
   selectedGoalId,
@@ -56,10 +53,19 @@ export function TodayTasksModal({
   const selectedGoalPlans = selectedGoal
     ? plans.filter((plan) => plan.goalId === selectedGoal.id)
     : [];
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const selectedPlan = useMemo(
+    () => selectedGoalPlans.find((plan) => plan.id === selectedPlanId) ?? null,
+    [selectedGoalPlans, selectedPlanId],
+  );
   const hasRefreshableTask = selectedGoalPlans.some(
     (plan) => !isPlanExpired(plan) && plan.tasks.some((task) => !task.done),
   );
   const showGoalList = !selectedGoal;
+
+  useEffect(() => {
+    setSelectedPlanId(null);
+  }, [selectedGoalId, visible]);
 
   return (
     <Modal animationType="fade" transparent visible={visible}>
@@ -98,7 +104,7 @@ export function TodayTasksModal({
                   {showGoalList ? '올해 목표' : '목록으로'}
                 </Text>
               </Pressable>
-              {showGoalList ? null : selectedGoalPlans.length === 0 ? (
+              {!showGoalList && selectedGoalPlans.length === 0 ? (
                 <Pressable
                   accessibilityRole="button"
                   disabled={!selectedGoal || isGenerating}
@@ -118,39 +124,6 @@ export function TodayTasksModal({
                 </Pressable>
               ) : null}
             </View>
-
-            {!showGoalList && selectedGoalPlans.length > 0 ? (
-              <View style={styles.modalActionRow}>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={!hasRefreshableTask || hasUsedTaskRefresh || isGenerating}
-                  onPress={onRefreshOneTask}
-                  style={[
-                    styles.secondaryModalButton,
-                    (!hasRefreshableTask || hasUsedTaskRefresh || isGenerating)
-                      ? styles.disabledModalButton
-                      : null,
-                  ]}
-                >
-                  <Text style={styles.secondaryModalButtonText}>새로고침</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={isGenerating}
-                  onPress={onGenerate}
-                  style={[
-                    styles.primaryModalButton,
-                    isGenerating ? styles.disabledModalButton : null,
-                  ]}
-                >
-                  {isGenerating ? (
-                    <ActivityIndicator color="#fff8ea" />
-                  ) : (
-                    <Text style={styles.primaryModalButtonText}>광고 보고 추가 생성</Text>
-                  )}
-                </Pressable>
-              </View>
-            ) : null}
 
             {errorMessage ? (
               <Text style={styles.goalErrorText}>{errorMessage}</Text>
@@ -183,35 +156,31 @@ export function TodayTasksModal({
                 </Text>
               ) : (
                 selectedGoalPlans.map((plan) => (
-                  <View key={plan.id} style={styles.planBlock}>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() => onTogglePlan(plan.id)}
-                    >
-                      <Text style={styles.planRoundText}>
-                        {plan.round}회차 {isPlanExpired(plan) ? '만료됨' : '오늘'}
-                      </Text>
-                      <Text style={styles.planTitleText}>
-                        {expandedPlanIds.includes(plan.id) ? '접기' : '펼치기'} - {plan.title}
-                      </Text>
-                    </Pressable>
-                    {expandedPlanIds.includes(plan.id)
-                      ? plan.tasks.map((task) => (
-                          <TaskRow
-                            disabled={isPlanExpired(plan)}
-                            goalDifficulty={selectedGoal.difficulty}
-                            key={task.id}
-                            onPress={() => onToggleTask(plan.id, task.id)}
-                            task={task}
-                          />
-                        ))
-                      : null}
-                  </View>
+                  <PlanSummary
+                    key={plan.id}
+                    onPress={() => setSelectedPlanId(plan.id)}
+                    plan={plan}
+                  />
                 ))
               )}
             </ScrollView>
           </View>
         </View>
+        {selectedGoal && selectedPlan ? (
+          <TaskDetailPopup
+            errorMessage={errorMessage}
+            goalDifficulty={selectedGoal.difficulty}
+            hasRefreshableTask={hasRefreshableTask}
+            hasUsedTaskRefresh={hasUsedTaskRefresh}
+            isGenerating={isGenerating}
+            onClose={() => setSelectedPlanId(null)}
+            onGenerate={onGenerate}
+            onRefreshOneTask={onRefreshOneTask}
+            onToggleTask={onToggleTask}
+            plan={selectedPlan}
+            width={width}
+          />
+        ) : null}
       </View>
     </Modal>
   );
@@ -253,6 +222,145 @@ function GoalTaskSummary({
         </View>
       </View>
     </Pressable>
+  );
+}
+
+function PlanSummary({
+  onPress,
+  plan,
+}: {
+  onPress: () => void;
+  plan: DailyPlan;
+}) {
+  const completedTasks = plan.tasks.filter((task) => task.done).length;
+
+  return (
+    <Pressable
+      accessibilityLabel={`${plan.round}회차 ${isPlanExpired(plan) ? '만료됨' : '오늘'}, ${plan.title}, ${completedTasks}개 완료`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={styles.planBlock}
+    >
+      <View style={styles.planSummaryHeader}>
+        <View style={styles.planSummaryTextWrap}>
+          <Text style={styles.planRoundText}>
+            {plan.round}회차 {isPlanExpired(plan) ? '만료됨' : '오늘'}
+          </Text>
+          <Text style={styles.planTitleText}>{plan.title}</Text>
+        </View>
+        <Text style={styles.planTaskCount}>
+          {completedTasks}/{plan.tasks.length}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function TaskDetailPopup({
+  errorMessage,
+  goalDifficulty,
+  hasRefreshableTask,
+  hasUsedTaskRefresh,
+  isGenerating,
+  onClose,
+  onGenerate,
+  onRefreshOneTask,
+  onToggleTask,
+  plan,
+  width,
+}: {
+  errorMessage: string;
+  goalDifficulty: YearlyGoal['difficulty'];
+  hasRefreshableTask: boolean;
+  hasUsedTaskRefresh: boolean;
+  isGenerating: boolean;
+  onClose: () => void;
+  onGenerate: () => void;
+  onRefreshOneTask: () => void;
+  onToggleTask: (planId: string, taskId: string) => void;
+  plan: DailyPlan;
+  width: number;
+}) {
+  const isExpired = isPlanExpired(plan);
+
+  return (
+    <View style={styles.detailLayer}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.detailBackdrop} />
+      </TouchableWithoutFeedback>
+      <View style={[styles.tasksModalFrame, { width }]}>
+        <View style={styles.tasksModalPanel}>
+          <View style={styles.tasksHeader}>
+            <View style={styles.tasksHeaderTextWrap}>
+              <Text style={styles.simpleModalTitle}>{plan.title}</Text>
+              <Text style={styles.goalSummaryText}>
+                {plan.round}회차 {isExpired ? '만료됨' : '오늘'}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityLabel="할 일 팝업 닫기"
+              accessibilityRole="button"
+              onPress={onClose}
+              style={styles.smallCloseButton}
+            >
+              <Text style={styles.smallCloseText}>x</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.modalActionRow}>
+            <Pressable
+              accessibilityRole="button"
+              disabled={!hasRefreshableTask || hasUsedTaskRefresh || isGenerating}
+              onPress={onRefreshOneTask}
+              style={[
+                styles.secondaryModalButton,
+                (!hasRefreshableTask || hasUsedTaskRefresh || isGenerating)
+                  ? styles.disabledModalButton
+                  : null,
+              ]}
+            >
+              <Text style={styles.secondaryModalButtonText}>새로고침</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              disabled={isGenerating}
+              onPress={onGenerate}
+              style={[
+                styles.primaryModalButton,
+                isGenerating ? styles.disabledModalButton : null,
+              ]}
+            >
+              {isGenerating ? (
+                <ActivityIndicator color="#fff8ea" />
+              ) : (
+                <Text style={styles.primaryModalButtonText}>광고 보고 추가 생성</Text>
+              )}
+            </Pressable>
+          </View>
+
+          {errorMessage ? (
+            <Text style={styles.goalErrorText}>{errorMessage}</Text>
+          ) : null}
+
+          <ScrollView
+            contentContainerStyle={styles.taskListContent}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+            style={styles.taskListScroll}
+          >
+            {plan.tasks.map((task) => (
+              <TaskRow
+                disabled={isExpired}
+                goalDifficulty={goalDifficulty}
+                key={task.id}
+                onPress={() => onToggleTask(plan.id, task.id)}
+                task={task}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -310,6 +418,25 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     backgroundColor: 'rgba(49, 42, 35, 0.58)',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  detailLayer: {
+    alignItems: 'center',
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    padding: 16,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 50,
+  },
+  detailBackdrop: {
+    backgroundColor: 'rgba(49, 42, 35, 0.32)',
     bottom: 0,
     left: 0,
     position: 'absolute',
@@ -488,6 +615,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 10,
   },
+  planSummaryHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  planSummaryTextWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
   planRoundText: {
     color: '#b36b31',
     fontFamily: pixelFontFamily,
@@ -503,6 +640,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     lineHeight: 18,
     marginTop: 4,
+  },
+  planTaskCount: {
+    color: '#8f5e33',
+    fontFamily: pixelFontFamily,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0,
+    lineHeight: 17,
   },
   taskRow: {
     alignItems: 'flex-start',

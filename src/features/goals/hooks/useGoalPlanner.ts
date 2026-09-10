@@ -20,6 +20,53 @@ import {
 
 type GenerationType = 'basic' | 'ad';
 
+const basicDailyPlanTitle = '오늘 할 일';
+const adDailyPlanTitle = '광고 보상 추가 할 일';
+
+async function createDailyPlansForGoals(
+  targetGoals: YearlyGoal[],
+  existingPlans: DailyPlan[],
+  generationType: GenerationType,
+): Promise<DailyPlan[]> {
+  const nextTasks = await Promise.all(
+    targetGoals.map((goal) =>
+      generateDailyTasksForGoal(
+        goal,
+        getExcludedTaskTitles(existingPlans, goal.id),
+        generationType === 'basic' ? 3 : 1,
+      ),
+    ),
+  );
+
+  return targetGoals.map((goal, index) => {
+    const generatedAt = Date.now() + index;
+
+    return {
+      expiresAt: getNextMidnightTimestamp(generatedAt),
+      generatedAt,
+      goalId: goal.id,
+      goalTitle: goal.title,
+      id: `${generatedAt}-${goal.id}`,
+      round: getNextRoundForGoal(existingPlans, goal.id),
+      tasks: nextTasks[index],
+      title: generationType === 'basic' ? basicDailyPlanTitle : adDailyPlanTitle,
+    };
+  });
+}
+
+function hasEditableBasicDailyPlan(
+  plans: DailyPlan[],
+  goalId: string,
+  now = Date.now(),
+) {
+  return plans.some(
+    (plan) =>
+      plan.goalId === goalId &&
+      plan.title === basicDailyPlanTitle &&
+      canEditPlan(plan, now),
+  );
+}
+
 export function useGoalPlanner() {
   const [isTodayTasksOpen, setIsTodayTasksOpen] = useState(false);
   const [isYearlyGoalOpen, setIsYearlyGoalOpen] = useState(false);
@@ -27,7 +74,6 @@ export function useGoalPlanner() {
   const [yearlyGoalDraft, setYearlyGoalDraft] = useState('');
   const [yearlyGoalDifficulty, setYearlyGoalDifficulty] = useState<GoalDifficulty>('medium');
   const [dailyPlans, setDailyPlans] = useState<DailyPlan[]>([]);
-  const [expandedPlanIds, setExpandedPlanIds] = useState<string[]>([]);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [goalError, setGoalError] = useState('');
   const [hasUsedTaskRefresh, setHasUsedTaskRefresh] = useState(false);
@@ -38,8 +84,9 @@ export function useGoalPlanner() {
   useEffect(() => {
     let isMounted = true;
 
-    loadGoalPlannerData()
-      .then((savedData) => {
+    const loadGoalPlanner = async () => {
+      try {
+        const savedData = await loadGoalPlannerData();
         if (!isMounted) {
           return;
         }
@@ -48,20 +95,53 @@ export function useGoalPlanner() {
         setDailyPlans(savedData.dailyPlans);
         setHasUsedTaskRefresh(savedData.hasUsedTaskRefresh);
         setRewardProgress(savedData.rewardProgress);
-      })
-      .catch((error) => {
+
+        const goalsMissingTodayPlan = savedData.yearlyGoals.filter(
+          (goal) => !hasEditableBasicDailyPlan(savedData.dailyPlans, goal.id),
+        );
+
+        if (goalsMissingTodayPlan.length === 0) {
+          return;
+        }
+
+        setIsGeneratingPlan(true);
+        setGoalError('');
+
+        const nextPlans = await createDailyPlansForGoals(
+          goalsMissingTodayPlan,
+          savedData.dailyPlans,
+          'basic',
+        );
+
+        if (!isMounted) {
+          return;
+        }
+
+        const savedPlans = [...nextPlans, ...savedData.dailyPlans];
+
+        setDailyPlans(savedPlans);
+        await saveGoalPlannerData({
+          dailyPlans: savedPlans,
+          hasUsedTaskRefresh: savedData.hasUsedTaskRefresh,
+          rewardProgress: savedData.rewardProgress,
+          yearlyGoals: savedData.yearlyGoals,
+        });
+      } catch (error) {
         const message =
           error instanceof Error ? error.message : '저장된 목표 데이터를 불러오지 못했습니다.';
 
         if (isMounted) {
           setGoalError(message);
         }
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) {
+          setIsGeneratingPlan(false);
           setIsLoadingGoalData(false);
         }
-      });
+      }
+    };
+
+    loadGoalPlanner();
 
     return () => {
       isMounted = false;
@@ -131,36 +211,15 @@ export function useGoalPlanner() {
     setGoalError('');
 
     try {
-      const nextTasks = await Promise.all(
-        targetGoals.map((goal) =>
-          generateDailyTasksForGoal(
-            goal,
-            getExcludedTaskTitles(dailyPlans, goal.id),
-            generationType === 'basic' ? 3 : 1,
-          ),
-        ),
+      const nextPlans = await createDailyPlansForGoals(
+        targetGoals,
+        dailyPlans,
+        generationType,
       );
-      const nextPlans = targetGoals.map((goal, index) => {
-        const generatedAt = Date.now() + index;
-        return {
-          expiresAt: getNextMidnightTimestamp(generatedAt),
-          generatedAt,
-          goalId: goal.id,
-          goalTitle: goal.title,
-          id: `${generatedAt}-${goal.id}`,
-          round: getNextRoundForGoal(dailyPlans, goal.id),
-          tasks: nextTasks[index],
-          title: generationType === 'basic' ? '오늘 할 일' : '광고 보상 추가 할 일',
-        };
-      });
 
       const savedPlans = [...nextPlans, ...dailyPlans];
 
       setDailyPlans(savedPlans);
-      setExpandedPlanIds((currentIds) => [
-        ...nextPlans.map((plan) => plan.id),
-        ...currentIds,
-      ]);
       persistGoalPlannerData(yearlyGoalsOverride, savedPlans);
     } catch (error) {
       const message =
@@ -308,14 +367,6 @@ export function useGoalPlanner() {
     persistGoalPlannerData(yearlyGoals, nextPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
 
-  const togglePlanExpanded = (planId: string) => {
-    setExpandedPlanIds((currentIds) =>
-      currentIds.includes(planId)
-        ? currentIds.filter((id) => id !== planId)
-        : [...currentIds, planId],
-    );
-  };
-
   const grantCurrencyReward = (coins: number) => {
     const nextRewardProgress = applyCurrencyReward(rewardProgress, coins);
 
@@ -340,7 +391,6 @@ export function useGoalPlanner() {
     closeTodayTasks,
     closeYearlyGoal,
     dailyPlans,
-    expandedPlanIds,
     grantCurrencyReward,
     generateAdditionalTaskForSelectedGoal,
     goalError,
@@ -359,7 +409,6 @@ export function useGoalPlanner() {
     setYearlyGoalDifficulty,
     setYearlyGoalDraft,
     spendCurrencyReward,
-    togglePlanExpanded,
     toggleTask,
     yearlyGoalDraft,
     yearlyGoalDifficulty,

@@ -88,7 +88,6 @@ export function HomeScreen() {
     closeTodayTasks,
     closeYearlyGoal,
     dailyPlans,
-    expandedPlanIds,
     grantCurrencyReward,
     generateAdditionalTaskForSelectedGoal,
     goalError,
@@ -106,7 +105,6 @@ export function HomeScreen() {
     setYearlyGoalDifficulty,
     setYearlyGoalDraft,
     spendCurrencyReward,
-    togglePlanExpanded,
     toggleTask,
     yearlyGoalDraft,
     yearlyGoalDifficulty,
@@ -411,11 +409,9 @@ export function HomeScreen() {
           onOpenGoal={openYearlyGoalFromTodayTasks}
           onRefreshOneTask={refreshOneIncompleteTaskForSelectedGoal}
           onSelectGoal={setSelectedTaskGoalId}
-          onTogglePlan={togglePlanExpanded}
           onToggleTask={toggleTask}
           plans={dailyPlans}
           selectedGoalId={selectedTaskGoalId}
-          expandedPlanIds={expandedPlanIds}
           visible={isTodayTasksOpen}
           width={popupWidth}
           yearlyGoals={yearlyGoals}
