@@ -81,8 +81,6 @@ export function EventPopup({ onClose, visible, width }: EventPopupProps) {
       </TouchableWithoutFeedback>
 
       <View style={[styles.popupFrame, { width }]}>
-        <View style={styles.frameShadowRight} />
-        <View style={styles.frameShadowBottom} />
         <View style={styles.outerBorder}>
           <View style={styles.cornerTopLeft} />
           <View style={styles.cornerTopRight} />
@@ -100,7 +98,7 @@ export function EventPopup({ onClose, visible, width }: EventPopupProps) {
                 onPress={closePopup}
                 style={styles.closeButton}
               >
-                <Text style={styles.closeText}>×</Text>
+                <Text style={styles.closeText}>x</Text>
               </Pressable>
             </View>
 
@@ -159,8 +157,6 @@ function EventDetailPopup({
       </TouchableWithoutFeedback>
 
       <View style={[styles.detailFrame, { width: Math.min(width - 18, 330) }]}>
-        <View style={styles.frameShadowRight} />
-        <View style={styles.frameShadowBottom} />
         <View style={styles.outerBorder}>
           <View style={styles.cornerTopLeft} />
           <View style={styles.cornerTopRight} />
@@ -180,7 +176,7 @@ function EventDetailPopup({
                 onPress={onClose}
                 style={styles.closeButton}
               >
-                <Text style={styles.closeText}>×</Text>
+                <Text style={styles.closeText}>x</Text>
               </Pressable>
             </View>
 
@@ -205,10 +201,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffd99e',
     borderColor: '#6b432f',
     borderWidth: 2,
-    height: 34,
+    height: 36,
     justifyContent: 'center',
     marginLeft: 8,
-    width: 34,
+    width: 36,
   },
   closeText: {
     color: '#5c3529',
@@ -306,22 +302,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
     marginBottom: 4,
-  },
-  frameShadowBottom: {
-    backgroundColor: '#6b432f',
-    bottom: -4,
-    height: 5,
-    left: 5,
-    position: 'absolute',
-    right: -4,
-  },
-  frameShadowRight: {
-    backgroundColor: '#8c5f3e',
-    bottom: -4,
-    position: 'absolute',
-    right: -4,
-    top: 5,
-    width: 5,
   },
   header: {
     alignItems: 'center',

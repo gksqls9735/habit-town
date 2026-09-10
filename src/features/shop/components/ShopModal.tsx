@@ -49,7 +49,6 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
       <View style={[styles.layer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="상점 닫기" onPress={onClose} style={styles.backdrop} />
         <View style={{ width: panelWidth, maxHeight: height - insets.top - insets.bottom - 32 }}>
-          <View pointerEvents="none" style={styles.pixelShadow} />
           <View accessibilityViewIsModal style={styles.panel}>
             <View style={styles.header}>
               <Image source={require('../../../../assets/ui/shop-button.png')} resizeMode="contain" style={styles.shopIcon} />
@@ -59,7 +58,7 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
               </View>
               <View style={styles.balance}><Text style={styles.coin}>◆</Text><Text style={styles.balanceText}>{coinBalance.toLocaleString()}</Text></View>
               <Pressable accessibilityRole="button" accessibilityLabel="상점 팝업 닫기" onPress={onClose} style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
-                <Text style={styles.closeText}>×</Text>
+                <Text style={styles.closeText}>x</Text>
               </Pressable>
             </View>
             <View style={styles.filters}>
@@ -101,16 +100,15 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
 
 const styles = StyleSheet.create({
   layer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
-  backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(43, 32, 28, 0.48)' },
-  pixelShadow: { position: 'absolute', top: 4, bottom: -4, left: 4, right: -4, backgroundColor: '#493b32' },
-  panel: { flexShrink: 1, borderWidth: 2, borderColor: '#3d2d28', backgroundColor: '#fff8ec' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 10, gap: 7, borderBottomWidth: 3, borderColor: '#d9bf9c', backgroundColor: '#f0dfc6' },
+  backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(49, 42, 35, 0.58)' },
+  panel: { flexShrink: 1, borderWidth: 2, borderColor: '#3d2d28', backgroundColor: '#fff8ea' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 10, gap: 7, backgroundColor: '#fff8ea' },
   shopIcon: { width: 40, height: 40 }, heading: { flex: 1 },
   eyebrow: { fontFamily, fontSize: 9, letterSpacing: 1, color: '#80634c', marginBottom: 4 }, title: { fontFamily, fontSize: 16, color: '#49372d' },
   balance: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, borderWidth: 2, borderColor: '#b39370', backgroundColor: '#fff8ec' },
   coin: { color: '#d88a3d', fontSize: 12 }, balanceText: { fontFamily, fontSize: 10, color: '#604832' },
-  close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff8ec', borderWidth: 2, borderColor: '#98785c', borderBottomWidth: 4 },
-  closeText: { fontFamily, fontSize: 25, color: '#644832' },
+  close: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffd99e', borderWidth: 2, borderColor: '#6b432f' },
+  closeText: { fontFamily, fontSize: 20, color: '#5c3529' },
   filters: { flexDirection: 'row', gap: 6, padding: 14, borderBottomWidth: 2, borderColor: '#e4cfb1' },
   filter: { flex: 1, minHeight: 44, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#d8c4a9', backgroundColor: '#f8eddd' },
   activeFilter: { borderColor: '#705340', backgroundColor: '#705340' }, filterText: { fontFamily, fontSize: 10, color: '#745c47' }, activeFilterText: { color: '#fff8ec' },

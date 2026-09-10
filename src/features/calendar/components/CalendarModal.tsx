@@ -78,7 +78,7 @@ export function CalendarModal({ onClose, plans, onToggleTask, isLoading, isBusy,
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel="캘린더 닫기" onPress={onClose}
               style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}>
-              <Text style={styles.closeText}>×</Text>
+              <Text style={styles.closeText}>x</Text>
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -192,12 +192,12 @@ function CalendarDay({ date, hidden, selected, today, onSelect, record }: {
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(49,42,35,0.58)' },
-  frame: { width: '100%', maxWidth: 390, maxHeight: '94%', backgroundColor: '#fff8ea', borderWidth: 2, borderColor: '#3d2d28', boxShadow: '4px 5px 0 rgba(49,42,35,0.22)' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, backgroundColor: '#f2dfb6', borderBottomWidth: 2, borderBottomColor: '#c8a47d', gap: 8 },
+  frame: { width: '100%', maxWidth: 390, maxHeight: '94%', backgroundColor: '#fff8ea', borderWidth: 2, borderColor: '#3d2d28' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, backgroundColor: '#fff8ea', gap: 8 },
   eyebrow: { fontFamily, fontSize: 10, color: '#725642', marginBottom: 7 },
   title: { fontFamily, fontSize: 20, color: '#35281f' },
-  closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#987052', backgroundColor: '#fff8ea' },
-  closeText: { fontFamily, fontSize: 26, color: '#6b432f' },
+  closeButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#6b432f', backgroundColor: '#ffd99e' },
+  closeText: { fontFamily, fontSize: 20, color: '#5c3529' },
   content: { padding: 10 },
   toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4, paddingHorizontal: 4 },
   subtitle: { fontFamily, fontSize: 10, color: '#786453', flexShrink: 1 },

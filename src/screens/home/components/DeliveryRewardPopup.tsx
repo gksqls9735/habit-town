@@ -64,8 +64,6 @@ export function DeliveryRewardPopup({
       </TouchableWithoutFeedback>
 
       <View style={[styles.popupFrame, { width }]}>
-        <View style={styles.frameShadowRight} />
-        <View style={styles.frameShadowBottom} />
         <View style={styles.outerBorder}>
           <View style={styles.cornerTopLeft} />
           <View style={styles.cornerTopRight} />
@@ -165,10 +163,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffd99e',
     borderColor: '#6b432f',
     borderWidth: 2,
-    height: 34,
+    height: 36,
     justifyContent: 'center',
     marginLeft: 8,
-    width: 34,
+    width: 36,
   },
   closeText: {
     color: '#5c3529',
@@ -256,22 +254,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
-  },
-  frameShadowBottom: {
-    backgroundColor: '#6b432f',
-    bottom: -4,
-    height: 5,
-    left: 5,
-    position: 'absolute',
-    right: -4,
-  },
-  frameShadowRight: {
-    backgroundColor: '#8c5f3e',
-    bottom: -4,
-    position: 'absolute',
-    right: -4,
-    top: 5,
-    width: 5,
   },
   header: {
     alignItems: 'flex-start',

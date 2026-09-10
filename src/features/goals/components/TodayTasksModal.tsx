@@ -483,9 +483,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffd99e',
     borderColor: '#6b432f',
     borderWidth: 2,
-    height: 32,
+    height: 36,
     justifyContent: 'center',
-    width: 32,
+    width: 36,
   },
   smallCloseText: {
     color: '#5c3529',
