@@ -85,6 +85,16 @@ export function applyCurrencyReward(
   };
 }
 
+export function applyExperienceReward(
+  progress: RewardProgress,
+  experience: number,
+): RewardProgress {
+  return applyTaskReward(progress, {
+    coins: 0,
+    experience: Math.max(0, Math.floor(experience)),
+  });
+}
+
 export function applyCurrencySpend(
   progress: RewardProgress,
   coins: number,

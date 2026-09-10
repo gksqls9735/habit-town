@@ -23,6 +23,7 @@ const actions = [
   { label: '밥먹이기', color: '#f6e3bb', icon: feedBowlFullIcon },
   { label: '놀아주기', color: '#f3ded0', icon: playBallIcon },
 ];
+const experienceRingSegments = 32;
 const pixelStyle = Platform.OS === 'web'
   ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle) : undefined;
 
@@ -44,13 +45,17 @@ export function PetStatusHud({
         <View style={styles.portraitColumn}>
           <View style={styles.ring} accessibilityRole="progressbar"
             accessibilityLabel={`${petName} 경험치`} accessibilityValue={{ min: 0, max: 100, now: Math.round(experiencePercent * 100) }}>
-            {Array.from({ length: 64 }, (_, index) => {
-              const angle = index / 64 * Math.PI * 2 - Math.PI / 2;
+            <View style={styles.ringInnerShadow} />
+            {Array.from({ length: experienceRingSegments }, (_, index) => {
+              const angle = index / experienceRingSegments * Math.PI * 2 - Math.PI / 2;
+              const isFilled = index < Math.round(experiencePercent * experienceRingSegments);
+
               return <View key={index} style={[styles.ringSegment, {
-                left: 33 + Math.cos(angle) * 31 - 1.5,
-                top: 33 + Math.sin(angle) * 31 - 1.5,
-                transform: [{ rotate: `${index / 64 * 360}deg` }],
-                backgroundColor: index < Math.round(experiencePercent * 64) ? '#8aab65' : '#e2d8bc',
+                left: 34 + Math.cos(angle) * 30 - 3,
+                top: 34 + Math.sin(angle) * 30 - 3,
+                transform: [{ rotate: `${index / experienceRingSegments * 360}deg` }],
+                backgroundColor: isFilled ? '#87a85d' : '#d5c99f',
+                borderColor: isFilled ? '#5d743f' : '#b9a87d',
               }]} />;
             })}
             <View style={styles.portrait}>
@@ -102,8 +107,9 @@ const styles = StyleSheet.create({
   top: { position: 'absolute', top: 10, left: 10, right: 10, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, zIndex: 10 },
   statusPanel: { width: '50%', maxWidth: 390, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   portraitColumn: { alignItems: 'center', width: 68, paddingBottom: 6 },
-  ring: { width: 68, height: 68, borderRadius: 34, borderWidth: 1, borderColor: '#624936', backgroundColor: '#e2d8bc' },
-  ringSegment: { position: 'absolute', width: 3, height: 3 },
+  ring: { width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: '#624936', backgroundColor: '#efe1b8' },
+  ringInnerShadow: { position: 'absolute', left: 5, top: 5, width: 54, height: 54, borderRadius: 27, borderWidth: 2, borderColor: '#c8b88e' },
+  ringSegment: { position: 'absolute', width: 6, height: 6, borderWidth: 1 },
   portrait: { position: 'absolute', left: 4, top: 4, width: 58, height: 58, borderRadius: 29, borderWidth: 1, borderColor: '#624936', backgroundColor: '#fffaf0', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   petImage: { width: 86, height: 86, flexShrink: 0, transform: [{ translateX: 3 }, { translateY: 11 }] },
   stageBadge: { position: 'absolute', bottom: 0, zIndex: 1, fontFamily, fontSize: 9, color: '#624936', backgroundColor: '#fff0cd', borderColor: '#795c43', borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },

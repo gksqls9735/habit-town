@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -14,7 +14,12 @@ import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
 import { InventoryModal } from '../../features/inventory/components/InventoryModal';
 import { loadInventoryItems, saveInventoryItem } from '../../features/inventory/inventoryRepository';
+import {
+  DeliveryEventReason,
+  drawDeliveryMessage,
+} from '../../features/rewards/deliveryMessages';
 import { DeliveryReward, drawDeliveryReward } from '../../features/rewards/eventRewards';
+import { experiencePerGrowthStage, growthStages } from '../../features/rewards/rewardSystem';
 import { ShopModal } from '../../features/shop/components/ShopModal';
 import type { ShopItem } from '../../features/shop/items';
 import { DeliveryRewardPopup } from './components/DeliveryRewardPopup';
@@ -33,6 +38,11 @@ const roomWallpaperImage = require('../../../assets/png/backgrounds/basic-room-w
 const roomFloorImage = require('../../../assets/png/backgrounds/basic-room-floor.png');
 const pixelFontFamily = 'Galmuri11';
 const localDevCurrencyGrantAmount = 1000;
+const localDevExperienceGrantAmount = 10;
+
+function getGrowthStageIndex(stage: GrowthStage) {
+  return growthStages.indexOf(stage);
+}
 /*
  * Animation assets are temporarily disabled. Keep these requires here so the
  * pet animations can be restored without hunting down asset paths later.
@@ -78,6 +88,8 @@ export function HomeScreen() {
   const [rewardDeliveryEventKey, setRewardDeliveryEventKey] = useState(0);
   const [isRewardParcelAvailable, setIsRewardParcelAvailable] = useState(false);
   const [deliveryReward, setDeliveryReward] = useState<DeliveryReward | null>(null);
+  const [deliveryRewardMessage, setDeliveryRewardMessage] = useState('');
+  const [deliveryEventReason, setDeliveryEventReason] = useState<DeliveryEventReason>('manual');
   const [isDeliveryRewardPopupOpen, setIsDeliveryRewardPopupOpen] = useState(false);
   const [isClaimingDeliveryReward, setIsClaimingDeliveryReward] = useState(false);
   const [deliveryRewardError, setDeliveryRewardError] = useState('');
@@ -89,16 +101,19 @@ export function HomeScreen() {
     closeYearlyGoal,
     dailyPlans,
     grantCurrencyReward,
+    grantExperienceReward,
     generateAdditionalTaskForSelectedGoal,
     goalError,
     hasUsedTaskRefresh,
     isGeneratingPlan,
+    isLoadingGoalData,
     isTodayTasksOpen,
     isYearlyGoalOpen,
     openTodayTasks,
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
     refreshOneIncompleteTaskForSelectedGoal,
+    resetPetGrowth,
     rewardProgress,
     selectedTaskGoalId,
     setSelectedTaskGoalId,
@@ -125,6 +140,7 @@ export function HomeScreen() {
   const sideInset = Math.max(6, Math.round(width * 0.02));
   const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
   const currentStage = rewardProgress.stage;
+  const previousGrowthStageRef = useRef<GrowthStage | null>(null);
   const characterSize = Math.round(132 * roomScale);
   const characterBottom = Math.max(100, Math.round(height * (compactHeight ? 0.15 : 0.18)));
   const showLocalDevButton = isLocalhostDevWeb();
@@ -184,13 +200,34 @@ export function HomeScreen() {
 
     return action;
   });
-  const startRewardDelivery = () => {
+  const startRewardDelivery = useCallback((reason: DeliveryEventReason = 'manual') => {
     setDeliveryReward(null);
+    setDeliveryRewardMessage('');
+    setDeliveryEventReason(reason);
     setDeliveryRewardError('');
     setIsDeliveryRewardPopupOpen(false);
     setIsRewardParcelAvailable(true);
     setRewardDeliveryEventKey((current) => current + 1);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isLoadingGoalData) {
+      return;
+    }
+
+    const previousStage = previousGrowthStageRef.current;
+
+    if (previousStage === null) {
+      previousGrowthStageRef.current = currentStage;
+      return;
+    }
+
+    previousGrowthStageRef.current = currentStage;
+
+    if (getGrowthStageIndex(currentStage) > getGrowthStageIndex(previousStage)) {
+      startRewardDelivery('growth');
+    }
+  }, [currentStage, isLoadingGoalData, startRewardDelivery]);
   const handleLocalDevAction = (label: string) => {
     if (label === '이벤트:택배') {
       startRewardDelivery();
@@ -199,6 +236,21 @@ export function HomeScreen() {
 
     if (label === '데이터:재화 증가') {
       grantCurrencyReward(localDevCurrencyGrantAmount);
+      return;
+    }
+
+    if (label === '데이터:경험치 증가') {
+      grantExperienceReward(localDevExperienceGrantAmount);
+      return;
+    }
+
+    if (label === '데이터:경험치 100%') {
+      grantExperienceReward(experiencePerGrowthStage);
+      return;
+    }
+
+    if (label === '리셋') {
+      resetPetGrowth();
     }
   };
   const closeDeliveryReward = () => {
@@ -208,12 +260,14 @@ export function HomeScreen() {
   const discardDeliveryReward = () => {
     if (isClaimingDeliveryReward) return;
     setDeliveryReward(null);
+    setDeliveryRewardMessage('');
     setDeliveryRewardError('');
     setIsDeliveryRewardPopupOpen(false);
     setIsRewardParcelAvailable(false);
   };
   const openDeliveryReward = () => {
     setDeliveryReward((current) => current ?? drawDeliveryReward());
+    setDeliveryRewardMessage((current) => current || drawDeliveryMessage(deliveryEventReason));
     setDeliveryRewardError('');
     setIsDeliveryRewardPopupOpen(true);
   };
@@ -231,6 +285,7 @@ export function HomeScreen() {
       }
 
       setDeliveryReward(null);
+      setDeliveryRewardMessage('');
       setIsDeliveryRewardPopupOpen(false);
       setIsRewardParcelAvailable(false);
     } catch {
@@ -378,6 +433,7 @@ export function HomeScreen() {
           onAccept={acceptDeliveryReward}
           onClose={closeDeliveryReward}
           onDiscard={discardDeliveryReward}
+          message={deliveryRewardMessage}
           reward={deliveryReward}
           visible={isDeliveryRewardPopupOpen}
           width={popupWidth}

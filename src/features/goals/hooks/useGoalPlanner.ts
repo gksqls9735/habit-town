@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   applyCurrencyReward,
   applyCurrencySpend,
+  applyExperienceReward,
   applyTaskReward,
   calculateTaskReward,
   initialRewardProgress,
@@ -374,6 +375,26 @@ export function useGoalPlanner() {
     persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
 
+  const grantExperienceReward = (experience: number) => {
+    const nextRewardProgress = applyExperienceReward(rewardProgress, experience);
+
+    setRewardProgress(nextRewardProgress);
+    persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
+  };
+
+  const resetPetGrowth = () => {
+    const nextRewardProgress: RewardProgress = {
+      ...rewardProgress,
+      experience: initialRewardProgress.experience,
+      level: initialRewardProgress.level,
+      stage: initialRewardProgress.stage,
+      totalExperience: initialRewardProgress.totalExperience,
+    };
+
+    setRewardProgress(nextRewardProgress);
+    persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
+  };
+
   const spendCurrencyReward = (coins: number) => {
     const nextRewardProgress = applyCurrencySpend(rewardProgress, coins);
 
@@ -392,6 +413,7 @@ export function useGoalPlanner() {
     closeYearlyGoal,
     dailyPlans,
     grantCurrencyReward,
+    grantExperienceReward,
     generateAdditionalTaskForSelectedGoal,
     goalError,
     hasUsedTaskRefresh,
@@ -403,6 +425,7 @@ export function useGoalPlanner() {
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
     refreshOneIncompleteTaskForSelectedGoal,
+    resetPetGrowth,
     rewardProgress,
     selectedTaskGoalId,
     setSelectedTaskGoalId,

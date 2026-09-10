@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 const localDevActions = ['이벤트', '데이터', '상태', '리셋'] as const;
 const localDevSubActions = {
   이벤트: ['택배'],
-  데이터: ['재화 증가'],
+  데이터: ['재화 증가', '경험치 증가', '경험치 100%'],
 } as const;
 const pixelFontFamily = 'Galmuri11';
 const localDevSubMenuRowHeight = 42;

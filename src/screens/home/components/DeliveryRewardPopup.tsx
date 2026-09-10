@@ -25,6 +25,7 @@ const rarityLabels: Record<DeliveryRewardRarity, string> = {
 
 type DeliveryRewardPopupProps = {
   isBusy: boolean;
+  message: string;
   onAccept: () => void;
   onClose: () => void;
   onDiscard: () => void;
@@ -35,6 +36,7 @@ type DeliveryRewardPopupProps = {
 
 export function DeliveryRewardPopup({
   isBusy,
+  message,
   onAccept,
   onClose,
   onDiscard,
@@ -87,6 +89,10 @@ export function DeliveryRewardPopup({
             </View>
 
             <View style={styles.content}>
+              {message ? (
+                <Text style={styles.eventMessage}>{message}</Text>
+              ) : null}
+
               <View style={styles.rewardStage}>
                 <Image
                   accessibilityIgnoresInvertColors
@@ -236,6 +242,20 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
     marginBottom: 5,
+  },
+  eventMessage: {
+    backgroundColor: '#fff0cc',
+    borderColor: '#d8b878',
+    borderWidth: 2,
+    color: '#5c3529',
+    fontFamily: pixelFontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0,
+    lineHeight: 16,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   frameShadowBottom: {
     backgroundColor: '#6b432f',
