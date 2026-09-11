@@ -15,6 +15,14 @@ import { getItemImage } from '../../items/itemImages';
 import { getItemShopCategory, type ItemCatalogShopCategory } from '../../items/itemCatalog';
 
 const pixelFontFamily = 'Galmuri11';
+const contentHorizontalPadding = 12;
+const popupBorderWidth = 2;
+const slotColumnCount = 6;
+const slotGap = 4;
+const slotMinimumSize = 34;
+const slotVisibleRowCount = 4;
+const slotTrayBorderWidth = 3;
+const slotTrayPadding = 4;
 
 type InventorySection = 'general' | 'decor';
 type DecorInventoryCategory = 'all' | ItemCatalogShopCategory;
@@ -90,7 +98,10 @@ export function InventoryModal({
   const activeSectionItemCount = sectionCounts[activeSection];
   const activeSectionCapacity = capacities[activeSection === 'decor' ? 'decor' : 'general'];
   const visibleSlotCount = Math.max(activeSectionCapacity, sectionItems.length);
-  const slotSize = Math.max(38, Math.floor((width - 76) / 6));
+  const slotSize = getResponsiveSlotSize(width);
+  const slotGridWidth = (slotSize * slotColumnCount) + (slotGap * (slotColumnCount - 1));
+  const slotGridViewportHeight = (slotSize * slotVisibleRowCount)
+    + (slotGap * (slotVisibleRowCount - 1));
 
   useEffect(() => {
     if (visible) {
@@ -274,45 +285,52 @@ export function InventoryModal({
                     </View>
                   ) : null}
                   <View style={styles.slotTray}>
-                    <View style={styles.slotGrid}>
-                      {Array.from({ length: visibleSlotCount }, (_, index) => {
-                        const item = sectionItems[index];
+                    <ScrollView
+                      nestedScrollEnabled
+                      showsVerticalScrollIndicator={false}
+                      style={[styles.slotGridScroll, { height: slotGridViewportHeight }]}
+                      contentContainerStyle={styles.slotGridScrollContent}
+                    >
+                      <View style={[styles.slotGrid, { width: slotGridWidth }]}>
+                        {Array.from({ length: visibleSlotCount }, (_, index) => {
+                          const item = sectionItems[index];
 
-                        if (!item) {
+                          if (!item) {
+                            return (
+                              <View
+                                accessibilityLabel={`빈 슬롯 ${index + 1}`}
+                                key={`empty-${index}`}
+                                style={[styles.slot, { height: slotSize, width: slotSize }]}
+                              />
+                            );
+                          }
+
+                          const selected = selectedItemId === item.id;
                           return (
-                            <View
-                              accessibilityLabel={`빈 슬롯 ${index + 1}`}
-                              key={`empty-${index}`}
-                              style={[styles.slot, { height: slotSize, width: slotSize }]}
-                            />
+                            <Pressable
+                              accessibilityLabel={`${item.name}, ${item.quantity}개`}
+                              accessibilityRole="button"
+                              key={item.id}
+                              onPress={() => handleSelectItem(item)}
+                              style={[
+                                styles.slot,
+                                selected ? styles.slotSelected : null,
+                                { height: slotSize, width: slotSize },
+                              ]}
+                            >
+                              <PixelItemIcon item={item} size={Math.round(slotSize * 0.62)} />
+                              {item.isNew ? (
+                                <View style={styles.newBadge}>
+                                  <Text style={styles.newBadgeText}>N</Text>
+                                </View>
+                              ) : null}
+                              {item.equipped ? <View style={styles.equippedMarker} /> : null}
+                              <Text style={styles.quantityText}>{item.quantity}</Text>
+                            </Pressable>
                           );
-                        }
-
-                        const selected = selectedItemId === item.id;
-                        return (
-                          <Pressable
-                            accessibilityLabel={`${item.name}, ${item.quantity}개`}
-                            accessibilityRole="button"
-                            key={item.id}
-                            onPress={() => handleSelectItem(item)}
-                            style={[
-                              styles.slot,
-                              selected ? styles.slotSelected : null,
-                              { height: slotSize, width: slotSize },
-                            ]}
-                          >
-                            <PixelItemIcon item={item} size={Math.round(slotSize * 0.62)} />
-                            {item.isNew ? (
-                              <View style={styles.newBadge}>
-                                <Text style={styles.newBadgeText}>N</Text>
-                              </View>
-                            ) : null}
-                            {item.equipped ? <View style={styles.equippedMarker} /> : null}
-                            <Text style={styles.quantityText}>{item.quantity}</Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
+                        })}
+                      </View>
+                    </ScrollView>
                   </View>
 
                   <View style={styles.divider} />
@@ -378,6 +396,20 @@ export function InventoryModal({
         width={width}
       />
     </View>
+  );
+}
+
+function getResponsiveSlotSize(popupWidth: number): number {
+  const trayInnerWidth = popupWidth
+    - (popupBorderWidth * 2)
+    - (contentHorizontalPadding * 2)
+    - (slotTrayBorderWidth * 2)
+    - (slotTrayPadding * 2);
+  const totalGapWidth = slotGap * (slotColumnCount - 1);
+
+  return Math.max(
+    slotMinimumSize,
+    Math.floor((trayInnerWidth - totalGapWidth) / slotColumnCount),
   );
 }
 
@@ -560,7 +592,7 @@ const styles = StyleSheet.create({
   content: {
     backgroundColor: '#fff8ea',
     paddingBottom: 14,
-    paddingHorizontal: 12,
+    paddingHorizontal: contentHorizontalPadding,
     paddingTop: 8,
   },
   cornerBottomLeft: {
@@ -1005,9 +1037,16 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   slotGrid: {
+    alignSelf: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
+    gap: slotGap,
+  },
+  slotGridScroll: {
+    flexGrow: 0,
+  },
+  slotGridScrollContent: {
+    alignItems: 'center',
   },
   slotSelected: {
     backgroundColor: '#ffd98e',
@@ -1017,8 +1056,8 @@ const styles = StyleSheet.create({
   slotTray: {
     backgroundColor: '#d38b37',
     borderColor: '#7d4219',
-    borderWidth: 3,
-    padding: 4,
+    borderWidth: slotTrayBorderWidth,
+    padding: slotTrayPadding,
     position: 'relative',
   },
   title: {

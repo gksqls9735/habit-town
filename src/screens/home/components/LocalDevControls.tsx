@@ -53,7 +53,7 @@ export function LocalDevControls({
                   label === activeSubMenu ? styles.localDevMenuButtonActive : null,
                 ]}
               >
-                <Text style={styles.localDevMenuButtonText}>{label}</Text>
+                <Text numberOfLines={1} style={styles.localDevMenuButtonText}>{label}</Text>
               </Pressable>
             ))}
           </View>
@@ -72,7 +72,7 @@ export function LocalDevControls({
                   onPress={() => handleSubActionPress(activeSubMenu, label)}
                   style={styles.localDevSubButton}
                 >
-                  <Text style={styles.localDevSubButtonText}>{label}</Text>
+                  <Text numberOfLines={1} style={styles.localDevSubButtonText}>{label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     height: 36,
     justifyContent: 'center',
-    minWidth: 76,
+    minWidth: 98,
     paddingHorizontal: 9,
   },
   localDevSubButtonText: {
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0,
+    textAlign: 'center',
   },
   localDevSubMenu: {
     alignItems: 'center',

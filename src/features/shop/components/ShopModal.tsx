@@ -1,5 +1,16 @@
 import { useRef, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import {
+  Image,
+  ImageStyle,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { InventoryCapacityCategory } from '../../inventory/types';
 import { shopItems, type ShopCategory, type ShopItem } from '../items';
@@ -13,6 +24,11 @@ type ShopModalProps = {
 };
 
 const fontFamily = 'Galmuri11';
+const currencyCoinIcon = require('../../../../assets/ui/currency-coin.png');
+const pixelatedImageStyle =
+  Platform.OS === 'web'
+    ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
+    : null;
 const filters: { id: ShopCategory; label: string }[] = [
   { id: 'object', label: '가구/소품' },
   { id: 'wallpaper', label: '벽지' },
@@ -60,7 +76,10 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
                 <Text style={styles.eyebrow}>ROOM SHOP</Text>
                 <Text accessibilityRole="header" style={styles.title}>꾸미기 상점</Text>
               </View>
-              <View style={styles.balance}><Text style={styles.coin}>◆</Text><Text style={styles.balanceText}>{coinBalance.toLocaleString()}</Text></View>
+              <View style={styles.balance}>
+                <Image accessibilityIgnoresInvertColors source={currencyCoinIcon} resizeMode="contain" style={[styles.coinIcon, pixelatedImageStyle]} />
+                <Text style={styles.balanceText}>{coinBalance.toLocaleString()}</Text>
+              </View>
               <Pressable accessibilityRole="button" accessibilityLabel="상점 팝업 닫기" onPress={onClose} style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
                 <Text style={styles.closeText}>x</Text>
               </Pressable>
@@ -88,7 +107,16 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
                     </View>
                     <Pressable accessibilityRole="button" disabled={owned || isPurchasingId !== null} onPress={() => void buy(item)}
                       style={({ pressed }) => [styles.buyButton, owned && styles.ownedButton, insufficient && !owned && styles.lowBalanceButton, pressed && styles.pressed]}>
-                      <Text style={[styles.buyText, insufficient && !owned && styles.lowBalanceText]}>{owned ? '보유 중' : isPurchasing ? '담는 중' : `◆ ${item.price}`}</Text>
+                      {owned || isPurchasing ? (
+                        <Text style={[styles.buyText, insufficient && !owned && styles.lowBalanceText]}>
+                          {owned ? '보유 중' : '담는 중'}
+                        </Text>
+                      ) : (
+                        <View style={styles.priceRow}>
+                          <Image accessibilityIgnoresInvertColors source={currencyCoinIcon} resizeMode="contain" style={[styles.priceCoinIcon, pixelatedImageStyle]} />
+                          <Text style={[styles.buyText, insufficient && styles.lowBalanceText]}>{item.price}</Text>
+                        </View>
+                      )}
                     </Pressable>
                   </View>
                 );
@@ -110,7 +138,7 @@ const styles = StyleSheet.create({
   shopIcon: { width: 40, height: 40 }, heading: { flex: 1 },
   eyebrow: { fontFamily, fontSize: 9, letterSpacing: 1, color: '#80634c', marginBottom: 4 }, title: { fontFamily, fontSize: 16, color: '#49372d' },
   balance: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, borderWidth: 2, borderColor: '#b39370', backgroundColor: '#fff8ec' },
-  coin: { color: '#d88a3d', fontSize: 12 }, balanceText: { fontFamily, fontSize: 10, color: '#604832' },
+  coinIcon: { height: 16, width: 16 }, balanceText: { fontFamily, fontSize: 10, color: '#604832' },
   close: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffd99e', borderWidth: 2, borderColor: '#6b432f' },
   closeText: { fontFamily, fontSize: 20, color: '#5c3529' },
   filters: { flexDirection: 'row', gap: 6, padding: 14, borderBottomWidth: 2, borderColor: '#e4cfb1' },
@@ -123,6 +151,8 @@ const styles = StyleSheet.create({
   buyButton: { minWidth: 64, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, borderWidth: 2, borderColor: '#705340', borderBottomWidth: 4, backgroundColor: '#8a684f' },
   ownedButton: { backgroundColor: '#a99b84', borderColor: '#817663' }, lowBalanceButton: { backgroundColor: '#e8d8c0', borderColor: '#c4ad90' },
   buyText: { fontFamily, fontSize: 10, color: '#fffaf0' }, lowBalanceText: { color: '#947c64' },
+  priceCoinIcon: { height: 15, width: 15 },
+  priceRow: { alignItems: 'center', flexDirection: 'row', gap: 3 },
   messageBox: { minHeight: 52, justifyContent: 'center', paddingHorizontal: 14, borderTopWidth: 2, borderColor: '#e4cfb1', backgroundColor: '#fffaf1' }, message: { fontFamily, fontSize: 10, lineHeight: 17, textAlign: 'center', color: '#715944' },
   pressed: { opacity: 0.7 },
 });

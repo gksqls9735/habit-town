@@ -7,6 +7,7 @@ import {
 
 const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
+const currencyCoinIcon = require('../../../../assets/ui/currency-coin.png');
 const feedBowlFullIcon = require('../../../../assets/ui/action/feed-action-object-icon.png');
 const playBallIcon = require('../../../../assets/ui/action/play-action-object-icon.png');
 const cleanlinessBubblesIcon = require('../../../../assets/ui/needs/cleanliness-bubbles-icon.png');
@@ -76,7 +77,7 @@ export function PetStatusHud({
         </View>
       </View>
       <View style={styles.currency} accessibilityLabel={`금색 재화 ${progress.coins}`}>
-        <View style={styles.coin}><View style={styles.coinCore} /></View>
+        <Image accessibilityIgnoresInvertColors source={currencyCoinIcon} resizeMode="contain" style={[styles.coinIcon, pixelStyle]} />
         <Text style={styles.currencyText}>{progress.coins.toLocaleString('ko-KR')}</Text>
       </View>
     </View>
@@ -121,8 +122,7 @@ const styles = StyleSheet.create({
   highlight: { height: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
   currency: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 7, height: 34, backgroundColor: '#a3907a', borderWidth: 2, borderColor: '#624936', marginTop: 4 },
   currencyText: { fontFamily, fontSize: 11, color: '#fff8ea' },
-  coin: { width: 15, height: 17, borderWidth: 2, borderColor: '#8f582c', backgroundColor: '#efc76d', padding: 2 },
-  coinCore: { flex: 1, backgroundColor: '#bd813b' },
+  coinIcon: { width: 18, height: 18 },
   bottom: { position: 'absolute', bottom: 14, left: 16, right: 16, alignItems: 'center', zIndex: 10 },
   actions: { flexDirection: 'row', width: '100%', maxWidth: 390, gap: 10 },
   action: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderBottomWidth: 5, borderColor: '#795c43', paddingVertical: 8 },
