@@ -24,7 +24,7 @@ export const leftActions: RailAction[] = [
 ];
 
 export const rightActions: RailAction[] = [
-  { image: require('../../../assets/ui/reward-button.png'), label: '보상', symbol: 'G' },
+  { image: require('../../../assets/ui/reward-button.png'), label: '선물', symbol: 'G' },
   { image: require('../../../assets/ui/inventory-button.png'), label: '가방', symbol: 'I' },
 ];
 

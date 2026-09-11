@@ -1,5 +1,7 @@
 import {
   Image,
+  ImageStyle,
+  Platform,
   Pressable,
   StyleProp,
   StyleSheet,
@@ -9,7 +11,23 @@ import {
 } from 'react-native';
 import { RailAction, RailMetrics } from '../types';
 
+const badgeImages = [
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-0.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-1.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-2.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-3.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-4.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-5.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-6.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-7.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-8.png'),
+  require('../../../../assets/ui/today-tasks/today-tasks-badge-9.png'),
+] as const;
 const pixelFontFamily = 'Galmuri11';
+const pixelatedImageStyle =
+  Platform.OS === 'web'
+    ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
+    : null;
 
 type HomeActionRailProps = {
   actions: RailAction[];
@@ -34,6 +52,8 @@ function RailButton({
   action: RailAction;
   metrics: RailMetrics;
 }) {
+  const badgeImage = getBadgeImage(action.badge);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -46,9 +66,14 @@ function RailButton({
         },
       ]}
     >
-      {action.badge ? (
+      {badgeImage ? (
         <View style={styles.railBadge}>
-          <Text style={styles.railBadgeText}>{action.badge}</Text>
+          <Image
+            accessibilityIgnoresInvertColors
+            resizeMode="contain"
+            source={badgeImage}
+            style={[styles.railBadgeImage, pixelatedImageStyle]}
+          />
         </View>
       ) : null}
       <View
@@ -86,6 +111,19 @@ function RailButton({
   );
 }
 
+function getBadgeImage(badge: string | undefined) {
+  if (!badge) return null;
+
+  const badgeNumber = Number(badge);
+
+  if (!Number.isFinite(badgeNumber)) {
+    return null;
+  }
+
+  const badgeIndex = Math.max(0, Math.min(9, Math.floor(badgeNumber)));
+  return badgeImages[badgeIndex];
+}
+
 const styles = StyleSheet.create({
   generatedRailIcon: {
     alignItems: 'center',
@@ -102,24 +140,18 @@ const styles = StyleSheet.create({
   },
   railBadge: {
     alignItems: 'center',
-    backgroundColor: '#f3a0a8',
-    borderColor: '#fff3f4',
-    borderRadius: 6,
-    borderWidth: 2,
-    minHeight: 18,
-    minWidth: 24,
-    paddingHorizontal: 4,
+    height: 24,
+    justifyContent: 'center',
     position: 'absolute',
-    right: 2,
-    top: -6,
+    right: -2,
+    top: -8,
+    width: 28,
     zIndex: 3,
   },
-  railBadgeText: {
-    color: '#ffffff',
-    fontFamily: pixelFontFamily,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0,
+  railBadgeImage: {
+    height: 24,
+    position: 'absolute',
+    width: 28,
   },
   railButton: {
     alignItems: 'center',

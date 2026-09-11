@@ -26,11 +26,17 @@ import {
   drawDeliveryMessage,
 } from '../../features/rewards/deliveryMessages';
 import { DeliveryReward, drawDeliveryReward } from '../../features/rewards/eventRewards';
+import {
+  consumeGiftBox,
+  increaseGiftBoxCount,
+  loadGiftBoxCount,
+} from '../../features/rewards/giftBoxRepository';
 import { experiencePerGrowthStage, growthStages } from '../../features/rewards/rewardSystem';
 import { ShopModal } from '../../features/shop/components/ShopModal';
 import type { ShopItem } from '../../features/shop/items';
 import { DeliveryRewardPopup } from './components/DeliveryRewardPopup';
 import { EventPopup } from './components/EventPopup';
+import { GiftRewardPopup } from './components/GiftRewardPopup';
 import { PetCareActions, PetStatusHud } from './components/PetCareOverlay';
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
@@ -94,6 +100,11 @@ export function HomeScreen() {
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isGiftRewardOpen, setIsGiftRewardOpen] = useState(false);
+  const [isClaimingGiftReward, setIsClaimingGiftReward] = useState(false);
+  const [giftBoxCount, setGiftBoxCount] = useState(0);
+  const [giftReward, setGiftReward] = useState<DeliveryReward | null>(null);
+  const [giftRewardError, setGiftRewardError] = useState('');
   const [ownedShopItemIds, setOwnedShopItemIds] = useState<string[]>([]);
   const [isEventOpen, setIsEventOpen] = useState(false);
   const [isLocalDevMenuOpen, setIsLocalDevMenuOpen] = useState(false);
@@ -160,8 +171,31 @@ export function HomeScreen() {
   const characterSize = Math.round(132 * roomScale);
   const characterBottom = Math.max(100, Math.round(height * (compactHeight ? 0.15 : 0.18)));
   const showLocalDevButton = isLocalhostDevWeb();
+  const openGiftRewardPopup = () => {
+    setGiftReward(null);
+    setGiftRewardError('');
+    setIsGiftRewardOpen(true);
+  };
+  const sendGiftReward = async () => {
+    try {
+      const nextGiftBoxCount = await increaseGiftBoxCount();
+      setGiftBoxCount(nextGiftBoxCount);
+      openGiftRewardPopup();
+    } catch {
+      setGiftRewardError('선물 상자를 보내지 못했어요. 다시 눌러 주세요.');
+      setIsGiftRewardOpen(true);
+    }
+  };
   const rightRailActions: RailAction[] = [
     ...rightActions.map((action) => {
+      if (action.label === '선물') {
+        return {
+          ...action,
+          badge: giftBoxCount > 0 ? String(giftBoxCount) : undefined,
+          onPress: openGiftRewardPopup,
+        };
+      }
+
       if (action.label === '가방') {
         return { ...action, onPress: () => setIsInventoryOpen(true) };
       }
@@ -249,6 +283,12 @@ export function HomeScreen() {
   }, [refreshRoomBackgroundImages]);
 
   useEffect(() => {
+    void loadGiftBoxCount().then(setGiftBoxCount).catch(() => {
+      setGiftRewardError('선물 상자를 불러오지 못했어요.');
+    });
+  }, []);
+
+  useEffect(() => {
     if (isLoadingGoalData) {
       return;
     }
@@ -269,6 +309,11 @@ export function HomeScreen() {
   const handleLocalDevAction = (label: string) => {
     if (label === '이벤트:택배') {
       startRewardDelivery();
+      return;
+    }
+
+    if (label === '이벤트:선물 보내기') {
+      void sendGiftReward();
       return;
     }
 
@@ -330,6 +375,56 @@ export function HomeScreen() {
       setDeliveryRewardError('선물을 저장하지 못했어요. 다시 눌러 주세요.');
     } finally {
       setIsClaimingDeliveryReward(false);
+    }
+  };
+  const closeGiftReward = () => {
+    if (isClaimingGiftReward) return;
+
+    setGiftReward(null);
+    setGiftRewardError('');
+    setIsGiftRewardOpen(false);
+  };
+  const openGiftBox = async () => {
+    if (giftBoxCount <= 0 || isClaimingGiftReward) return;
+
+    let didConsumeGiftBox = false;
+    setIsClaimingGiftReward(true);
+    setGiftRewardError('');
+
+    try {
+      const nextGiftBoxCount = await consumeGiftBox();
+
+      if (nextGiftBoxCount === null) {
+        setGiftBoxCount(0);
+        setGiftRewardError('열 수 있는 선물 상자가 없어요.');
+        return;
+      }
+
+      didConsumeGiftBox = true;
+      setGiftBoxCount(nextGiftBoxCount);
+
+      const reward = drawDeliveryReward();
+
+      if (reward.kind === 'currency') {
+        grantCurrencyReward(reward.amount);
+      } else {
+        await saveInventoryItem(reward.item);
+      }
+
+      setGiftReward(reward);
+    } catch {
+      if (didConsumeGiftBox) {
+        try {
+          const restoredGiftBoxCount = await increaseGiftBoxCount();
+          setGiftBoxCount(restoredGiftBoxCount);
+        } catch {
+          // Keep the visible error below when the rollback persistence also fails.
+        }
+      }
+
+      setGiftRewardError('선물을 열지 못했어요. 다시 눌러 주세요.');
+    } finally {
+      setIsClaimingGiftReward(false);
     }
   };
   const purchaseShopItem = async (item: ShopItem): Promise<boolean> => {
@@ -461,6 +556,20 @@ export function HomeScreen() {
           ownedItemIds={ownedShopItemIds}
           visible={isShopOpen}
         />
+        <GiftRewardPopup
+          giftBoxCount={giftBoxCount}
+          isBusy={isClaimingGiftReward}
+          onClose={closeGiftReward}
+          onOpenBox={openGiftBox}
+          reward={giftReward}
+          visible={isGiftRewardOpen}
+          width={popupWidth}
+        />
+        {giftRewardError ? (
+          <View style={styles.deliveryRewardError}>
+            <Text style={styles.deliveryRewardErrorText}>{giftRewardError}</Text>
+          </View>
+        ) : null}
 
         <EventPopup
           onClose={() => setIsEventOpen(false)}
