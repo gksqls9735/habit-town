@@ -23,6 +23,7 @@ const badgeImages = [
   require('../../../../assets/ui/today-tasks/today-tasks-badge-8.png'),
   require('../../../../assets/ui/today-tasks/today-tasks-badge-9.png'),
 ] as const;
+const badgeOverflowImage = require('../../../../assets/ui/today-tasks/today-tasks-badge-plus.png');
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'
@@ -120,7 +121,11 @@ function getBadgeImage(badge: string | undefined) {
     return null;
   }
 
-  const badgeIndex = Math.max(0, Math.min(9, Math.floor(badgeNumber)));
+  if (badgeNumber > 9) {
+    return badgeOverflowImage;
+  }
+
+  const badgeIndex = Math.max(0, Math.floor(badgeNumber));
   return badgeImages[badgeIndex];
 }
 

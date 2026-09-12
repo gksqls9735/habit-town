@@ -10,7 +10,8 @@ export function getRemainingTaskCount(plans: DailyPlan[]) {
 }
 
 export function getRemainingTaskBadge(plans: DailyPlan[]) {
-  return String(getRemainingTaskCount(plans));
+  const remainingTaskCount = getRemainingTaskCount(plans);
+  return remainingTaskCount > 0 ? String(remainingTaskCount) : undefined;
 }
 
 export function getCompletedNonRepeatableTaskTitles(

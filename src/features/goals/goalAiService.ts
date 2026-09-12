@@ -79,7 +79,7 @@ export async function generateDailyTasksForGoal(
         ? 'AI 요청이 많아 잠시 사용할 수 없어요. 잠시 후 다시 시도해 주세요.'
         : response.status === 401 || response.status === 403
           ? 'AI 서비스 인증 설정을 확인해 주세요.'
-          : 'AI 서비스 요청에 실패했어요. 잠시 후 다시 시도해 주세요.';
+          : '할 일을 만들지 못했어요. 잠시 후 다시 시도해 주세요.';
       throw new Error(message);
     }
 
