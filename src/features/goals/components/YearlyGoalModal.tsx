@@ -4,7 +4,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,7 +14,6 @@ import {
   GoalDifficulty,
   goalDifficultyLabels,
   goalDifficultyOptions,
-  YearlyGoal,
 } from '../types';
 
 const pixelFontFamily = 'Galmuri11';
@@ -31,7 +29,6 @@ type YearlyGoalModalProps = {
   value: string;
   visible: boolean;
   width: number;
-  yearlyGoals: YearlyGoal[];
 };
 
 export function YearlyGoalModal({
@@ -45,7 +42,6 @@ export function YearlyGoalModal({
   value,
   visible,
   width,
-  yearlyGoals,
 }: YearlyGoalModalProps) {
   return (
     <Modal animationType="fade" transparent visible={visible}>
@@ -62,19 +58,6 @@ export function YearlyGoalModal({
             <Text style={styles.simpleModalDescription}>
               목표를 여러 개 추가할 수 있어요. 오늘 할 일은 목표 1개당 기본 3개씩 생성됩니다.
             </Text>
-            {yearlyGoals.length > 0 ? (
-              <ScrollView
-                contentContainerStyle={styles.goalListContent}
-                nestedScrollEnabled
-                style={styles.goalListPanel}
-              >
-                {yearlyGoals.map((goal) => (
-                  <Text key={goal.id} style={styles.goalListText}>
-                    - [{goalDifficultyLabels[goal.difficulty]}] {goal.title}
-                  </Text>
-                ))}
-              </ScrollView>
-            ) : null}
             <Text style={styles.fieldLabel}>난이도</Text>
             <View style={styles.difficultySegment}>
               {goalDifficultyOptions.map((option) => {
@@ -192,25 +175,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     lineHeight: 18,
     marginTop: 8,
-  },
-  goalListPanel: {
-    backgroundColor: '#fff0cc',
-    borderColor: '#d7a36d',
-    borderWidth: 2,
-    marginTop: 12,
-    maxHeight: 130,
-  },
-  goalListContent: {
-    padding: 9,
-  },
-  goalListText: {
-    color: '#7a5947',
-    fontFamily: pixelFontFamily,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0,
-    lineHeight: 17,
-    marginTop: 3,
   },
   fieldLabel: {
     color: '#7a5947',

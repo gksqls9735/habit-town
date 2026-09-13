@@ -20,10 +20,12 @@ type TodayTasksModalProps = {
   hasUsedTaskRefresh: boolean;
   isGenerating: boolean;
   onClose: () => void;
+  onAbandonGoal: (goalId: string) => void;
   onGenerate: () => void;
   onOpenGoal: () => void;
   onRefreshOneTask: () => void;
   onSelectGoal: (goalId: string | null) => void;
+  onToggleGoalCompletion: (goalId: string) => void;
   onToggleTask: (planId: string, taskId: string) => void;
   plans: DailyPlan[];
   selectedGoalId: string | null;
@@ -36,11 +38,13 @@ export function TodayTasksModal({
   errorMessage,
   hasUsedTaskRefresh,
   isGenerating,
+  onAbandonGoal,
   onClose,
   onGenerate,
   onOpenGoal,
   onRefreshOneTask,
   onSelectGoal,
+  onToggleGoalCompletion,
   onToggleTask,
   plans,
   selectedGoalId,
@@ -121,6 +125,34 @@ export function TodayTasksModal({
                   ) : (
                     <Text style={styles.primaryModalButtonText}>오늘 할 일 생성</Text>
                   )}
+                </Pressable>
+              ) : null}
+              {!showGoalList ? (
+                <Pressable
+                  accessibilityLabel={`${selectedGoal.title} 목표 포기`}
+                  accessibilityRole="button"
+                  disabled={isGenerating}
+                  onPress={() => onAbandonGoal(selectedGoal.id)}
+                  style={[
+                    styles.goalAbandonButton,
+                    isGenerating ? styles.disabledModalButton : null,
+                  ]}
+                >
+                  <Text style={styles.goalAbandonButtonText}>목표 포기</Text>
+                </Pressable>
+              ) : null}
+              {!showGoalList ? (
+                <Pressable
+                  accessibilityLabel={`${selectedGoal.title} 목표 완료 처리`}
+                  accessibilityRole="button"
+                  disabled={isGenerating}
+                  onPress={() => onToggleGoalCompletion(selectedGoal.id)}
+                  style={[
+                    styles.goalCompleteButton,
+                    isGenerating ? styles.disabledModalButton : null,
+                  ]}
+                >
+                  <Text style={styles.goalCompleteButtonText}>목표 완료</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -517,6 +549,24 @@ const styles = StyleSheet.create({
     height: 42,
     justifyContent: 'center',
   },
+  goalCompleteButton: {
+    alignItems: 'center',
+    backgroundColor: '#6f8d48',
+    borderColor: '#425a2c',
+    borderWidth: 2,
+    flex: 1.1,
+    height: 42,
+    justifyContent: 'center',
+  },
+  goalAbandonButton: {
+    alignItems: 'center',
+    backgroundColor: '#b85b49',
+    borderColor: '#7f352c',
+    borderWidth: 2,
+    flex: 1.1,
+    height: 42,
+    justifyContent: 'center',
+  },
   disabledModalButton: {
     opacity: 0.5,
   },
@@ -531,6 +581,20 @@ const styles = StyleSheet.create({
     color: '#fff8ea',
     fontFamily: pixelFontFamily,
     fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  goalCompleteButtonText: {
+    color: '#fff8ea',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  goalAbandonButtonText: {
+    color: '#fff8ea',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0,
   },

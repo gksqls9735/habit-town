@@ -98,7 +98,10 @@ export function useGoalPlanner() {
         setRewardProgress(savedData.rewardProgress);
 
         const goalsMissingTodayPlan = savedData.yearlyGoals.filter(
-          (goal) => !hasEditableBasicDailyPlan(savedData.dailyPlans, goal.id),
+          (goal) =>
+            goal.completedAt == null &&
+            goal.abandonedAt == null &&
+            !hasEditableBasicDailyPlan(savedData.dailyPlans, goal.id),
         );
 
         if (goalsMissingTodayPlan.length === 0) {
@@ -199,7 +202,9 @@ export function useGoalPlanner() {
     generationType: GenerationType = 'ad',
     yearlyGoalsOverride = yearlyGoals,
   ) => {
-    const targetGoals = goalsOverride ?? yearlyGoals;
+    const targetGoals = (goalsOverride ?? yearlyGoals).filter(
+      (goal) => goal.completedAt == null && goal.abandonedAt == null,
+    );
     if (targetGoals.length === 0 || isGeneratingPlan) {
       if (targetGoals.length === 0) {
         setGoalError('먼저 올해 목표를 입력해 주세요.');
@@ -238,9 +243,11 @@ export function useGoalPlanner() {
       return;
     }
 
+    const createdAt = Date.now();
     const nextGoal: YearlyGoal = {
+      createdAt,
       difficulty: yearlyGoalDifficulty,
-      id: `${Date.now()}`,
+      id: `${createdAt}`,
       title: cleanGoal,
     };
 
@@ -258,7 +265,7 @@ export function useGoalPlanner() {
 
   const generateAdditionalTaskForSelectedGoal = async () => {
     const selectedGoal = yearlyGoals.find((goal) => goal.id === selectedTaskGoalId);
-    if (!selectedGoal) {
+    if (!selectedGoal || selectedGoal.completedAt != null || selectedGoal.abandonedAt != null) {
       return;
     }
 
@@ -267,7 +274,7 @@ export function useGoalPlanner() {
 
   const refreshOneIncompleteTaskForSelectedGoal = async () => {
     const selectedGoal = yearlyGoals.find((goal) => goal.id === selectedTaskGoalId);
-    if (!selectedGoal || isGeneratingPlan) {
+    if (!selectedGoal || selectedGoal.completedAt != null || selectedGoal.abandonedAt != null || isGeneratingPlan) {
       return;
     }
 
@@ -336,7 +343,7 @@ export function useGoalPlanner() {
     }
     const targetTask = targetPlan.tasks.find((task) => task.id === taskId);
     const targetGoal = yearlyGoals.find((goal) => goal.id === targetPlan.goalId);
-    if (!targetTask || !targetGoal) {
+    if (!targetTask || !targetGoal || targetGoal.completedAt != null || targetGoal.abandonedAt != null) {
       return;
     }
     const shouldGrantReward = !targetTask.done && targetTask.rewardGrantedAt === null;
@@ -367,6 +374,34 @@ export function useGoalPlanner() {
     }
     persistGoalPlannerData(yearlyGoals, nextPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
+
+  const toggleYearlyGoalCompletion = (goalId: string) => {
+    if (isLoadingGoalData || isGeneratingPlan) return;
+    const nextGoals = yearlyGoals.map((goal) => goal.id === goalId
+      ? { ...goal, abandonedAt: null, completedAt: goal.completedAt == null ? Date.now() : null }
+      : goal);
+    setYearlyGoals(nextGoals);
+    setGoalError('');
+    setSelectedTaskGoalId(null);
+    persistGoalPlannerData(nextGoals);
+  };
+
+  const abandonYearlyGoal = (goalId: string) => {
+    if (isLoadingGoalData || isGeneratingPlan) return;
+    const nextGoals = yearlyGoals.map((goal) => goal.id === goalId
+      ? { ...goal, abandonedAt: Date.now(), completedAt: null }
+      : goal);
+    setYearlyGoals(nextGoals);
+    setGoalError('');
+    setSelectedTaskGoalId(null);
+    persistGoalPlannerData(nextGoals);
+  };
+
+  const activeYearlyGoals = yearlyGoals.filter(
+    (goal) => goal.completedAt == null && goal.abandonedAt == null,
+  );
+  const activeDailyPlans = dailyPlans.filter((plan) =>
+    activeYearlyGoals.some((goal) => goal.id === plan.goalId));
 
   const grantCurrencyReward = (coins: number) => {
     const nextRewardProgress = applyCurrencyReward(rewardProgress, coins);
@@ -408,6 +443,10 @@ export function useGoalPlanner() {
   };
 
   return {
+    abandonYearlyGoal,
+    activeYearlyGoals,
+    activeDailyPlans,
+    toggleYearlyGoalCompletion,
     addYearlyGoal,
     closeTodayTasks,
     closeYearlyGoal,
