@@ -13,7 +13,10 @@ import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
 import { DailyPlan, GoalDifficulty, YearlyGoal } from '../types';
 import {
   canEditPlan,
+  duplicateClosedGoalCooldownDays,
+  findDuplicateYearlyGoal,
   getExcludedTaskTitles,
+  getGoalClosedAt,
   getNextMidnightTimestamp,
   getNextRoundForGoal,
   isPlanExpired,
@@ -240,6 +243,15 @@ export function useGoalPlanner() {
   const addYearlyGoal = async () => {
     const cleanGoal = yearlyGoalDraft.trim();
     if (!cleanGoal || isGeneratingPlan) {
+      return;
+    }
+
+    const duplicateGoal = findDuplicateYearlyGoal(yearlyGoals, cleanGoal);
+    if (duplicateGoal) {
+      const closedAt = getGoalClosedAt(duplicateGoal);
+      setGoalError(closedAt == null
+        ? `이미 비슷한 목표가 있어요: ${duplicateGoal.title}`
+        : `최근 ${duplicateClosedGoalCooldownDays}일 안에 끝낸 비슷한 목표가 있어요: ${duplicateGoal.title}`);
       return;
     }
 

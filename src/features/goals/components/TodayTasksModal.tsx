@@ -15,6 +15,11 @@ import { isPlanExpired } from '../utils';
 
 const pixelFontFamily = 'Galmuri11';
 
+function getPlanDisplayTitle(plan: DailyPlan) {
+  const date = new Date(plan.generatedAt);
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
 type TodayTasksModalProps = {
   errorMessage: string;
   hasUsedTaskRefresh: boolean;
@@ -265,10 +270,11 @@ function PlanSummary({
   plan: DailyPlan;
 }) {
   const completedTasks = plan.tasks.filter((task) => task.done).length;
+  const displayTitle = getPlanDisplayTitle(plan);
 
   return (
     <Pressable
-      accessibilityLabel={`${plan.round}회차 ${isPlanExpired(plan) ? '만료됨' : '오늘'}, ${plan.title}, ${completedTasks}개 완료`}
+      accessibilityLabel={`${plan.round}회차 ${isPlanExpired(plan) ? '만료됨' : '오늘'}, ${displayTitle}, ${completedTasks}개 완료`}
       accessibilityRole="button"
       onPress={onPress}
       style={styles.planBlock}
@@ -278,7 +284,7 @@ function PlanSummary({
           <Text style={styles.planRoundText}>
             {plan.round}회차 {isPlanExpired(plan) ? '만료됨' : '오늘'}
           </Text>
-          <Text style={styles.planTitleText}>{plan.title}</Text>
+          <Text style={styles.planTitleText}>{displayTitle}</Text>
         </View>
         <Text style={styles.planTaskCount}>
           {completedTasks}/{plan.tasks.length}
@@ -314,6 +320,7 @@ function TaskDetailPopup({
   width: number;
 }) {
   const isExpired = isPlanExpired(plan);
+  const displayTitle = getPlanDisplayTitle(plan);
 
   return (
     <View style={styles.detailLayer}>
@@ -324,7 +331,7 @@ function TaskDetailPopup({
         <View style={styles.tasksModalPanel}>
           <View style={styles.tasksHeader}>
             <View style={styles.tasksHeaderTextWrap}>
-              <Text style={styles.simpleModalTitle}>{plan.title}</Text>
+              <Text style={styles.simpleModalTitle}>{displayTitle}</Text>
               <Text style={styles.goalSummaryText}>
                 {plan.round}회차 {isExpired ? '만료됨' : '오늘'}
               </Text>
