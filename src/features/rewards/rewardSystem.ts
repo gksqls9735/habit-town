@@ -125,10 +125,11 @@ export function applyCurrencySpend(
 export function applyCareMeterIncrease(
   careMeters: CareMeterValues,
   meter: CareMeterKey,
+  increase = careActionMeterIncrease,
 ): CareMeterValues {
   return {
     ...careMeters,
-    [meter]: clampRatio(careMeters[meter] + careActionMeterIncrease),
+    [meter]: clampRatio(careMeters[meter] + Math.max(0, increase)),
   };
 }
 

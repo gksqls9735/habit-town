@@ -112,7 +112,7 @@ export function PetStatusHud({
   );
 }
 
-/** Bottom care actions increase the matching top meter toward full. */
+/** Bottom care actions open the matching care item flow. */
 export function PetCareActions({
   onCareAction,
 }: {

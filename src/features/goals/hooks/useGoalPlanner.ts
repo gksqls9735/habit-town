@@ -402,8 +402,8 @@ export function useGoalPlanner() {
     persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
 
-  const fillCareMeter = (meter: CareMeterKey) => {
-    const nextCareMeters = applyCareMeterIncrease(careMeters, meter);
+  const fillCareMeter = (meter: CareMeterKey, increase?: number) => {
+    const nextCareMeters = applyCareMeterIncrease(careMeters, meter, increase);
 
     setCareMeters(nextCareMeters);
     persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, rewardProgress, nextCareMeters);

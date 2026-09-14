@@ -15,12 +15,14 @@ import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
 import { InventoryModal } from '../../features/inventory/components/InventoryModal';
 import {
+  consumeInventoryItem,
   increaseInventoryCapacity,
   loadInventoryItems,
   saveInventoryItem,
 } from '../../features/inventory/inventoryRepository';
+import type { InventoryItem } from '../../features/inventory/types';
 import { getItemImage } from '../../features/items/itemImages';
-import { getItemShopCategory } from '../../features/items/itemCatalog';
+import { getItemCareEffect, getItemShopCategory } from '../../features/items/itemCatalog';
 import { loadPetName, savePetName } from '../../features/pets/petProfileRepository';
 import {
   DeliveryEventReason,
@@ -33,8 +35,13 @@ import {
   loadGiftBoxCount,
 } from '../../features/rewards/giftBoxRepository';
 import { experiencePerGrowthStage, growthStages } from '../../features/rewards/rewardSystem';
+import type { CareMeterKey } from '../../features/rewards/rewardSystem';
 import { ShopModal } from '../../features/shop/components/ShopModal';
 import type { ShopItem } from '../../features/shop/items';
+import {
+  CareItemUsePopup,
+  type CareUsableItem,
+} from './components/CareItemUsePopup';
 import { DeliveryRewardPopup } from './components/DeliveryRewardPopup';
 import { EventPopup } from './components/EventPopup';
 import { GiftRewardPopup } from './components/GiftRewardPopup';
@@ -71,6 +78,19 @@ type PetNameMap = Partial<Record<PetDefinition['id'], string>>;
 
 function getGrowthStageIndex(stage: GrowthStage) {
   return growthStages.indexOf(stage);
+}
+
+function getCareUsableItems(
+  items: readonly InventoryItem[],
+  meter: CareMeterKey,
+): CareUsableItem[] {
+  return items.flatMap((item) => {
+    const careEffect = getItemCareEffect(item.id);
+
+    return careEffect && careEffect.meter === meter && item.quantity > 0
+      ? [{ ...item, careEffect }]
+      : [];
+  });
 }
 /*
  * Animation assets are temporarily disabled. Keep these requires here so the
@@ -135,6 +155,10 @@ export function HomeScreen() {
   const [petStatusError, setPetStatusError] = useState('');
   const [petSettingsLanguage, setPetSettingsLanguage] = useState<PetSettingsLanguage>('ko');
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
+  const [activeCareMeter, setActiveCareMeter] = useState<CareMeterKey | null>(null);
+  const [careUsableItems, setCareUsableItems] = useState<CareUsableItem[]>([]);
+  const [careItemError, setCareItemError] = useState('');
+  const [isUsingCareItem, setIsUsingCareItem] = useState(false);
   const [roomBackgroundImages, setRoomBackgroundImages] = useState<RoomBackgroundImages>({
     floor: roomFloorImage,
     wallpaper: roomWallpaperImage,
@@ -487,6 +511,48 @@ export function HomeScreen() {
       setIsSavingPetName(false);
     }
   };
+  const openCareItemPopup = async (meter: CareMeterKey) => {
+    setActiveCareMeter(meter);
+    setCareItemError('');
+
+    try {
+      const items = await loadInventoryItems();
+      setCareUsableItems(getCareUsableItems(items, meter));
+    } catch {
+      setCareUsableItems([]);
+      setCareItemError('돌봄 아이템을 불러오지 못했어요. 다시 눌러 주세요.');
+    }
+  };
+  const closeCareItemPopup = () => {
+    if (isUsingCareItem) return;
+
+    setActiveCareMeter(null);
+    setCareUsableItems([]);
+    setCareItemError('');
+  };
+  const useCareItem = async (item: CareUsableItem, quantity: number) => {
+    if (isUsingCareItem) return;
+
+    setIsUsingCareItem(true);
+    setCareItemError('');
+
+    try {
+      const consumed = await consumeInventoryItem(item.id, quantity);
+
+      if (!consumed) {
+        setCareItemError('사용할 수량이 부족해요. 가방을 다시 확인해 주세요.');
+        return;
+      }
+
+      fillCareMeter(item.careEffect.meter, item.careEffect.increase * quantity);
+      setActiveCareMeter(null);
+      setCareUsableItems([]);
+    } catch {
+      setCareItemError('아이템을 사용하지 못했어요. 다시 시도해 주세요.');
+    } finally {
+      setIsUsingCareItem(false);
+    }
+  };
   const purchaseShopItem = async (item: ShopItem): Promise<boolean> => {
     if (rewardProgress.coins < item.price) return false;
 
@@ -566,7 +632,17 @@ export function HomeScreen() {
           petName={activePetDisplayName}
           progress={rewardProgress}
         />
-        <PetCareActions onCareAction={fillCareMeter} />
+        <PetCareActions onCareAction={openCareItemPopup} />
+        <CareItemUsePopup
+          errorMessage={careItemError}
+          isBusy={isUsingCareItem}
+          items={careUsableItems}
+          meter={activeCareMeter}
+          onClose={closeCareItemPopup}
+          onUseItem={(item, quantity) => void useCareItem(item, quantity)}
+          visible={activeCareMeter !== null}
+          width={popupWidth}
+        />
 
         {showLocalDevButton ? (
           <LocalDevControls

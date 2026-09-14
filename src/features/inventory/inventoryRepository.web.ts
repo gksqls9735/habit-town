@@ -69,6 +69,37 @@ export async function saveInventoryItem(item: InventoryItem): Promise<void> {
 }
 
 /**
+ * Consumes a positive quantity from an owned item. Empty stacks are removed.
+ */
+export async function consumeInventoryItem(id: string, quantity: number): Promise<boolean> {
+  const consumeQuantity = Math.max(0, Math.floor(quantity));
+
+  if (consumeQuantity <= 0) {
+    return false;
+  }
+
+  const items = readInventoryItems();
+  const itemIndex = items.findIndex((candidate) => candidate.id === id);
+
+  if (itemIndex === -1 || items[itemIndex].quantity < consumeQuantity) {
+    return false;
+  }
+
+  if (items[itemIndex].quantity === consumeQuantity) {
+    items.splice(itemIndex, 1);
+  } else {
+    items[itemIndex] = {
+      ...items[itemIndex],
+      isNew: false,
+      quantity: items[itemIndex].quantity - consumeQuantity,
+    };
+  }
+
+  writeInventoryItems(items);
+  return true;
+}
+
+/**
  * Persists an item's equipped state and clears its new-item marker.
  */
 export async function setInventoryItemEquipped(id: string, equipped: boolean): Promise<void> {
