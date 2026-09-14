@@ -58,9 +58,9 @@ const localDevCurrencyGrantAmount = 1000;
 const localDevExperienceGrantAmount = 10;
 const careActionMeterIncrease = 0.2;
 const initialCareMeters: PetCareMeterValues = {
-  cleanliness: 0.8,
-  hunger: 0.45,
-  loneliness: 0.3,
+  cleanliness: 0,
+  hunger: 0,
+  loneliness: 0,
 };
 const emptyCareMeters: PetCareMeterValues = {
   cleanliness: 0,
