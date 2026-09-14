@@ -186,6 +186,39 @@
       "price": 650
     }
   },
+  "strawberry-cream-wallpaper": {
+    "name": "딸기 크림 벽지",
+    "imageUrl": "assets/png/backgrounds/strawberry-cream-wallpaper.png",
+    "category": "decor",
+    "description": "작은 딸기와 꽃 패턴으로 방을 산뜻하게 꾸며 주는 벽지예요.",
+    "symbol": "R",
+    "shop": {
+      "category": "wallpaper",
+      "price": 680
+    }
+  },
+  "cloud-sky-wallpaper": {
+    "name": "구름 하늘 벽지",
+    "imageUrl": "assets/png/backgrounds/cloud-sky-wallpaper.png",
+    "category": "decor",
+    "description": "포근한 구름과 별 패턴으로 방을 맑게 밝혀 주는 벽지예요.",
+    "symbol": "C",
+    "shop": {
+      "category": "wallpaper",
+      "price": 680
+    }
+  },
+  "sage-flower-wallpaper": {
+    "name": "세이지 플라워 벽지",
+    "imageUrl": "assets/png/backgrounds/sage-flower-wallpaper.png",
+    "category": "decor",
+    "description": "잔잔한 꽃과 잎사귀 패턴으로 방을 차분하게 꾸며 주는 벽지예요.",
+    "symbol": "G",
+    "shop": {
+      "category": "wallpaper",
+      "price": 700
+    }
+  },
   "dark-walnut-flooring": {
     "name": "다크 월넛 바닥재",
     "imageUrl": "assets/png/backgrounds/dark-walnut-flooring.png",
@@ -206,6 +239,39 @@
     "shop": {
       "category": "flooring",
       "price": 720
+    }
+  },
+  "herringbone-oak-flooring": {
+    "name": "헤링본 오크 바닥재",
+    "imageUrl": "assets/png/backgrounds/herringbone-oak-flooring.png",
+    "category": "decor",
+    "description": "사선으로 짜인 오크 무늬가 방을 따뜻하고 단정하게 만들어 줘요.",
+    "symbol": "H",
+    "shop": {
+      "category": "flooring",
+      "price": 820
+    }
+  },
+  "mint-checker-flooring": {
+    "name": "민트 체크 타일",
+    "imageUrl": "assets/png/backgrounds/mint-checker-flooring.png",
+    "category": "decor",
+    "description": "민트와 아이보리 타일로 방에 산뜻한 리듬을 더해 줘요.",
+    "symbol": "M",
+    "shop": {
+      "category": "flooring",
+      "price": 760
+    }
+  },
+  "terracotta-mosaic-flooring": {
+    "name": "테라코타 모자이크 바닥재",
+    "imageUrl": "assets/png/backgrounds/terracotta-mosaic-flooring.png",
+    "category": "decor",
+    "description": "따뜻한 테라코타 조각 패턴으로 방에 포근한 개성을 더해 줘요.",
+    "symbol": "T",
+    "shop": {
+      "category": "flooring",
+      "price": 790
     }
   },
   "clean-action-object": {
