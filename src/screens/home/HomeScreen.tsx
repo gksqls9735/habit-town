@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  GestureResponderEvent,
   Image,
   ImageSourcePropType,
+  LayoutChangeEvent,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -23,7 +26,12 @@ import {
 import type { InventoryItem } from '../../features/inventory/types';
 import { getItemImage } from '../../features/items/itemImages';
 import { getItemCareEffect, getItemShopCategory } from '../../features/items/itemCatalog';
-import { loadPetName, savePetName } from '../../features/pets/petProfileRepository';
+import {
+  loadPetName,
+  loadPetRoomName,
+  savePetName,
+  savePetRoomName,
+} from '../../features/pets/petProfileRepository';
 import {
   DeliveryEventReason,
   drawDeliveryMessage,
@@ -36,6 +44,10 @@ import {
 } from '../../features/rewards/giftBoxRepository';
 import { experiencePerGrowthStage, growthStages } from '../../features/rewards/rewardSystem';
 import type { CareMeterKey } from '../../features/rewards/rewardSystem';
+import {
+  loadDecorPlacements,
+  saveDecorPlacement,
+} from '../../features/room/decorPlacementRepository';
 import { ShopModal } from '../../features/shop/components/ShopModal';
 import type { ShopItem } from '../../features/shop/items';
 import {
@@ -75,6 +87,13 @@ type RoomBackgroundImages = {
 };
 
 type PetNameMap = Partial<Record<PetDefinition['id'], string>>;
+type PetRoomNameMap = Partial<Record<PetDefinition['id'], string>>;
+
+type PlacedDecorItem = {
+  item: InventoryItem;
+  x: number;
+  y: number;
+};
 
 function getGrowthStageIndex(stage: GrowthStage) {
   return growthStages.indexOf(stage);
@@ -151,6 +170,7 @@ export function HomeScreen() {
   const [deliveryRewardError, setDeliveryRewardError] = useState('');
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
   const [customPetNames, setCustomPetNames] = useState<PetNameMap>({});
+  const [customPetRoomNames, setCustomPetRoomNames] = useState<PetRoomNameMap>({});
   const [isSavingPetName, setIsSavingPetName] = useState(false);
   const [petStatusError, setPetStatusError] = useState('');
   const [petSettingsLanguage, setPetSettingsLanguage] = useState<PetSettingsLanguage>('ko');
@@ -159,6 +179,9 @@ export function HomeScreen() {
   const [careUsableItems, setCareUsableItems] = useState<CareUsableItem[]>([]);
   const [careItemError, setCareItemError] = useState('');
   const [isUsingCareItem, setIsUsingCareItem] = useState(false);
+  const [placementItem, setPlacementItem] = useState<InventoryItem | null>(null);
+  const [placedDecorItems, setPlacedDecorItems] = useState<Record<string, PlacedDecorItem>>({});
+  const [roomLayout, setRoomLayout] = useState({ height: 0, width: 0 });
   const [roomBackgroundImages, setRoomBackgroundImages] = useState<RoomBackgroundImages>({
     floor: roomFloorImage,
     wallpaper: roomWallpaperImage,
@@ -211,6 +234,7 @@ export function HomeScreen() {
   const sideInset = Math.max(6, Math.round(width * 0.02));
   const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
   const activePetDisplayName = customPetNames[activePet.id] ?? activePet.name;
+  const activePetRoomName = customPetRoomNames[activePet.id] ?? activePet.roomName;
   const currentStage = rewardProgress.stage;
   const previousGrowthStageRef = useRef<GrowthStage | null>(null);
   const characterSize = Math.round(132 * roomScale);
@@ -305,7 +329,7 @@ export function HomeScreen() {
     setRewardDeliveryEventKey((current) => current + 1);
   }, []);
   const refreshRoomBackgroundImages = useCallback(() => {
-    void loadInventoryItems().then((items) => {
+    void Promise.all([loadInventoryItems(), loadDecorPlacements()]).then(([items, placements]) => {
       const equippedWallpaper = items.find(
         (item) => item.equipped && getItemShopCategory(item.id) === 'wallpaper',
       );
@@ -319,6 +343,15 @@ export function HomeScreen() {
           ? getItemImage(equippedWallpaper.id) ?? roomWallpaperImage
           : roomWallpaperImage,
       });
+      setPlacedDecorItems(Object.fromEntries(
+        placements
+          .map((placement) => {
+            const item = items.find((candidate) => candidate.id === placement.itemId);
+
+            return item ? [item.id, { item, x: placement.x, y: placement.y }] : null;
+          })
+          .filter((entry): entry is [string, PlacedDecorItem] => entry !== null),
+      ));
     });
   }, []);
 
@@ -334,13 +367,27 @@ export function HomeScreen() {
 
   useEffect(() => {
     void Promise.all(
-      pets.map(async (pet) => [pet.id, await loadPetName(pet.id)] as const),
+      pets.map(async (pet) => {
+        const [petName, roomName] = await Promise.all([
+          loadPetName(pet.id),
+          loadPetRoomName(pet.id),
+        ]);
+
+        return [pet.id, petName, roomName] as const;
+      }),
     ).then((entries) => {
       setCustomPetNames(Object.fromEntries(
-        entries.filter((entry): entry is readonly [PetDefinition['id'], string] => Boolean(entry[1])),
+        entries
+          .filter((entry): entry is readonly [PetDefinition['id'], string, string | null] => Boolean(entry[1]))
+          .map(([petId, petName]) => [petId, petName]),
       ) as PetNameMap);
+      setCustomPetRoomNames(Object.fromEntries(
+        entries
+          .filter((entry): entry is readonly [PetDefinition['id'], string | null, string] => Boolean(entry[2]))
+          .map(([petId, , roomName]) => [petId, roomName]),
+      ) as PetRoomNameMap);
     }).catch(() => {
-      setPetStatusError('펫 이름을 불러오지 못했어요.');
+      setPetStatusError('펫 이름과 방 이름을 불러오지 못했어요.');
     });
   }, []);
 
@@ -490,11 +537,17 @@ export function HomeScreen() {
     setIsPetSettingsOpen(false);
     setIsPetStatusOpen(false);
   };
-  const updateActivePetName = async (name: string) => {
+  const updateActivePetProfile = async (name: string, roomName: string) => {
     const normalizedName = name.trim();
+    const normalizedRoomName = roomName.trim();
 
     if (!normalizedName) {
       setPetStatusError('이름을 입력해 주세요.');
+      return;
+    }
+
+    if (!normalizedRoomName) {
+      setPetStatusError('방 이름을 입력해 주세요.');
       return;
     }
 
@@ -502,11 +555,16 @@ export function HomeScreen() {
     setPetStatusError('');
 
     try {
-      const savedName = await savePetName(activePet.id, normalizedName);
+      const [savedName, savedRoomName] = await Promise.all([
+        savePetName(activePet.id, normalizedName),
+        savePetRoomName(activePet.id, normalizedRoomName),
+      ]);
+
       setCustomPetNames((current) => ({ ...current, [activePet.id]: savedName }));
+      setCustomPetRoomNames((current) => ({ ...current, [activePet.id]: savedRoomName }));
       setIsPetStatusOpen(false);
     } catch {
-      setPetStatusError('펫 이름을 저장하지 못했어요. 다시 눌러 주세요.');
+      setPetStatusError('펫 이름과 방 이름을 저장하지 못했어요. 다시 눌러 주세요.');
     } finally {
       setIsSavingPetName(false);
     }
@@ -586,12 +644,45 @@ export function HomeScreen() {
       return false;
     }
   };
+  const beginDecorPlacement = (item: InventoryItem) => {
+    setPlacementItem(item);
+    setIsInventoryOpen(false);
+  };
+  const updateRoomLayout = (event: LayoutChangeEvent) => {
+    const { height: roomHeight, width: roomWidth } = event.nativeEvent.layout;
+
+    setRoomLayout({ height: roomHeight, width: roomWidth });
+  };
+  const placeDecorItem = (event: GestureResponderEvent) => {
+    if (!placementItem) return;
+
+    const { locationX, locationY } = event.nativeEvent;
+    const x = clamp(locationX / Math.max(roomLayout.width || width, 1), 0.05, 0.95);
+    const y = clamp(locationY / Math.max(roomLayout.height || height, 1), 0.08, 0.94);
+
+    const placement = {
+      item: placementItem,
+      x,
+      y,
+    };
+
+    setPlacedDecorItems((current) => ({
+      ...current,
+      [placementItem.id]: placement,
+    }));
+    void saveDecorPlacement({ itemId: placementItem.id, x, y });
+    setPlacementItem(null);
+  };
 
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.shell}>
         <View style={styles.room}>
-          <View accessibilityIgnoresInvertColors style={styles.roomBackground}>
+          <View
+            accessibilityIgnoresInvertColors
+            onLayout={updateRoomLayout}
+            style={styles.roomBackground}
+          >
             <Image
               accessibilityIgnoresInvertColors
               resizeMode="stretch"
@@ -604,6 +695,15 @@ export function HomeScreen() {
               source={roomBackgroundImages.floor}
               style={styles.roomFloorImage}
             />
+            {Object.values(placedDecorItems).map((placedItem) => (
+              <PlacedDecorObject
+                item={placedItem.item}
+                key={placedItem.item.id}
+                roomScale={roomScale}
+                x={placedItem.x}
+                y={placedItem.y}
+              />
+            ))}
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
               <StaticPet
                 onPress={() => {
@@ -615,10 +715,30 @@ export function HomeScreen() {
                 stage={currentStage}
                 size={characterSize}
               />
-              <View style={styles.roomNameTag}>
-                <Text style={styles.roomNameText}>{activePetDisplayName}</Text>
-              </View>
             </View>
+            {placementItem ? (
+              <Pressable
+                accessibilityLabel={`${placementItem.name} 배치 위치 선택`}
+                accessibilityRole="button"
+                onPress={placeDecorItem}
+                style={styles.placementLayer}
+              >
+                <View style={styles.placementToolbar}>
+                  <Text style={styles.placementText}>{placementItem.name} 배치</Text>
+                  <Pressable
+                    accessibilityLabel="배치 취소"
+                    accessibilityRole="button"
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      setPlacementItem(null);
+                    }}
+                    style={styles.placementCancelButton}
+                  >
+                    <Text style={styles.placementCancelText}>취소</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            ) : null}
           </View>
         </View>
 
@@ -631,6 +751,7 @@ export function HomeScreen() {
           petImage={activePet.stages[currentStage]}
           petName={activePetDisplayName}
           progress={rewardProgress}
+          roomName={activePetRoomName}
         />
         <PetCareActions onCareAction={openCareItemPopup} />
         <CareItemUsePopup
@@ -678,6 +799,8 @@ export function HomeScreen() {
             activePetId={activePetId}
             currentStage={currentStage}
             onClose={() => setIsPetRoomOpen(false)}
+            petDisplayNames={customPetNames}
+            petRoomNames={customPetRoomNames}
             onSelectPet={(petId) => {
               setActivePetId(petId);
               setIsPetRoomOpen(false);
@@ -690,12 +813,14 @@ export function HomeScreen() {
 
         <PetStatusPopup
           defaultName={activePet.name}
+          defaultRoomName={activePet.roomName}
           displayName={activePetDisplayName}
+          displayRoomName={activePetRoomName}
           errorMessage={petStatusError}
           isSaving={isSavingPetName}
           onClose={closePetStatus}
           onOpenSettings={() => setIsPetSettingsOpen(true)}
-          onSaveName={updateActivePetName}
+          onSaveProfile={updateActivePetProfile}
           petImage={activePet.stages[currentStage]}
           progress={rewardProgress}
           visible={isPetStatusOpen}
@@ -713,6 +838,7 @@ export function HomeScreen() {
         />
 
         <InventoryModal
+          onBeginDecorPlacement={beginDecorPlacement}
           onInventoryChanged={refreshRoomBackgroundImages}
           onClose={() => setIsInventoryOpen(false)}
           visible={isInventoryOpen}
@@ -801,6 +927,49 @@ export function HomeScreen() {
         />
       </View>
     </SafeAreaView>
+  );
+}
+
+function PlacedDecorObject({
+  item,
+  roomScale,
+  x,
+  y,
+}: {
+  item: InventoryItem;
+  roomScale: number;
+  x: number;
+  y: number;
+}) {
+  const image = getItemImage(item.id);
+  const size = Math.round(64 * roomScale);
+
+  return (
+    <View
+      accessibilityLabel={`배치된 ${item.name}`}
+      style={[
+        styles.placedDecorObject,
+        {
+          height: size,
+          left: `${x * 100}%`,
+          marginLeft: -Math.round(size / 2),
+          marginTop: -Math.round(size / 2),
+          top: `${y * 100}%`,
+          width: size,
+        },
+      ]}
+    >
+      {image ? (
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={image}
+          style={styles.placedDecorImage}
+        />
+      ) : (
+        <Text style={styles.placedDecorFallback}>{item.symbol}</Text>
+      )}
+    </View>
   );
 }
 
@@ -1099,6 +1268,66 @@ const styles = StyleSheet.create({
     right: 0,
     width: '100%',
   },
+  placedDecorFallback: {
+    color: '#fff8ea',
+    fontFamily: pixelFontFamily,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  placedDecorImage: {
+    height: '100%',
+    width: '100%',
+  },
+  placedDecorObject: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    zIndex: 2,
+  },
+  placementCancelButton: {
+    alignItems: 'center',
+    backgroundColor: '#ffd99e',
+    borderColor: '#6b432f',
+    borderWidth: 2,
+    height: 32,
+    justifyContent: 'center',
+    minWidth: 54,
+    paddingHorizontal: 8,
+  },
+  placementCancelText: {
+    color: '#5c3529',
+    fontFamily: pixelFontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  placementLayer: {
+    alignItems: 'center',
+    bottom: 0,
+    left: 0,
+    paddingTop: 72,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 30,
+  },
+  placementText: {
+    color: '#35281f',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  placementToolbar: {
+    alignItems: 'center',
+    backgroundColor: '#fff8ea',
+    borderColor: '#3d2d28',
+    borderWidth: 2,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
   characterStage: {
     alignItems: 'center',
     left: 0,
@@ -1125,23 +1354,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     lineHeight: 15,
     textAlign: 'center',
-  },
-  roomNameTag: {
-    alignItems: 'center',
-    backgroundColor: '#fff2d8',
-    borderColor: '#76503d',
-    borderWidth: 3,
-    marginTop: -8,
-    minWidth: 86,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  roomNameText: {
-    color: '#5e4235',
-    fontFamily: pixelFontFamily,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0,
   },
 });
 

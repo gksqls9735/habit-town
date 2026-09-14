@@ -48,11 +48,13 @@ const categoryColors: Record<InventoryItemCategory, string> = {
 };
 
 export function InventoryModal({
+  onBeginDecorPlacement,
   onInventoryChanged,
   onClose,
   visible,
   width,
 }: {
+  onBeginDecorPlacement?: (item: InventoryItem) => void;
   onInventoryChanged?: () => void;
   onClose: () => void;
   visible: boolean;
@@ -180,6 +182,11 @@ export function InventoryModal({
   const handleToggleEquipped = async (id: string) => {
     await toggleEquipped(id);
     onInventoryChanged?.();
+  };
+
+  const handlePlaceDecorItem = (item: InventoryItem) => {
+    onBeginDecorPlacement?.(item);
+    onClose();
   };
 
   return (
@@ -357,7 +364,14 @@ export function InventoryModal({
                         {canEquipItem(selectedItem) ? (
                         <Pressable
                           accessibilityRole="button"
-                          onPress={() => void handleToggleEquipped(selectedItem.id)}
+                          onPress={() => {
+                            if (isPlaceableDecorObject(selectedItem)) {
+                              handlePlaceDecorItem(selectedItem);
+                              return;
+                            }
+
+                            void handleToggleEquipped(selectedItem.id);
+                          }}
                           style={[
                             styles.detailActionButton,
                             styles.equipButton,
@@ -489,6 +503,10 @@ function getInventorySectionLabel(section: InventorySection) {
 }
 
 function getItemActionLabel(item: InventoryItem) {
+  if (isPlaceableDecorObject(item)) {
+    return '배치하기';
+  }
+
   if (getInventorySection(item) === 'decor') {
     return item.equipped ? '적용 해제' : '적용하기';
   }
@@ -504,6 +522,10 @@ function getDecorInventoryCategory(item: InventoryItem): DecorShopCategory | und
   }
 
   return item.category === 'decor' || shopCategory === 'object' ? 'object' : undefined;
+}
+
+function isPlaceableDecorObject(item: InventoryItem): boolean {
+  return getDecorInventoryCategory(item) === 'object';
 }
 
 function matchesDecorInventoryCategory(

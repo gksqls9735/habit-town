@@ -16,6 +16,8 @@ const pixelFontFamily = 'Galmuri11';
 export function PetRoomPopup({
   activePetId,
   currentStage,
+  petDisplayNames,
+  petRoomNames,
   onClose,
   onSelectPet,
   pets,
@@ -24,6 +26,8 @@ export function PetRoomPopup({
 }: {
   activePetId: PetDefinition['id'];
   currentStage: GrowthStage;
+  petDisplayNames: Partial<Record<PetDefinition['id'], string>>;
+  petRoomNames: Partial<Record<PetDefinition['id'], string>>;
   onClose: () => void;
   onSelectPet: (petId: PetDefinition['id']) => void;
   pets: PetDefinition[];
@@ -33,6 +37,7 @@ export function PetRoomPopup({
   const [selectedPetId, setSelectedPetId] =
     useState<PetDefinition['id']>(activePetId);
   const selectedPet = pets.find((pet) => pet.id === selectedPetId) ?? pets[0];
+  const selectedPetDisplayName = petDisplayNames[selectedPet.id] ?? selectedPet.name;
   const popupPets = [pets[1], pets[0], pets[2]];
 
   return (
@@ -53,9 +58,6 @@ export function PetRoomPopup({
               <View>
                 <Text style={styles.popupEyebrow}>CHARACTER SELECT</Text>
                 <Text style={styles.popupTitle}>함께 성장할 친구를 골라주세요</Text>
-                <Text style={styles.popupSubtitle}>
-                  캐릭터의 도트 원본을 그대로 보여드려요.
-                </Text>
               </View>
               <PopupCloseButton
                 accessibilityLabel="펫룸 팝업 닫기"
@@ -71,6 +73,8 @@ export function PetRoomPopup({
               <View style={styles.petLineup}>
                 {popupPets.map((pet) => {
                   const isSelected = pet.id === selectedPetId;
+                  const petDisplayName = petDisplayNames[pet.id] ?? pet.name;
+                  const petRoomName = petRoomNames[pet.id] ?? pet.roomName;
 
                   return (
                     <Pressable
@@ -99,15 +103,15 @@ export function PetRoomPopup({
                         />
                       </View>
                       <View style={styles.petNamePlate}>
-                        <Text style={styles.petName}>{pet.name}</Text>
+                        <Text numberOfLines={1} style={styles.petName}>{petDisplayName}</Text>
                       </View>
-                      <Text style={styles.petTypeLabel}>GROWTH TYPE</Text>
+                      <Text numberOfLines={1} style={styles.petRoomName}>{petRoomName}</Text>
                     </Pressable>
                   );
                 })}
               </View>
               <Text style={styles.petConfirmQuestion}>
-                {selectedPet.name}와 함께 시작할까요?
+                {selectedPetDisplayName}와 함께 시작할까요?
               </Text>
               <View style={styles.popupActions}>
                 <Pressable
@@ -123,7 +127,7 @@ export function PetRoomPopup({
                   style={styles.popupConfirmButton}
                 >
                   <Text style={styles.popupConfirmText}>
-                    {selectedPet.name} 선택
+                    {selectedPetDisplayName} 선택
                   </Text>
                 </Pressable>
               </View>
@@ -258,14 +262,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
   },
-  popupSubtitle: {
-    color: '#7a5947',
-    fontFamily: pixelFontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0,
-    marginTop: 6,
-  },
   popupCloseButton: {
     alignItems: 'center',
     backgroundColor: '#ffd99e',
@@ -361,10 +357,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     textAlign: 'center',
   },
-  petTypeLabel: {
+  petRoomName: {
     color: '#b36b31',
     fontFamily: pixelFontFamily,
-    fontSize: 7,
+    fontSize: 8,
     fontWeight: '900',
     letterSpacing: 0,
     marginTop: 4,

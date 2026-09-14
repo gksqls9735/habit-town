@@ -2,7 +2,6 @@ import { Image, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from '
 import type { ImageSourcePropType } from 'react-native';
 import {
   experiencePerGrowthStage,
-  growthStageLabels,
 } from '../../../features/rewards/rewardSystem';
 import type {
   CareMeterKey,
@@ -55,12 +54,14 @@ export function PetStatusHud({
   petImage,
   petName,
   progress,
+  roomName,
 }: {
   careMeters: CareMeterValues;
   onPressPet?: () => void;
   petImage: ImageSourcePropType;
   petName: string;
   progress: RewardProgress;
+  roomName: string;
 }) {
   const growthPercent = progress.experience / experiencePerGrowthStage;
 
@@ -87,7 +88,7 @@ export function PetStatusHud({
               <Image source={petImage} accessibilityLabel={`선택한 펫 ${petName}`} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
             </View>
           </Pressable>
-          <Text style={styles.stageBadge}>{growthStageLabels[progress.stage]}</Text>
+          <Text numberOfLines={1} style={styles.stageBadge}>{petName}</Text>
         </View>
         <View style={styles.meters}>
           {previewNeeds.map((need) => {
@@ -104,9 +105,14 @@ export function PetStatusHud({
           })}
         </View>
       </View>
-      <View style={styles.currency} accessibilityLabel={`금색 재화 ${progress.coins}`}>
-        <Image accessibilityIgnoresInvertColors source={coinIcon} resizeMode="contain" style={[styles.coinIcon, pixelStyle]} />
-        <Text style={styles.currencyText}>{progress.coins.toLocaleString('ko-KR')}</Text>
+      <View style={styles.roomSummary}>
+        <View style={styles.currency} accessibilityLabel={`금색 재화 ${progress.coins}`}>
+          <Image accessibilityIgnoresInvertColors source={coinIcon} resizeMode="contain" style={[styles.coinIcon, pixelStyle]} />
+          <Text style={styles.currencyText}>{progress.coins.toLocaleString('ko-KR')}</Text>
+        </View>
+        <Text numberOfLines={1} style={styles.roomNameText}>
+          {roomName}
+        </Text>
       </View>
     </View>
   );
@@ -146,16 +152,18 @@ const styles = StyleSheet.create({
   ringSegment: { position: 'absolute', width: 6, height: 6, borderWidth: 1 },
   portrait: { position: 'absolute', left: 4, top: 4, width: 58, height: 58, borderRadius: 29, borderWidth: 1, borderColor: '#624936', backgroundColor: '#fffaf0', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   petImage: { width: 86, height: 86, flexShrink: 0, transform: [{ translateX: 3 }, { translateY: 11 }] },
-  stageBadge: { position: 'absolute', bottom: 0, zIndex: 1, fontFamily, fontSize: 9, color: '#624936', backgroundColor: '#fff0cd', borderColor: '#795c43', borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },
+  stageBadge: { position: 'absolute', bottom: 0, zIndex: 1, maxWidth: 86, fontFamily, fontSize: 9, color: '#624936', backgroundColor: '#fff0cd', borderColor: '#795c43', borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },
   meters: { flex: 1, minWidth: 0, gap: 8 },
   meterRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   meterIcon: { width: 14, height: 14 },
   track: { flex: 1, height: 14, borderWidth: 1, borderColor: '#795c43', backgroundColor: '#fffaf0', padding: 2 },
   fill: { height: '100%' },
   highlight: { height: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
-  currency: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 7, height: 34, backgroundColor: '#a3907a', borderWidth: 2, borderColor: '#624936', marginTop: 4 },
-  currencyText: { fontFamily, fontSize: 11, color: '#fff8ea' },
-  coinIcon: { width: 26, height: 26 },
+  roomSummary: { flexShrink: 0, alignItems: 'flex-end', marginTop: 4 },
+  currency: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2, height: 38, marginTop: 2 },
+  currencyText: { fontFamily, fontSize: 12, fontWeight: '900', color: '#604832', textShadowColor: '#fff8ea', textShadowOffset: { height: 1, width: 1 }, textShadowRadius: 0 },
+  coinIcon: { width: 32, height: 32 },
+  roomNameText: { maxWidth: 132, fontFamily, fontSize: 11, color: '#5e4235', fontWeight: '900', letterSpacing: 0, marginTop: -2, textShadowColor: '#fff8ea', textShadowOffset: { height: 1, width: 1 }, textShadowRadius: 0 },
   bottom: { position: 'absolute', bottom: 14, left: 16, right: 16, alignItems: 'center', zIndex: 10 },
   actions: { flexDirection: 'row', width: '100%', maxWidth: 390, gap: 10 },
   action: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderBottomWidth: 5, borderColor: '#795c43', paddingVertical: 8 },

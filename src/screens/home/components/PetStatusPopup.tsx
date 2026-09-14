@@ -26,12 +26,14 @@ const pixelatedImageStyle =
 
 type PetStatusPopupProps = {
   defaultName: string;
+  defaultRoomName: string;
   displayName: string;
+  displayRoomName: string;
   errorMessage: string;
   isSaving: boolean;
   onClose: () => void;
   onOpenSettings: () => void;
-  onSaveName: (name: string) => void;
+  onSaveProfile: (name: string, roomName: string) => void;
   petImage: ImageSourcePropType;
   progress: RewardProgress;
   visible: boolean;
@@ -40,26 +42,31 @@ type PetStatusPopupProps = {
 
 export function PetStatusPopup({
   defaultName,
+  defaultRoomName,
   displayName,
+  displayRoomName,
   errorMessage,
   isSaving,
   onClose,
   onOpenSettings,
-  onSaveName,
+  onSaveProfile,
   petImage,
   progress,
   visible,
   width,
 }: PetStatusPopupProps) {
   const [draftName, setDraftName] = useState(displayName);
+  const [draftRoomName, setDraftRoomName] = useState(displayRoomName);
   const normalizedDraftName = draftName.trim();
+  const normalizedDraftRoomName = draftRoomName.trim();
   const growthPercent = Math.round(progress.experience / experiencePerGrowthStage * 100);
 
   useEffect(() => {
     if (visible) {
       setDraftName(displayName);
+      setDraftRoomName(displayRoomName);
     }
-  }, [displayName, visible]);
+  }, [displayName, displayRoomName, visible]);
 
   if (!visible) {
     return null;
@@ -109,6 +116,7 @@ export function PetStatusPopup({
               <View style={styles.statPanel}>
                 <Text style={styles.nameText}>{displayName}</Text>
                 <Text style={styles.subText}>기본 이름: {defaultName}</Text>
+                <Text style={styles.subText}>방 이름: {displayRoomName}</Text>
                 <View style={styles.statGrid}>
                   <StatusChip label="단계" value={growthStageLabels[progress.stage]} />
                   <StatusChip label="성장치" value={`${growthPercent}%`} />
@@ -129,6 +137,18 @@ export function PetStatusPopup({
                 value={draftName}
               />
               <Text style={styles.helperText}>최대 12자까지 사용할 수 있어요.</Text>
+              <Text style={[styles.inputLabel, styles.roomInputLabel]}>방 이름 변경</Text>
+              <TextInput
+                accessibilityLabel="방 이름 입력"
+                editable={!isSaving}
+                maxLength={16}
+                onChangeText={setDraftRoomName}
+                placeholder={defaultRoomName}
+                placeholderTextColor="#a98669"
+                style={styles.nameInput}
+                value={draftRoomName}
+              />
+              <Text style={styles.helperText}>최대 16자까지 사용할 수 있어요. 방 글자까지 직접 정할 수 있어요.</Text>
               {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
             </View>
 
@@ -143,14 +163,14 @@ export function PetStatusPopup({
                 <Text style={styles.cancelText}>닫기</Text>
               </Pressable>
               <Pressable
-                accessibilityLabel="펫 이름 저장"
+                accessibilityLabel="펫 이름과 방 이름 저장"
                 accessibilityRole="button"
-                disabled={isSaving || !normalizedDraftName}
-                onPress={() => onSaveName(normalizedDraftName)}
+                disabled={isSaving || !normalizedDraftName || !normalizedDraftRoomName}
+                onPress={() => onSaveProfile(normalizedDraftName, normalizedDraftRoomName)}
                 style={[
                   styles.actionButton,
                   styles.saveButton,
-                  !normalizedDraftName ? styles.actionButtonDisabled : null,
+                  !normalizedDraftName || !normalizedDraftRoomName ? styles.actionButtonDisabled : null,
                 ]}
               >
                 <Text style={styles.saveText}>{isSaving ? '저장 중...' : '저장하기'}</Text>
@@ -274,6 +294,9 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
     marginBottom: 7,
+  },
+  roomInputLabel: {
+    marginTop: 12,
   },
   nameInput: {
     backgroundColor: '#fff8ea',
