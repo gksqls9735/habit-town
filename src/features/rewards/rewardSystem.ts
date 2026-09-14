@@ -26,10 +26,10 @@ export const careActionMeterIncrease = 0.2;
 export const growthStages: GrowthStage[] = ['baby', 'child', 'teen', 'adult'];
 
 export const growthStageLabels: Record<GrowthStage, string> = {
-  adult: 'ADULT',
-  baby: 'BABY',
-  child: 'CHILD',
-  teen: 'TEEN',
+  adult: '성체',
+  baby: '아기',
+  child: '어린이',
+  teen: '청소년',
 };
 
 export const initialRewardProgress: RewardProgress = {

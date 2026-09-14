@@ -21,6 +21,7 @@ import {
 } from '../../features/inventory/inventoryRepository';
 import { getItemImage } from '../../features/items/itemImages';
 import { getItemShopCategory } from '../../features/items/itemCatalog';
+import { loadPetName, savePetName } from '../../features/pets/petProfileRepository';
 import {
   DeliveryEventReason,
   drawDeliveryMessage,
@@ -44,6 +45,11 @@ import {
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
 import { PetRoomPopup } from './components/PetRoomPopup';
+import {
+  PetSettingsLanguage,
+  PetSettingsPopup,
+} from './components/PetSettingsPopup';
+import { PetStatusPopup } from './components/PetStatusPopup';
 import { RewardDeliveryEvent } from './components/RewardDeliveryEvent';
 import { StaticPet } from './components/StaticPet';
 import { leftActions, pets, rightActions } from './homeData';
@@ -60,6 +66,8 @@ type RoomBackgroundImages = {
   floor: ImageSourcePropType;
   wallpaper: ImageSourcePropType;
 };
+
+type PetNameMap = Partial<Record<PetDefinition['id'], string>>;
 
 function getGrowthStageIndex(stage: GrowthStage) {
   return growthStages.indexOf(stage);
@@ -101,6 +109,8 @@ type PetAnimationState = {
 export function HomeScreen() {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
+  const [isPetStatusOpen, setIsPetStatusOpen] = useState(false);
+  const [isPetSettingsOpen, setIsPetSettingsOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isGiftRewardOpen, setIsGiftRewardOpen] = useState(false);
@@ -120,6 +130,11 @@ export function HomeScreen() {
   const [isClaimingDeliveryReward, setIsClaimingDeliveryReward] = useState(false);
   const [deliveryRewardError, setDeliveryRewardError] = useState('');
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
+  const [customPetNames, setCustomPetNames] = useState<PetNameMap>({});
+  const [isSavingPetName, setIsSavingPetName] = useState(false);
+  const [petStatusError, setPetStatusError] = useState('');
+  const [petSettingsLanguage, setPetSettingsLanguage] = useState<PetSettingsLanguage>('ko');
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [roomBackgroundImages, setRoomBackgroundImages] = useState<RoomBackgroundImages>({
     floor: roomFloorImage,
     wallpaper: roomWallpaperImage,
@@ -171,6 +186,7 @@ export function HomeScreen() {
   const railTop = compactHeight ? 126 : Math.round(148 * roomScale);
   const sideInset = Math.max(6, Math.round(width * 0.02));
   const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
+  const activePetDisplayName = customPetNames[activePet.id] ?? activePet.name;
   const currentStage = rewardProgress.stage;
   const previousGrowthStageRef = useRef<GrowthStage | null>(null);
   const characterSize = Math.round(132 * roomScale);
@@ -293,6 +309,18 @@ export function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    void Promise.all(
+      pets.map(async (pet) => [pet.id, await loadPetName(pet.id)] as const),
+    ).then((entries) => {
+      setCustomPetNames(Object.fromEntries(
+        entries.filter((entry): entry is readonly [PetDefinition['id'], string] => Boolean(entry[1])),
+      ) as PetNameMap);
+    }).catch(() => {
+      setPetStatusError('펫 이름을 불러오지 못했어요.');
+    });
+  }, []);
+
+  useEffect(() => {
     if (isLoadingGoalData) {
       return;
     }
@@ -326,12 +354,12 @@ export function HomeScreen() {
       return;
     }
 
-    if (label === '데이터:경험치 증가') {
+    if (label === '데이터:성장치 증가') {
       grantExperienceReward(localDevExperienceGrantAmount);
       return;
     }
 
-    if (label === '데이터:경험치 100%') {
+    if (label === '데이터:성장치 100%') {
       grantExperienceReward(experiencePerGrowthStage);
       return;
     }
@@ -431,6 +459,34 @@ export function HomeScreen() {
       setIsClaimingGiftReward(false);
     }
   };
+  const closePetStatus = () => {
+    if (isSavingPetName) return;
+
+    setPetStatusError('');
+    setIsPetSettingsOpen(false);
+    setIsPetStatusOpen(false);
+  };
+  const updateActivePetName = async (name: string) => {
+    const normalizedName = name.trim();
+
+    if (!normalizedName) {
+      setPetStatusError('이름을 입력해 주세요.');
+      return;
+    }
+
+    setIsSavingPetName(true);
+    setPetStatusError('');
+
+    try {
+      const savedName = await savePetName(activePet.id, normalizedName);
+      setCustomPetNames((current) => ({ ...current, [activePet.id]: savedName }));
+      setIsPetStatusOpen(false);
+    } catch {
+      setPetStatusError('펫 이름을 저장하지 못했어요. 다시 눌러 주세요.');
+    } finally {
+      setIsSavingPetName(false);
+    }
+  };
   const purchaseShopItem = async (item: ShopItem): Promise<boolean> => {
     if (rewardProgress.coins < item.price) return false;
 
@@ -484,12 +540,17 @@ export function HomeScreen() {
             />
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
               <StaticPet
+                onPress={() => {
+                  setPetStatusError('');
+                  setIsPetStatusOpen(true);
+                }}
                 pet={activePet}
+                petName={activePetDisplayName}
                 stage={currentStage}
                 size={characterSize}
               />
               <View style={styles.roomNameTag}>
-                <Text style={styles.roomNameText}>{activePet.roomName}</Text>
+                <Text style={styles.roomNameText}>{activePetDisplayName}</Text>
               </View>
             </View>
           </View>
@@ -497,8 +558,12 @@ export function HomeScreen() {
 
         <PetStatusHud
           careMeters={careMeters}
+          onPressPet={() => {
+            setPetStatusError('');
+            setIsPetStatusOpen(true);
+          }}
           petImage={activePet.stages[currentStage]}
-          petName={activePet.name}
+          petName={activePetDisplayName}
           progress={rewardProgress}
         />
         <PetCareActions onCareAction={fillCareMeter} />
@@ -546,6 +611,30 @@ export function HomeScreen() {
             width={popupWidth}
           />
         ) : null}
+
+        <PetStatusPopup
+          defaultName={activePet.name}
+          displayName={activePetDisplayName}
+          errorMessage={petStatusError}
+          isSaving={isSavingPetName}
+          onClose={closePetStatus}
+          onOpenSettings={() => setIsPetSettingsOpen(true)}
+          onSaveName={updateActivePetName}
+          petImage={activePet.stages[currentStage]}
+          progress={rewardProgress}
+          visible={isPetStatusOpen}
+          width={popupWidth}
+        />
+
+        <PetSettingsPopup
+          language={petSettingsLanguage}
+          onChangeLanguage={setPetSettingsLanguage}
+          onClose={() => setIsPetSettingsOpen(false)}
+          onTogglePushNotifications={() => setPushNotificationsEnabled((current) => !current)}
+          pushNotificationsEnabled={pushNotificationsEnabled}
+          visible={isPetSettingsOpen}
+          width={popupWidth}
+        />
 
         <InventoryModal
           onInventoryChanged={refreshRoomBackgroundImages}

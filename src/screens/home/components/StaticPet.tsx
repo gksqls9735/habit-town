@@ -1,4 +1,4 @@
-import { Image, ImageStyle, Platform, StyleSheet, View } from 'react-native';
+import { Image, ImageStyle, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { GrowthStage, PetDefinition } from '../types';
 
 const pixelatedImageStyle =
@@ -7,23 +7,28 @@ const pixelatedImageStyle =
     : null;
 
 type StaticPetProps = {
+  onPress?: () => void;
   pet: PetDefinition;
+  petName: string;
   size: number;
   stage: GrowthStage;
 };
 
-export function StaticPet({ pet, size, stage }: StaticPetProps) {
+export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps) {
   const petSource = pet.stages[stage];
 
   return (
-    <View
+    <Pressable
+      accessibilityLabel={`${petName} 상태 보기`}
+      accessibilityRole="button"
+      onPress={onPress}
       style={[
         styles.staticPetWrap,
         {
           height: size,
           width: size,
-        },
-      ]}
+          },
+        ]}
     >
       <View
         style={[
@@ -46,7 +51,7 @@ export function StaticPet({ pet, size, stage }: StaticPetProps) {
           },
         ]}
       />
-    </View>
+    </Pressable>
   );
 }
 

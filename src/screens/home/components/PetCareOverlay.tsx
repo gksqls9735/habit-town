@@ -44,39 +44,41 @@ const actions: CareActionView[] = [
   { key: 'hunger', label: '밥먹이기', color: '#f6e3bb', icon: feedBowlFullIcon },
   { key: 'loneliness', label: '놀아주기', color: '#f3ded0', icon: playBallIcon },
 ];
-const experienceRingSegments = 32;
+const growthRingSegments = 32;
 const pixelStyle = Platform.OS === 'web'
   ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle) : undefined;
 
-/** Shows the selected pet with earned experience and care meters. */
+/** Shows the selected pet with earned growth and care meters. */
 export function PetStatusHud({
   careMeters,
+  onPressPet,
   petImage,
   petName,
   progress,
 }: {
   careMeters: CareMeterValues;
+  onPressPet?: () => void;
   petImage: ImageSourcePropType;
   petName: string;
   progress: RewardProgress;
 }) {
-  const experiencePercent = progress.experience / experiencePerGrowthStage;
+  const growthPercent = progress.experience / experiencePerGrowthStage;
 
   return (
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.statusPanel}>
         <View style={styles.portraitColumn}>
-          <View style={styles.ring} accessibilityRole="progressbar"
-            accessibilityLabel={`${petName} 경험치`} accessibilityValue={{ min: 0, max: 100, now: Math.round(experiencePercent * 100) }}>
+          <Pressable style={styles.ring} accessibilityRole="button"
+            accessibilityLabel={`${petName} 상태 보기`} onPress={onPressPet}>
             <View style={styles.ringInnerShadow} />
-            {Array.from({ length: experienceRingSegments }, (_, index) => {
-              const angle = index / experienceRingSegments * Math.PI * 2 - Math.PI / 2;
-              const isFilled = index < Math.round(experiencePercent * experienceRingSegments);
+            {Array.from({ length: growthRingSegments }, (_, index) => {
+              const angle = index / growthRingSegments * Math.PI * 2 - Math.PI / 2;
+              const isFilled = index < Math.round(growthPercent * growthRingSegments);
 
               return <View key={index} style={[styles.ringSegment, {
                 left: 34 + Math.cos(angle) * 30 - 3,
                 top: 34 + Math.sin(angle) * 30 - 3,
-                transform: [{ rotate: `${index / experienceRingSegments * 360}deg` }],
+                transform: [{ rotate: `${index / growthRingSegments * 360}deg` }],
                 backgroundColor: isFilled ? '#87a85d' : '#d5c99f',
                 borderColor: isFilled ? '#5d743f' : '#b9a87d',
               }]} />;
@@ -84,7 +86,7 @@ export function PetStatusHud({
             <View style={styles.portrait}>
               <Image source={petImage} accessibilityLabel={`선택한 펫 ${petName}`} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
             </View>
-          </View>
+          </Pressable>
           <Text style={styles.stageBadge}>{growthStageLabels[progress.stage]}</Text>
         </View>
         <View style={styles.meters}>
