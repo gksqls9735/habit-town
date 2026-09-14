@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "type": "native-size-growth-sprite-edit",
+  "timestamp": "2026-09-14T02:33:43.247488+00:00",
+  "source": "src/assets/growth-pixel-character/raw/hamster-baby-forepaws-source.png",
+  "output": "src/assets/growth-pixel-character/clean/hamster-baby-forepaws.png",
+  "stage": "baby",
+  "stage_height_ratio": null,
+  "native_canvas_preserved": true,
+  "target_visible_height": 136,
+  "working_grid": [
+    158,
+    158
+  ],
+  "output_scale": 1,
+  "output_size": [
+    158,
+    158
+  ],
+  "max_colors": 64,
+  "opaque_colors": 61,
+  "alpha": "binary",
+  "grounding": "bottom-center",
+  "visible_bbox": [
+    22,
+    16,
+    135,
+    152
+  ],
+  "grid_aligned": true,
+  "removed_border_pixels": 818904
+}
