@@ -105,6 +105,9 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
                     <View style={styles.cardCopy}>
                       <Text style={styles.itemName}>{item.name}</Text>
                       <Text numberOfLines={2} style={styles.description}>{item.description}</Text>
+                      {item.kind === 'inventory-item' && item.careEffect ? (
+                        <Text style={styles.careEffectText}>{getCareEffectLabel(item.careEffect)}</Text>
+                      ) : null}
                     </View>
                     <Pressable accessibilityRole="button" disabled={owned || isPurchasingId !== null} onPress={() => void buy(item)}
                       style={({ pressed }) => [styles.buyButton, owned && styles.ownedButton, insufficient && !owned && styles.lowBalanceButton, pressed && styles.pressed]}>
@@ -148,7 +151,8 @@ const styles = StyleSheet.create({
   scroll: { flexShrink: 1 }, products: { padding: 14, gap: 10 },
   card: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 7, padding: 7, borderWidth: 2, borderTopColor: '#aa8664', borderLeftColor: '#aa8664', borderRightColor: '#fffdf4', borderBottomColor: '#fffdf4', backgroundColor: '#f0dfc2' },
   preview: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff7e4', overflow: 'hidden' }, previewImage: { width: '92%', height: '92%' },
-  cardCopy: { flex: 1, gap: 5 }, itemName: { fontFamily, fontSize: 12, lineHeight: 18, color: '#49372d' }, description: { fontFamily, fontSize: 10, lineHeight: 16, color: '#79624d' },
+  cardCopy: { flex: 1, gap: 4 }, itemName: { fontFamily, fontSize: 12, lineHeight: 18, color: '#49372d' }, description: { fontFamily, fontSize: 10, lineHeight: 15, color: '#79624d' },
+  careEffectText: { alignSelf: 'flex-start', backgroundColor: '#fff5dc', borderColor: '#c59f72', borderWidth: 1, color: '#6b4e38', fontFamily, fontSize: 9, lineHeight: 14, paddingHorizontal: 5, paddingVertical: 2 },
   buyButton: { minWidth: 64, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, borderWidth: 2, borderColor: '#705340', borderBottomWidth: 4, backgroundColor: '#8a684f' },
   ownedButton: { backgroundColor: '#a99b84', borderColor: '#817663' }, lowBalanceButton: { backgroundColor: '#e8d8c0', borderColor: '#c4ad90' },
   buyText: { fontFamily, fontSize: 10, color: '#fffaf0' }, lowBalanceText: { color: '#947c64' },
@@ -164,4 +168,14 @@ function isOwnedShopItem(item: ShopItem, ownedItemIds: readonly string[]): boole
 
 function getCapacityLabel(category: InventoryCapacityCategory) {
   return category === 'decor' ? '꾸미기 가방' : '가방';
+}
+
+function getCareEffectLabel(effect: { increase: number; meter: 'cleanliness' | 'hunger' | 'loneliness' }) {
+  const meterLabel = effect.meter === 'cleanliness'
+    ? '청결도'
+    : effect.meter === 'hunger'
+      ? '포만감'
+      : '친밀도';
+
+  return `${meterLabel} +${Math.round(effect.increase * 100)}%`;
 }

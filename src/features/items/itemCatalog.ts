@@ -1,5 +1,6 @@
 import itemCatalog from './itemCatalog.json';
 import { InventoryItemCategory } from '../inventory/types';
+import type { CareMeterKey } from '../rewards/rewardSystem';
 
 export type ItemCode = keyof typeof itemCatalog;
 export type ItemCatalogShopCategory = 'action' | 'flooring' | 'object' | 'wallpaper';
@@ -11,6 +12,8 @@ export type ItemCatalogInventoryDefaults = {
 
 export type ItemCatalogShopEntry = {
   category: ItemCatalogShopCategory;
+  careIncrease?: number;
+  careMeter?: CareMeterKey;
   price: number;
 };
 

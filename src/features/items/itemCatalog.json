@@ -216,7 +216,9 @@
     "symbol": "C",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "cleanliness",
+      "careIncrease": 0.1,
+      "price": 60
     }
   },
   "pet-shampoo-action-object": {
@@ -227,6 +229,8 @@
     "symbol": "S",
     "shop": {
       "category": "action",
+      "careMeter": "cleanliness",
+      "careIncrease": 0.2,
       "price": 120
     }
   },
@@ -238,7 +242,9 @@
     "symbol": "T",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "cleanliness",
+      "careIncrease": 0.08,
+      "price": 50
     }
   },
   "dental-chew-action-object": {
@@ -249,7 +255,9 @@
     "symbol": "D",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "cleanliness",
+      "careIncrease": 0.15,
+      "price": 90
     }
   },
   "premium-kibble-action-object": {
@@ -260,7 +268,9 @@
     "symbol": "K",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "hunger",
+      "careIncrease": 0.16,
+      "price": 100
     }
   },
   "treat-biscuit-jar-action-object": {
@@ -271,7 +281,9 @@
     "symbol": "J",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "hunger",
+      "careIncrease": 0.08,
+      "price": 50
     }
   },
   "wet-food-can-action-object": {
@@ -282,7 +294,9 @@
     "symbol": "W",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "hunger",
+      "careIncrease": 0.14,
+      "price": 80
     }
   },
   "special-meal-plate-action-object": {
@@ -293,6 +307,8 @@
     "symbol": "M",
     "shop": {
       "category": "action",
+      "careMeter": "hunger",
+      "careIncrease": 0.2,
       "price": 120
     }
   },
@@ -304,7 +320,9 @@
     "symbol": "B",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "loneliness",
+      "careIncrease": 0.1,
+      "price": 60
     }
   },
   "plush-chick-action-object": {
@@ -315,7 +333,9 @@
     "symbol": "P",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "loneliness",
+      "careIncrease": 0.12,
+      "price": 70
     }
   },
   "feather-wand-action-object": {
@@ -326,7 +346,9 @@
     "symbol": "W",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "loneliness",
+      "careIncrease": 0.15,
+      "price": 90
     }
   },
   "rope-toy-action-object": {
@@ -337,7 +359,9 @@
     "symbol": "R",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "loneliness",
+      "careIncrease": 0.18,
+      "price": 110
     }
   },
   "play-tunnel-action-object": {
@@ -348,6 +372,8 @@
     "symbol": "T",
     "shop": {
       "category": "action",
+      "careMeter": "loneliness",
+      "careIncrease": 0.2,
       "price": 120
     }
   },
@@ -359,7 +385,9 @@
     "symbol": "F",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "hunger",
+      "careIncrease": 0.1,
+      "price": 60
     }
   },
   "play-action-object": {
@@ -370,7 +398,9 @@
     "symbol": "P",
     "shop": {
       "category": "action",
-      "price": 120
+      "careMeter": "loneliness",
+      "careIncrease": 0.1,
+      "price": 60
     }
   },
   "animal-rescue-snack": {

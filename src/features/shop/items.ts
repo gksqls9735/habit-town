@@ -1,6 +1,7 @@
 import type { ImageSourcePropType } from 'react-native';
 import { getItemImage } from '../items/itemImages';
 import { ItemCode, itemsByCode } from '../items/itemCatalog';
+import type { CareMeterKey } from '../rewards/rewardSystem';
 import {
   inventoryExpansionSlotCount,
   type InventoryCapacityCategory,
@@ -21,6 +22,10 @@ type BaseShopItem = {
 };
 
 export type InventoryShopItem = BaseShopItem & {
+  careEffect?: {
+    increase: number;
+    meter: CareMeterKey;
+  };
   id: ItemCode;
   inventoryCategory: InventoryItemCategory;
   kind: 'inventory-item';
@@ -84,6 +89,9 @@ const inventoryShopItems: InventoryShopItem[] = shopItemCodes.map((id) => {
     name: item.name,
     price: item.shop.price,
     symbol: item.symbol,
+    ...(item.shop.careMeter && typeof item.shop.careIncrease === 'number'
+      ? { careEffect: { increase: item.shop.careIncrease, meter: item.shop.careMeter } }
+      : {}),
   };
 });
 
