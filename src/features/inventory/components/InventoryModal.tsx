@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { useInventory } from '../hooks/useInventory';
 import { InventoryItem, InventoryItemCategory } from '../types';
 import { getItemImage } from '../../items/itemImages';
@@ -205,14 +206,10 @@ export function InventoryModal({
                     {activeSectionItemCount}/{activeSectionCapacity}
                   </Text>
                 </View>
-                <Pressable
+                <PopupCloseButton
                   accessibilityLabel="가방 닫기"
-                  accessibilityRole="button"
                   onPress={onClose}
-                  style={styles.closeButton}
-                >
-                  <Text style={styles.closeText}>x</Text>
-                </Pressable>
+                />
               </View>
             </View>
 

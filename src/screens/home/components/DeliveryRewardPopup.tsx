@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { DeliveryReward, DeliveryRewardRarity } from '../../../features/rewards/eventRewards';
 
 const parcelImage = require('../../../../assets/event/animal-rescue-reward-gift-box.png');
@@ -75,15 +76,11 @@ export function DeliveryRewardPopup({
                 <Text style={styles.eyebrow}>ANIMAL RESCUE GIFT</Text>
                 <Text style={styles.title}>택배 선물이 도착했어요</Text>
               </View>
-              <Pressable
+              <PopupCloseButton
                 accessibilityLabel="택배 선물 닫기"
-                accessibilityRole="button"
                 disabled={isBusy}
                 onPress={onClose}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <View style={styles.content}>

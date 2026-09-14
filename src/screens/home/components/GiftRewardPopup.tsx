@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { DeliveryReward, DeliveryRewardRarity } from '../../../features/rewards/eventRewards';
 
 const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
@@ -62,15 +63,11 @@ export function GiftRewardPopup({
                 <Text style={styles.eyebrow}>GIFT REWARD</Text>
                 <Text style={styles.title}>선물 상자</Text>
               </View>
-              <Pressable
+              <PopupCloseButton
                 accessibilityLabel="선물 팝업 닫기"
-                accessibilityRole="button"
                 disabled={isBusy}
                 onPress={onClose}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <View style={styles.content}>

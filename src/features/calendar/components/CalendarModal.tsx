@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Calendar, DateData, LocaleConfig } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { DailyPlan } from '../../goals/types';
 import { canEditPlan, getLocalDateKey, getNextMidnightTimestamp } from '../../goals/utils';
 import { CalendarRecord, getCalendarHistory } from '../calendarHistory';
@@ -76,10 +77,7 @@ export function CalendarModal({ onClose, plans, onToggleTask, isLoading, isBusy,
               <Text style={styles.eyebrow}>하루하루 쌓이는 작은 노력</Text>
               <Text style={styles.title}>나의 캘린더</Text>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="캘린더 닫기" onPress={onClose}
-              style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}>
-              <Text style={styles.closeText}>x</Text>
-            </Pressable>
+            <PopupCloseButton accessibilityLabel="캘린더 닫기" onPress={onClose} />
           </View>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.toolbar}>

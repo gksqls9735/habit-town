@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import {
   experiencePerGrowthStage,
   growthStageLabels,
@@ -87,15 +88,11 @@ export function PetStatusPopup({
               >
                 <Text style={styles.settingsIconText}>⚙</Text>
               </Pressable>
-              <Pressable
+              <PopupCloseButton
                 accessibilityLabel="펫 상태 팝업 닫기"
-                accessibilityRole="button"
                 disabled={isSaving}
                 onPress={onClose}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeText}>x</Text>
-              </Pressable>
+              />
             </View>
           </View>
 

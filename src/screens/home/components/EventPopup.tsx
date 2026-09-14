@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 
 const septemberAttendanceEventBannerImage = require('../../../../assets/ui/event/attendance-banners/september-attendance-event.png');
 const octoberAttendanceEventBannerImage = require('../../../../assets/ui/event/attendance-banners/october-attendance-event.png');
@@ -92,14 +93,10 @@ export function EventPopup({ onClose, visible, width }: EventPopupProps) {
                 <Text style={styles.eyebrow}>EVENT BOARD</Text>
                 <Text style={styles.title}>이벤트</Text>
               </View>
-              <Pressable
+              <PopupCloseButton
                 accessibilityLabel="이벤트 팝업 닫기"
-                accessibilityRole="button"
                 onPress={closePopup}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <ScrollView
@@ -170,14 +167,10 @@ function EventDetailPopup({
                   {banner.title}
                 </Text>
               </View>
-              <Pressable
+              <PopupCloseButton
                 accessibilityLabel="이벤트 상세 팝업 닫기"
-                accessibilityRole="button"
                 onPress={onClose}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <View style={styles.detailContent} />

@@ -12,6 +12,7 @@ import {
 import type { InventoryItem } from '../../../features/inventory/types';
 import { getItemImage } from '../../../features/items/itemImages';
 import type { CareMeterKey } from '../../../features/rewards/rewardSystem';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 
 export type CareUsableItem = InventoryItem & {
   careEffect: {
@@ -96,14 +97,10 @@ export function CareItemUsePopup({
               {getMeterActionTitle(meter)}
             </Text>
           </View>
-          <Pressable
+          <PopupCloseButton
             accessibilityLabel="돌봄 아이템 팝업 닫기"
-            accessibilityRole="button"
             onPress={onClose}
-            style={({ pressed }) => [styles.close, pressed && styles.pressed]}
-          >
-            <Text style={styles.closeText}>x</Text>
-          </Pressable>
+          />
         </View>
 
         {hasItems ? (

@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { calculateTaskReward } from '../../rewards/rewardSystem';
 import { DailyPlan, DailyTask, goalDifficultyLabels, YearlyGoal } from '../types';
 import { isPlanExpired } from '../utils';
@@ -84,14 +85,10 @@ export function TodayTasksModal({
                     : `[${goalDifficultyLabels[selectedGoal.difficulty]}] ${selectedGoal.title}`}
                 </Text>
               </View>
-              <Pressable
+              <PopupCloseButton
                 accessibilityLabel="오늘 할 일 닫기"
-                accessibilityRole="button"
                 onPress={onClose}
-                style={styles.smallCloseButton}
-              >
-                <Text style={styles.smallCloseText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <View style={styles.modalActionRow}>
@@ -297,14 +294,10 @@ function TaskDetailPopup({
                 {plan.round}회차 {isExpired ? '만료됨' : '오늘'}
               </Text>
             </View>
-            <Pressable
+            <PopupCloseButton
               accessibilityLabel="할 일 팝업 닫기"
-              accessibilityRole="button"
               onPress={onClose}
-              style={styles.smallCloseButton}
-            >
-              <Text style={styles.smallCloseText}>x</Text>
-            </Pressable>
+            />
           </View>
 
           <View style={styles.modalActionRow}>

@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 
 const pixelFontFamily = 'Galmuri11';
 
@@ -45,14 +46,10 @@ export function PetSettingsPopup({
               <Text style={styles.eyebrow}>PET SETTINGS</Text>
               <Text style={styles.title}>설정</Text>
             </View>
-            <Pressable
+            <PopupCloseButton
               accessibilityLabel="펫 설정 팝업 닫기"
-              accessibilityRole="button"
               onPress={onClose}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeText}>x</Text>
-            </Pressable>
+            />
           </View>
 
           <View style={styles.content}>

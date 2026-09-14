@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import type { InventoryCapacityCategory } from '../../inventory/types';
 import { shopItems, type ShopCategory, type ShopItem } from '../items';
 
@@ -81,9 +82,7 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
                 <Image accessibilityIgnoresInvertColors source={currencyCoinIcon} resizeMode="contain" style={[styles.coinIcon, pixelatedImageStyle]} />
                 <Text style={styles.balanceText}>{coinBalance.toLocaleString()}</Text>
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel="상점 팝업 닫기" onPress={onClose} style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
-                <Text style={styles.closeText}>x</Text>
-              </Pressable>
+              <PopupCloseButton accessibilityLabel="상점 팝업 닫기" onPress={onClose} />
             </View>
             <View style={styles.filters}>
               {filters.map((filter) => (

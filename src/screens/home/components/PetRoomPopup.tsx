@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { GrowthStage, PetDefinition } from '../types';
 
 const pixelFontFamily = 'Galmuri11';
@@ -56,14 +57,10 @@ export function PetRoomPopup({
                   캐릭터의 도트 원본을 그대로 보여드려요.
                 </Text>
               </View>
-              <Pressable
+              <PopupCloseButton
                 accessibilityLabel="펫룸 팝업 닫기"
-                accessibilityRole="button"
                 onPress={onClose}
-                style={styles.popupCloseButton}
-              >
-                <Text style={styles.popupCloseText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <ScrollView
