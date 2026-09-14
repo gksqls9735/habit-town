@@ -1,9 +1,10 @@
-import { Image, ImageSourcePropType, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 import {
   experiencePerGrowthStage,
   growthStageLabels,
-  RewardProgress,
 } from '../../../features/rewards/rewardSystem';
+import type { RewardProgress } from '../../../features/rewards/rewardSystem';
 
 const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
@@ -14,26 +15,46 @@ const hungerBoltIcon = require('../../../../assets/ui/needs/hunger-bolt-icon.png
 const lonelinessHeartBubbleIcon = require('../../../../assets/ui/needs/loneliness-heart-bubble-icon.png');
 const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
 
-const previewNeeds = [
-  { label: '청', name: '청결도', value: 0.8, color: '#8fbcc0', icon: cleanlinessBubblesIcon },
-  { label: '굶', name: '굶주림', value: 0.45, color: '#dfb471', icon: hungerBoltIcon },
-  { label: '외', name: '외로움', value: 0.3, color: '#e7a28f', icon: lonelinessHeartBubbleIcon },
+export type PetCareMeterKey = 'cleanliness' | 'hunger' | 'loneliness';
+export type PetCareMeterValues = Record<PetCareMeterKey, number>;
+
+type CareMeterView = {
+  color: string;
+  icon: ImageSourcePropType;
+  key: PetCareMeterKey;
+  label: string;
+  name: string;
+};
+
+type CareActionView = {
+  color: string;
+  icon: ImageSourcePropType;
+  key: PetCareMeterKey;
+  label: string;
+};
+
+const previewNeeds: CareMeterView[] = [
+  { key: 'cleanliness', label: '청', name: '청결도', color: '#8fbcc0', icon: cleanlinessBubblesIcon },
+  { key: 'hunger', label: '굶', name: '포만감', color: '#dfb471', icon: hungerBoltIcon },
+  { key: 'loneliness', label: '외', name: '친밀도', color: '#e7a28f', icon: lonelinessHeartBubbleIcon },
 ];
-const actions = [
-  { label: '청소하기', color: '#d9ebea', icon: cleanBrushIcon },
-  { label: '밥먹이기', color: '#f6e3bb', icon: feedBowlFullIcon },
-  { label: '놀아주기', color: '#f3ded0', icon: playBallIcon },
+const actions: CareActionView[] = [
+  { key: 'cleanliness', label: '청소하기', color: '#d9ebea', icon: cleanBrushIcon },
+  { key: 'hunger', label: '밥먹이기', color: '#f6e3bb', icon: feedBowlFullIcon },
+  { key: 'loneliness', label: '놀아주기', color: '#f3ded0', icon: playBallIcon },
 ];
 const experienceRingSegments = 32;
 const pixelStyle = Platform.OS === 'web'
   ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle) : undefined;
 
-/** Shows the selected pet with earned experience and presentation-only care meters. */
+/** Shows the selected pet with earned experience and care meters. */
 export function PetStatusHud({
+  careMeters,
   petImage,
   petName,
   progress,
 }: {
+  careMeters: PetCareMeterValues;
   petImage: ImageSourcePropType;
   petName: string;
   progress: RewardProgress;
@@ -66,14 +87,18 @@ export function PetStatusHud({
           <Text style={styles.stageBadge}>{growthStageLabels[progress.stage]}</Text>
         </View>
         <View style={styles.meters}>
-          {previewNeeds.map((need) => <View key={need.label} style={styles.meterRow}
-            accessibilityRole="progressbar" accessibilityLabel={`${need.name}, 디자인 미리보기`}
-            accessibilityValue={{ min: 0, max: 100, now: need.value * 100 }}>
+          {previewNeeds.map((need) => {
+            const value = careMeters[need.key];
+
+            return <View key={need.label} style={styles.meterRow}
+              accessibilityRole="progressbar" accessibilityLabel={need.name}
+              accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}>
             <Image source={need.icon} resizeMode="contain" style={styles.meterIcon} />
-            <View style={styles.track}><View style={[styles.fill, { width: `${need.value * 100}%`, backgroundColor: need.color }]}>
+            <View style={styles.track}><View style={[styles.fill, { width: `${value * 100}%`, backgroundColor: need.color }]}>
               <View style={styles.highlight} />
             </View></View>
-          </View>)}
+            </View>;
+          })}
         </View>
       </View>
       <View style={styles.currency} accessibilityLabel={`금색 재화 ${progress.coins}`}>
@@ -84,13 +109,18 @@ export function PetStatusHud({
   );
 }
 
-/** Preview buttons reserve the care-action layout without changing pet state. */
-export function PetCareActions() {
+/** Bottom care actions increase the matching top meter toward full. */
+export function PetCareActions({
+  onCareAction,
+}: {
+  onCareAction: (meter: PetCareMeterKey) => void;
+}) {
   return (
     <View style={styles.bottom} pointerEvents="box-none">
       <View style={styles.actions}>
         {actions.map((action) => <Pressable key={action.label} accessibilityRole="button"
-          accessibilityLabel={`${action.label}, 디자인 미리보기`} accessibilityState={{ disabled: true }} disabled
+          accessibilityLabel={action.label}
+          onPress={() => onCareAction(action.key)}
           style={[styles.action, { backgroundColor: action.color }]}>
           <View style={styles.actionHighlight} />
           {action.icon ? (
