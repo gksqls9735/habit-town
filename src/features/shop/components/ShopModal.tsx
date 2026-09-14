@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   filter: { flex: 1, minHeight: 44, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#d8c4a9', backgroundColor: '#f8eddd' },
   activeFilter: { borderColor: '#705340', backgroundColor: '#705340' }, filterText: { fontFamily, fontSize: 9, color: '#745c47' }, activeFilterText: { color: '#fff8ec' },
   scroll: { flexShrink: 1 }, products: { padding: 14, gap: 10 },
-  card: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 7, padding: 7, borderWidth: 2, borderTopColor: '#aa8664', borderLeftColor: '#aa8664', borderRightColor: '#fffdf4', borderBottomColor: '#fffdf4', backgroundColor: '#f0dfc2' },
+  card: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 7, padding: 7, borderWidth: 2, borderColor: '#aa8664', backgroundColor: '#f0dfc2' },
   preview: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff7e4', overflow: 'hidden' }, previewImage: { width: '92%', height: '92%' },
   cardCopy: { flex: 1, gap: 4 }, itemName: { fontFamily, fontSize: 12, lineHeight: 18, color: '#49372d' }, description: { fontFamily, fontSize: 10, lineHeight: 15, color: '#79624d' },
   careEffectText: { alignSelf: 'flex-start', backgroundColor: '#fff5dc', borderColor: '#c59f72', borderWidth: 1, color: '#6b4e38', fontFamily, fontSize: 9, lineHeight: 14, paddingHorizontal: 5, paddingVertical: 2 },
