@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { DeliveryReward, DeliveryRewardRarity } from '../../../features/rewards/eventRewards';
 
-const coinIcon = require('../../../../assets/ui/currency-coin.png');
+const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
 const giftIcon = require('../../../../assets/ui/reward-button.png');
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =

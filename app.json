@@ -3,7 +3,7 @@
     "name": "GROMI",
     "slug": "habit-town",
     "version": "1.0.0",
-    "icon": "./assets/png/ui/gromi-app-icon.png",
+    "icon": "./assets/png/ui/gromi-app-icon-hamster-simple.png",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
@@ -14,11 +14,11 @@
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/png/ui/gromi-app-icon.png",
+      "favicon": "./assets/png/ui/gromi-app-icon-hamster-simple.png",
       "splash": {
         "backgroundColor": "#FFF9EE",
         "resizeMode": "contain",
-        "image": "./assets/png/backgrounds/growmi-splash.png"
+        "image": "./assets/common/splash/growmi-splash.png"
       }
     },
     "plugins": [
@@ -28,7 +28,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFF9EE",
-          "image": "./assets/png/backgrounds/growmi-splash.png",
+          "image": "./assets/common/splash/growmi-splash.png",
           "imageWidth": 340,
           "resizeMode": "contain"
         }

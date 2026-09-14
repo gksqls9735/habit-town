@@ -24,7 +24,7 @@ type ShopModalProps = {
 };
 
 const fontFamily = 'Galmuri11';
-const currencyCoinIcon = require('../../../../assets/ui/currency-coin.png');
+const currencyCoinIcon = require('../../../../assets/png/ui/gromi-coin.png');
 const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   shopIcon: { width: 40, height: 40 }, heading: { flex: 1 },
   eyebrow: { fontFamily, fontSize: 9, letterSpacing: 1, color: '#80634c', marginBottom: 4 }, title: { fontFamily, fontSize: 16, color: '#49372d' },
   balance: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, borderWidth: 2, borderColor: '#b39370', backgroundColor: '#fff8ec' },
-  coinIcon: { height: 16, width: 16 }, balanceText: { fontFamily, fontSize: 10, color: '#604832' },
+  coinIcon: { height: 26, width: 26 }, balanceText: { fontFamily, fontSize: 10, color: '#604832' },
   close: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffd99e', borderWidth: 2, borderColor: '#6b432f' },
   closeText: { fontFamily, fontSize: 20, color: '#5c3529' },
   filters: { flexDirection: 'row', gap: 6, padding: 14, borderBottomWidth: 2, borderColor: '#e4cfb1' },
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   buyButton: { minWidth: 64, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, borderWidth: 2, borderColor: '#705340', borderBottomWidth: 4, backgroundColor: '#8a684f' },
   ownedButton: { backgroundColor: '#a99b84', borderColor: '#817663' }, lowBalanceButton: { backgroundColor: '#e8d8c0', borderColor: '#c4ad90' },
   buyText: { fontFamily, fontSize: 10, color: '#fffaf0' }, lowBalanceText: { color: '#947c64' },
-  priceCoinIcon: { height: 15, width: 15 },
+  priceCoinIcon: { height: 22, width: 22 },
   priceRow: { alignItems: 'center', flexDirection: 'row', gap: 3 },
   messageBox: { minHeight: 52, justifyContent: 'center', paddingHorizontal: 14, borderTopWidth: 2, borderColor: '#e4cfb1', backgroundColor: '#fffaf1' }, message: { fontFamily, fontSize: 10, lineHeight: 17, textAlign: 'center', color: '#715944' },
   pressed: { opacity: 0.7 },

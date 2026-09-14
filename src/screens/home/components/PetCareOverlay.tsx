@@ -7,12 +7,12 @@ import {
 
 const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
-const currencyCoinIcon = require('../../../../assets/ui/currency-coin.png');
 const feedBowlFullIcon = require('../../../../assets/ui/action/feed-action-object-icon.png');
 const playBallIcon = require('../../../../assets/ui/action/play-action-object-icon.png');
 const cleanlinessBubblesIcon = require('../../../../assets/ui/needs/cleanliness-bubbles-icon.png');
 const hungerBoltIcon = require('../../../../assets/ui/needs/hunger-bolt-icon.png');
 const lonelinessHeartBubbleIcon = require('../../../../assets/ui/needs/loneliness-heart-bubble-icon.png');
+const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
 
 const previewNeeds = [
   { label: '청', name: '청결도', value: 0.8, color: '#8fbcc0', icon: cleanlinessBubblesIcon },
@@ -77,7 +77,7 @@ export function PetStatusHud({
         </View>
       </View>
       <View style={styles.currency} accessibilityLabel={`금색 재화 ${progress.coins}`}>
-        <Image accessibilityIgnoresInvertColors source={currencyCoinIcon} resizeMode="contain" style={[styles.coinIcon, pixelStyle]} />
+        <Image accessibilityIgnoresInvertColors source={coinIcon} resizeMode="contain" style={[styles.coinIcon, pixelStyle]} />
         <Text style={styles.currencyText}>{progress.coins.toLocaleString('ko-KR')}</Text>
       </View>
     </View>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   highlight: { height: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
   currency: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 7, height: 34, backgroundColor: '#a3907a', borderWidth: 2, borderColor: '#624936', marginTop: 4 },
   currencyText: { fontFamily, fontSize: 11, color: '#fff8ea' },
-  coinIcon: { width: 18, height: 18 },
+  coinIcon: { width: 26, height: 26 },
   bottom: { position: 'absolute', bottom: 14, left: 16, right: 16, alignItems: 'center', zIndex: 10 },
   actions: { flexDirection: 'row', width: '100%', maxWidth: 390, gap: 10 },
   action: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderBottomWidth: 5, borderColor: '#795c43', paddingVertical: 8 },
