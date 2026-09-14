@@ -33,6 +33,9 @@
           "resizeMode": "contain"
         }
       ]
-    ]
+    ],
+    "android": {
+      "package": "com.anonymous.habittown"
+    }
   }
 }

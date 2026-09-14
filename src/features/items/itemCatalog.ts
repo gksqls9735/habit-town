@@ -2,7 +2,7 @@ import itemCatalog from './itemCatalog.json';
 import { InventoryItemCategory } from '../inventory/types';
 
 export type ItemCode = keyof typeof itemCatalog;
-export type ItemCatalogShopCategory = 'flooring' | 'object' | 'wallpaper';
+export type ItemCatalogShopCategory = 'action' | 'flooring' | 'object' | 'wallpaper';
 
 export type ItemCatalogInventoryDefaults = {
   starterQuantity: number;

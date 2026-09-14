@@ -7,7 +7,7 @@ import {
   type InventoryItemCategory,
 } from '../inventory/types';
 
-export type ShopCategory = 'object' | 'wallpaper' | 'flooring' | 'misc';
+export type ShopCategory = 'action' | 'object' | 'wallpaper' | 'flooring' | 'misc';
 export type ShopUpgradeId = 'decor-inventory-expansion' | 'inventory-expansion';
 
 type BaseShopItem = {
@@ -52,6 +52,18 @@ const shopItemCodes = [
   'cacao-flooring',
   'dark-walnut-flooring',
   'white-oak-flooring',
+  'pet-shampoo-action-object',
+  'pet-toothpaste-action-object',
+  'dental-chew-action-object',
+  'premium-kibble-action-object',
+  'treat-biscuit-jar-action-object',
+  'wet-food-can-action-object',
+  'special-meal-plate-action-object',
+  'bouncy-ball-action-object',
+  'plush-chick-action-object',
+  'feather-wand-action-object',
+  'rope-toy-action-object',
+  'play-tunnel-action-object',
 ] as const satisfies readonly ItemCode[];
 
 const inventoryShopItems: InventoryShopItem[] = shopItemCodes.map((id) => {

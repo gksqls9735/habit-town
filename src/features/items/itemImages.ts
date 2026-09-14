@@ -18,6 +18,21 @@ const itemImagesByCode: Partial<Record<ItemCode, ImageSourcePropType>> = {
   'powder-blue-wallpaper': require('../../../assets/png/backgrounds/powder-blue-wallpaper.png'),
   'dark-walnut-flooring': require('../../../assets/png/backgrounds/dark-walnut-flooring.png'),
   'white-oak-flooring': require('../../../assets/png/backgrounds/white-oak-flooring.png'),
+  'clean-action-object': require('../../../assets/ui/action/clean-action-object-icon.png'),
+  'pet-shampoo-action-object': require('../../../assets/png/objects/care/pet-shampoo-action-object-icon.png'),
+  'pet-toothpaste-action-object': require('../../../assets/png/objects/care/pet-toothpaste-action-object-icon.png'),
+  'dental-chew-action-object': require('../../../assets/png/objects/care/dental-chew-action-object-icon.png'),
+  'premium-kibble-action-object': require('../../../assets/png/objects/care/premium-kibble-action-object-icon.png'),
+  'treat-biscuit-jar-action-object': require('../../../assets/png/objects/care/treat-biscuit-jar-action-object-icon.png'),
+  'wet-food-can-action-object': require('../../../assets/png/objects/care/wet-food-can-action-object-icon.png'),
+  'special-meal-plate-action-object': require('../../../assets/png/objects/care/special-meal-plate-action-object-icon.png'),
+  'bouncy-ball-action-object': require('../../../assets/png/objects/care/bouncy-ball-action-object-icon.png'),
+  'plush-chick-action-object': require('../../../assets/png/objects/care/plush-chick-action-object-icon.png'),
+  'feather-wand-action-object': require('../../../assets/png/objects/care/feather-wand-action-object-icon.png'),
+  'rope-toy-action-object': require('../../../assets/png/objects/care/rope-toy-action-object-icon.png'),
+  'play-tunnel-action-object': require('../../../assets/png/objects/care/play-tunnel-action-object-icon.png'),
+  'feed-action-object': require('../../../assets/ui/action/feed-action-object-icon.png'),
+  'play-action-object': require('../../../assets/ui/action/play-action-object-icon.png'),
 };
 
 export function getItemImage(itemId: string): ImageSourcePropType | undefined {

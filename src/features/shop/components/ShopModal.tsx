@@ -31,6 +31,7 @@ const pixelatedImageStyle =
     : null;
 const filters: { id: ShopCategory; label: string }[] = [
   { id: 'object', label: '가구/소품' },
+  { id: 'action', label: '돌봄' },
   { id: 'wallpaper', label: '벽지' },
   { id: 'flooring', label: '바닥재' },
   { id: 'misc', label: '기타' },
@@ -142,8 +143,8 @@ const styles = StyleSheet.create({
   close: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffd99e', borderWidth: 2, borderColor: '#6b432f' },
   closeText: { fontFamily, fontSize: 20, color: '#5c3529' },
   filters: { flexDirection: 'row', gap: 6, padding: 14, borderBottomWidth: 2, borderColor: '#e4cfb1' },
-  filter: { flex: 1, minHeight: 44, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#d8c4a9', backgroundColor: '#f8eddd' },
-  activeFilter: { borderColor: '#705340', backgroundColor: '#705340' }, filterText: { fontFamily, fontSize: 10, color: '#745c47' }, activeFilterText: { color: '#fff8ec' },
+  filter: { flex: 1, minHeight: 44, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#d8c4a9', backgroundColor: '#f8eddd' },
+  activeFilter: { borderColor: '#705340', backgroundColor: '#705340' }, filterText: { fontFamily, fontSize: 9, color: '#745c47' }, activeFilterText: { color: '#fff8ec' },
   scroll: { flexShrink: 1 }, products: { padding: 14, gap: 10 },
   card: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 7, padding: 7, borderWidth: 2, borderTopColor: '#aa8664', borderLeftColor: '#aa8664', borderRightColor: '#fffdf4', borderBottomColor: '#fffdf4', backgroundColor: '#f0dfc2' },
   preview: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff7e4', overflow: 'hidden' }, previewImage: { width: '92%', height: '92%' },
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
 });
 
 function isOwnedShopItem(item: ShopItem, ownedItemIds: readonly string[]): boolean {
-  return item.kind === 'inventory-item' && ownedItemIds.includes(item.id);
+  return item.kind === 'inventory-item' && item.category !== 'action' && ownedItemIds.includes(item.id);
 }
 
 function getCapacityLabel(category: InventoryCapacityCategory) {

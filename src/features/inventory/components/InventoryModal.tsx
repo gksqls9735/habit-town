@@ -25,7 +25,8 @@ const slotTrayBorderWidth = 3;
 const slotTrayPadding = 4;
 
 type InventorySection = 'general' | 'decor';
-type DecorInventoryCategory = 'all' | ItemCatalogShopCategory;
+type DecorShopCategory = Exclude<ItemCatalogShopCategory, 'action'>;
+type DecorInventoryCategory = 'all' | DecorShopCategory;
 
 const inventorySections: readonly { id: InventorySection; label: string }[] = [
   { id: 'general', label: '일반 아이템' },
@@ -498,7 +499,7 @@ function getItemActionLabel(item: InventoryItem) {
   return item.equipped ? '장착 해제' : '장착하기';
 }
 
-function getDecorInventoryCategory(item: InventoryItem): ItemCatalogShopCategory | undefined {
+function getDecorInventoryCategory(item: InventoryItem): DecorShopCategory | undefined {
   const shopCategory = getItemShopCategory(item.id);
 
   if (shopCategory === 'wallpaper' || shopCategory === 'flooring') {
