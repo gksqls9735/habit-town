@@ -4,7 +4,11 @@ import {
   experiencePerGrowthStage,
   growthStageLabels,
 } from '../../../features/rewards/rewardSystem';
-import type { RewardProgress } from '../../../features/rewards/rewardSystem';
+import type {
+  CareMeterKey,
+  CareMeterValues,
+  RewardProgress,
+} from '../../../features/rewards/rewardSystem';
 
 const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
@@ -15,13 +19,10 @@ const hungerBoltIcon = require('../../../../assets/ui/needs/hunger-bolt-icon.png
 const lonelinessHeartBubbleIcon = require('../../../../assets/ui/needs/loneliness-heart-bubble-icon.png');
 const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
 
-export type PetCareMeterKey = 'cleanliness' | 'hunger' | 'loneliness';
-export type PetCareMeterValues = Record<PetCareMeterKey, number>;
-
 type CareMeterView = {
   color: string;
   icon: ImageSourcePropType;
-  key: PetCareMeterKey;
+  key: CareMeterKey;
   label: string;
   name: string;
 };
@@ -29,7 +30,7 @@ type CareMeterView = {
 type CareActionView = {
   color: string;
   icon: ImageSourcePropType;
-  key: PetCareMeterKey;
+  key: CareMeterKey;
   label: string;
 };
 
@@ -54,7 +55,7 @@ export function PetStatusHud({
   petName,
   progress,
 }: {
-  careMeters: PetCareMeterValues;
+  careMeters: CareMeterValues;
   petImage: ImageSourcePropType;
   petName: string;
   progress: RewardProgress;
@@ -113,7 +114,7 @@ export function PetStatusHud({
 export function PetCareActions({
   onCareAction,
 }: {
-  onCareAction: (meter: PetCareMeterKey) => void;
+  onCareAction: (meter: CareMeterKey) => void;
 }) {
   return (
     <View style={styles.bottom} pointerEvents="box-none">

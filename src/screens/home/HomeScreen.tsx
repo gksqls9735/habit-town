@@ -41,7 +41,6 @@ import {
   PetCareActions,
   PetStatusHud,
 } from './components/PetCareOverlay';
-import type { PetCareMeterKey, PetCareMeterValues } from './components/PetCareOverlay';
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
 import { PetRoomPopup } from './components/PetRoomPopup';
@@ -56,17 +55,6 @@ const roomFloorImage = require('../../../assets/png/backgrounds/basic-room-floor
 const pixelFontFamily = 'Galmuri11';
 const localDevCurrencyGrantAmount = 1000;
 const localDevExperienceGrantAmount = 10;
-const careActionMeterIncrease = 0.2;
-const initialCareMeters: PetCareMeterValues = {
-  cleanliness: 0,
-  hunger: 0,
-  loneliness: 0,
-};
-const emptyCareMeters: PetCareMeterValues = {
-  cleanliness: 0,
-  hunger: 0,
-  loneliness: 0,
-};
 
 type RoomBackgroundImages = {
   floor: ImageSourcePropType;
@@ -132,7 +120,6 @@ export function HomeScreen() {
   const [isClaimingDeliveryReward, setIsClaimingDeliveryReward] = useState(false);
   const [deliveryRewardError, setDeliveryRewardError] = useState('');
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
-  const [careMeters, setCareMeters] = useState<PetCareMeterValues>(initialCareMeters);
   const [roomBackgroundImages, setRoomBackgroundImages] = useState<RoomBackgroundImages>({
     floor: roomFloorImage,
     wallpaper: roomWallpaperImage,
@@ -140,9 +127,11 @@ export function HomeScreen() {
   const goalPlanner = useGoalPlanner();
   const {
     addYearlyGoal,
+    careMeters,
     closeTodayTasks,
     closeYearlyGoal,
     dailyPlans,
+    fillCareMeter,
     grantCurrencyReward,
     grantExperienceReward,
     generateAdditionalTaskForSelectedGoal,
@@ -156,7 +145,7 @@ export function HomeScreen() {
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
     refreshOneIncompleteTaskForSelectedGoal,
-    resetPetGrowth,
+    resetPetStatus,
     rewardProgress,
     selectedTaskGoalId,
     setSelectedTaskGoalId,
@@ -275,13 +264,6 @@ export function HomeScreen() {
     setIsRewardParcelAvailable(true);
     setRewardDeliveryEventKey((current) => current + 1);
   }, []);
-  const fillCareMeter = (meter: PetCareMeterKey) => {
-    setCareMeters((current) => ({
-      ...current,
-      [meter]: clamp(current[meter] + careActionMeterIncrease, 0, 1),
-    }));
-  };
-
   const refreshRoomBackgroundImages = useCallback(() => {
     void loadInventoryItems().then((items) => {
       const equippedWallpaper = items.find(
@@ -355,8 +337,7 @@ export function HomeScreen() {
     }
 
     if (label === '리셋') {
-      setCareMeters(emptyCareMeters);
-      resetPetGrowth();
+      resetPetStatus();
     }
   };
   const closeDeliveryReward = () => {

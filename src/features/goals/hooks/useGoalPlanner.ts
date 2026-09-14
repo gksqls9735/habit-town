@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import {
+  applyCareMeterIncrease,
   applyCurrencyReward,
   applyCurrencySpend,
   applyExperienceReward,
   applyTaskReward,
   calculateTaskReward,
+  initialCareMeters,
   initialRewardProgress,
-  RewardProgress,
 } from '../../rewards/rewardSystem';
+import type { CareMeterKey, CareMeterValues, RewardProgress } from '../../rewards/rewardSystem';
 import { generateDailyTasksForGoal } from '../goalAiService';
 import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
-import { DailyPlan, GoalDifficulty, YearlyGoal } from '../types';
+import type { DailyPlan, GoalDifficulty, YearlyGoal } from '../types';
 import {
   canEditPlan,
   getExcludedTaskTitles,
@@ -79,6 +81,7 @@ export function useGoalPlanner() {
   const [goalError, setGoalError] = useState('');
   const [hasUsedTaskRefresh, setHasUsedTaskRefresh] = useState(false);
   const [isLoadingGoalData, setIsLoadingGoalData] = useState(true);
+  const [careMeters, setCareMeters] = useState<CareMeterValues>(initialCareMeters);
   const [rewardProgress, setRewardProgress] = useState<RewardProgress>(initialRewardProgress);
   const [selectedTaskGoalId, setSelectedTaskGoalId] = useState<string | null>(null);
 
@@ -95,6 +98,7 @@ export function useGoalPlanner() {
         setYearlyGoals(savedData.yearlyGoals);
         setDailyPlans(savedData.dailyPlans);
         setHasUsedTaskRefresh(savedData.hasUsedTaskRefresh);
+        setCareMeters(savedData.careMeters);
         setRewardProgress(savedData.rewardProgress);
 
         const goalsMissingTodayPlan = savedData.yearlyGoals.filter(
@@ -122,6 +126,7 @@ export function useGoalPlanner() {
 
         setDailyPlans(savedPlans);
         await saveGoalPlannerData({
+          careMeters: savedData.careMeters,
           dailyPlans: savedPlans,
           hasUsedTaskRefresh: savedData.hasUsedTaskRefresh,
           rewardProgress: savedData.rewardProgress,
@@ -154,8 +159,10 @@ export function useGoalPlanner() {
     nextDailyPlans = dailyPlans,
     nextHasUsedTaskRefresh = hasUsedTaskRefresh,
     nextRewardProgress = rewardProgress,
+    nextCareMeters = careMeters,
   ) => {
     saveGoalPlannerData({
+      careMeters: nextCareMeters,
       dailyPlans: nextDailyPlans,
       hasUsedTaskRefresh: nextHasUsedTaskRefresh,
       rewardProgress: nextRewardProgress,
@@ -395,6 +402,38 @@ export function useGoalPlanner() {
     persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
 
+  const fillCareMeter = (meter: CareMeterKey) => {
+    const nextCareMeters = applyCareMeterIncrease(careMeters, meter);
+
+    setCareMeters(nextCareMeters);
+    persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, rewardProgress, nextCareMeters);
+  };
+
+  const resetCareMeters = () => {
+    setCareMeters(initialCareMeters);
+    persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, rewardProgress, initialCareMeters);
+  };
+
+  const resetPetStatus = () => {
+    const nextRewardProgress: RewardProgress = {
+      ...rewardProgress,
+      experience: initialRewardProgress.experience,
+      level: initialRewardProgress.level,
+      stage: initialRewardProgress.stage,
+      totalExperience: initialRewardProgress.totalExperience,
+    };
+
+    setCareMeters(initialCareMeters);
+    setRewardProgress(nextRewardProgress);
+    persistGoalPlannerData(
+      yearlyGoals,
+      dailyPlans,
+      hasUsedTaskRefresh,
+      nextRewardProgress,
+      initialCareMeters,
+    );
+  };
+
   const spendCurrencyReward = (coins: number) => {
     const nextRewardProgress = applyCurrencySpend(rewardProgress, coins);
 
@@ -409,9 +448,11 @@ export function useGoalPlanner() {
 
   return {
     addYearlyGoal,
+    careMeters,
     closeTodayTasks,
     closeYearlyGoal,
     dailyPlans,
+    fillCareMeter,
     grantCurrencyReward,
     grantExperienceReward,
     generateAdditionalTaskForSelectedGoal,
@@ -426,6 +467,8 @@ export function useGoalPlanner() {
     openYearlyGoalFromTodayTasks,
     refreshOneIncompleteTaskForSelectedGoal,
     resetPetGrowth,
+    resetCareMeters,
+    resetPetStatus,
     rewardProgress,
     selectedTaskGoalId,
     setSelectedTaskGoalId,

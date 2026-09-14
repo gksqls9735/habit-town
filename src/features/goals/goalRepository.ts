@@ -1,12 +1,18 @@
 import * as SQLite from 'expo-sqlite';
-import { normalizeRewardProgress, RewardProgress } from '../rewards/rewardSystem';
-import { DailyPlan, DailyTask, GoalDifficulty, YearlyGoal } from './types';
+import {
+  normalizeCareMeters,
+  normalizeRewardProgress,
+} from '../rewards/rewardSystem';
+import type { CareMeterValues, RewardProgress } from '../rewards/rewardSystem';
+import type { DailyPlan, DailyTask, GoalDifficulty, YearlyGoal } from './types';
 
 const databaseName = 'habit-town.db';
+const careMetersKey = 'careMeters';
 const rewardProgressKey = 'rewardProgress';
 const taskRefreshKey = 'hasUsedTaskRefresh';
 
 type GoalPlannerData = {
+  careMeters: CareMeterValues;
   dailyPlans: DailyPlan[];
   hasUsedTaskRefresh: boolean;
   rewardProgress: RewardProgress;
@@ -47,7 +53,7 @@ let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
   const db = await getGoalDatabase();
-  const [goalRows, planRows, taskRows, refreshRow, rewardProgressRow] = await Promise.all([
+  const [goalRows, planRows, taskRows, refreshRow, rewardProgressRow, careMetersRow] = await Promise.all([
     db.getAllAsync<GoalRow>('SELECT id, title, difficulty FROM goals ORDER BY created_at ASC'),
     db.getAllAsync<DailyPlanRow>(
       `SELECT id, goal_id, goal_title, title, generated_at, expires_at, round
@@ -67,6 +73,10 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
     db.getFirstAsync<{ value: string }>(
       'SELECT value FROM app_meta WHERE key = ?',
       rewardProgressKey,
+    ),
+    db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM app_meta WHERE key = ?',
+      careMetersKey,
     ),
   ]);
 
@@ -93,6 +103,7 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
   );
 
   return {
+    careMeters: parseCareMeters(careMetersRow?.value),
     dailyPlans: planRows.map((row) => ({
       expiresAt: row.expires_at,
       generatedAt: row.generated_at,
@@ -120,7 +131,12 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
     await db.runAsync('DELETE FROM daily_tasks');
     await db.runAsync('DELETE FROM daily_plans');
     await db.runAsync('DELETE FROM goals');
-    await db.runAsync('DELETE FROM app_meta WHERE key IN (?, ?)', taskRefreshKey, rewardProgressKey);
+    await db.runAsync(
+      'DELETE FROM app_meta WHERE key IN (?, ?, ?)',
+      taskRefreshKey,
+      rewardProgressKey,
+      careMetersKey,
+    );
 
     for (const [index, goal] of data.yearlyGoals.entries()) {
       await db.runAsync(
@@ -176,6 +192,11 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
       'INSERT INTO app_meta (key, value) VALUES (?, ?)',
       rewardProgressKey,
       JSON.stringify(data.rewardProgress),
+    );
+    await db.runAsync(
+      'INSERT INTO app_meta (key, value) VALUES (?, ?)',
+      careMetersKey,
+      JSON.stringify(data.careMeters),
     );
   });
 }
@@ -270,5 +291,17 @@ function parseRewardProgress(value?: string) {
     return normalizeRewardProgress(JSON.parse(value));
   } catch {
     return normalizeRewardProgress(null);
+  }
+}
+
+function parseCareMeters(value?: string) {
+  if (!value) {
+    return normalizeCareMeters(null);
+  }
+
+  try {
+    return normalizeCareMeters(JSON.parse(value));
+  } catch {
+    return normalizeCareMeters(null);
   }
 }
