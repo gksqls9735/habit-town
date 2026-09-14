@@ -188,6 +188,7 @@ export function HomeScreen() {
   });
   const goalPlanner = useGoalPlanner();
   const {
+    abandonYearlyGoal,
     addYearlyGoal,
     careMeters,
     closeTodayTasks,
@@ -218,6 +219,9 @@ export function HomeScreen() {
     yearlyGoalDraft,
     yearlyGoalDifficulty,
     yearlyGoals,
+    activeYearlyGoals,
+    activeDailyPlans,
+    toggleYearlyGoalCompletion,
   } = goalPlanner;
   const { height, width } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
@@ -289,7 +293,7 @@ export function HomeScreen() {
     if (action.label === '오늘 할일') {
       return {
         ...action,
-        badge: getRemainingTaskBadge(dailyPlans),
+        badge: getRemainingTaskBadge(activeDailyPlans),
         onPress: openTodayTasks,
       };
     }
@@ -876,6 +880,7 @@ export function HomeScreen() {
         {isCalendarOpen ? <CalendarModal
           onClose={() => setIsCalendarOpen(false)}
           plans={dailyPlans}
+          yearlyGoals={yearlyGoals}
           onToggleTask={toggleTask}
           isLoading={goalPlanner.isLoadingGoalData}
           isBusy={isGeneratingPlan}
@@ -899,12 +904,11 @@ export function HomeScreen() {
         <YearlyGoalModal
           difficulty={yearlyGoalDifficulty}
           errorMessage={goalError}
-          isGenerating={isGeneratingPlan}
+          isGenerating={isGeneratingPlan || isLoadingGoalData}
           onChangeDifficulty={setYearlyGoalDifficulty}
           onChangeDraft={setYearlyGoalDraft}
           onClose={closeYearlyGoal}
           onSave={addYearlyGoal}
-          yearlyGoals={yearlyGoals}
           value={yearlyGoalDraft}
           visible={isYearlyGoalOpen}
           width={popupWidth}
@@ -913,17 +917,19 @@ export function HomeScreen() {
           errorMessage={goalError}
           hasUsedTaskRefresh={hasUsedTaskRefresh}
           isGenerating={isGeneratingPlan}
+          onAbandonGoal={abandonYearlyGoal}
           onClose={closeTodayTasks}
           onGenerate={generateAdditionalTaskForSelectedGoal}
           onOpenGoal={openYearlyGoalFromTodayTasks}
           onRefreshOneTask={refreshOneIncompleteTaskForSelectedGoal}
           onSelectGoal={setSelectedTaskGoalId}
+          onToggleGoalCompletion={toggleYearlyGoalCompletion}
           onToggleTask={toggleTask}
           plans={dailyPlans}
           selectedGoalId={selectedTaskGoalId}
           visible={isTodayTasksOpen}
           width={popupWidth}
-          yearlyGoals={yearlyGoals}
+          yearlyGoals={activeYearlyGoals}
         />
       </View>
     </SafeAreaView>

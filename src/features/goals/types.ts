@@ -9,6 +9,9 @@ export const goalDifficultyLabels: Record<GoalDifficulty, string> = {
 export const goalDifficultyOptions: GoalDifficulty[] = ['high', 'medium', 'low'];
 
 export type YearlyGoal = {
+  abandonedAt?: number | null;
+  completedAt?: number | null;
+  createdAt: number;
   difficulty: GoalDifficulty;
   id: string;
   title: string;

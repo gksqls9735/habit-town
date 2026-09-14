@@ -20,6 +20,9 @@ type GoalPlannerData = {
 };
 
 type GoalRow = {
+  abandoned_at: number | null;
+  completed_at: number | null;
+  created_at: number;
   difficulty: string | null;
   id: string;
   title: string;
@@ -53,8 +56,9 @@ let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
   const db = await getGoalDatabase();
+
   const [goalRows, planRows, taskRows, refreshRow, rewardProgressRow, careMetersRow] = await Promise.all([
-    db.getAllAsync<GoalRow>('SELECT id, title, difficulty FROM goals ORDER BY created_at ASC'),
+    db.getAllAsync<GoalRow>('SELECT id, title, difficulty, created_at, completed_at, abandoned_at FROM goals ORDER BY created_at ASC'),
     db.getAllAsync<DailyPlanRow>(
       `SELECT id, goal_id, goal_title, title, generated_at, expires_at, round
        FROM daily_plans
@@ -117,6 +121,9 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
     hasUsedTaskRefresh: refreshRow?.value === 'true',
     rewardProgress: parseRewardProgress(rewardProgressRow?.value),
     yearlyGoals: goalRows.map((row) => ({
+      abandonedAt: row.abandoned_at,
+      completedAt: row.completed_at,
+      createdAt: normalizeGoalCreatedAt(row),
       difficulty: getGoalDifficulty(row.difficulty),
       id: row.id,
       title: row.title,
@@ -138,13 +145,15 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
       careMetersKey,
     );
 
-    for (const [index, goal] of data.yearlyGoals.entries()) {
+    for (const goal of data.yearlyGoals) {
       await db.runAsync(
-        'INSERT INTO goals (id, title, difficulty, created_at) VALUES (?, ?, ?, ?)',
+        'INSERT INTO goals (id, title, difficulty, created_at, completed_at, abandoned_at) VALUES (?, ?, ?, ?, ?, ?)',
         goal.id,
         goal.title,
         goal.difficulty,
-        index,
+        goal.createdAt,
+        goal.completedAt ?? null,
+        goal.abandonedAt ?? null,
       );
     }
 
@@ -249,6 +258,13 @@ async function openGoalDatabase() {
   `);
 
   await ensureGoalDifficultyColumn(db);
+  const goalColumns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(goals)');
+  if (!goalColumns.some((column) => column.name === 'completed_at')) {
+    await db.execAsync('ALTER TABLE goals ADD COLUMN completed_at INTEGER');
+  }
+  if (!goalColumns.some((column) => column.name === 'abandoned_at')) {
+    await db.execAsync('ALTER TABLE goals ADD COLUMN abandoned_at INTEGER');
+  }
   await ensureTaskRewardGrantedAtColumn(db);
 
   return db;
@@ -280,6 +296,19 @@ function getGoalDifficulty(value: string | null): GoalDifficulty {
   }
 
   return 'medium';
+}
+
+function normalizeGoalCreatedAt(row: GoalRow) {
+  if (row.created_at > 946684800000) {
+    return row.created_at;
+  }
+
+  const idTimestamp = Number(row.id);
+  if (Number.isFinite(idTimestamp) && idTimestamp > 946684800000) {
+    return idTimestamp;
+  }
+
+  return Date.now();
 }
 
 function parseRewardProgress(value?: string) {
