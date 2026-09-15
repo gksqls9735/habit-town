@@ -21,13 +21,53 @@ const theme = {
   calendarBackground: '#fff8ea',
   textSectionTitleColor: '#786453',
   textDayHeaderFontFamily: fontFamily,
+  textDayHeaderFontSize: 12,
   textMonthFontFamily: fontFamily,
   textMonthFontSize: 18,
   monthTextColor: '#35281f',
   arrowColor: '#6b432f',
+  textDisabledColor: 'transparent',
   'stylesheet.calendar.header': {
-    dayTextAtIndex0: { color: '#b64d48' },
-    dayTextAtIndex6: { color: '#456da2' },
+    header: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingLeft: 10,
+      paddingRight: 10,
+      marginTop: 2,
+      marginBottom: 20,
+    },
+    week: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 0,
+      marginBottom: 16,
+      paddingHorizontal: 2,
+    },
+    dayHeader: {
+      color: '#786453',
+      fontFamily,
+      fontSize: 12,
+      textAlign: 'center',
+      width: 38,
+    },
+    dayTextAtIndex0: { color: '#d96d64' },
+    dayTextAtIndex6: { color: '#5d88be' },
+  },
+  'stylesheet.calendar.main': {
+    container: {
+      paddingLeft: 0,
+      paddingRight: 0,
+      backgroundColor: '#fff8ea',
+    },
+    week: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginVertical: 3,
+    },
+    monthView: {
+      backgroundColor: '#fff8ea',
+    },
   },
 };
 
@@ -101,7 +141,7 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
         <Pressable accessibilityLabel="캘린더 닫기" onPress={onClose} style={styles.backdrop} />
         <View style={styles.frame} accessibilityViewIsModal>
           <View style={styles.header}>
-            <View>
+            <View style={styles.headerCopy}>
               <Text style={styles.eyebrow}>하루하루 쌓이는 작은 노력</Text>
               <Text style={styles.title}>나의 캘린더</Text>
             </View>
@@ -109,7 +149,10 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
           </View>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.toolbar}>
-              <Text style={styles.subtitle}>나의 발자국을 모아보세요</Text>
+              <View style={styles.toolbarCopy}>
+                <Text style={styles.subtitle}>선택 {month}월 {day}일</Text>
+                <Text style={styles.subtitleMuted}>나의 발자국을 모아보세요</Text>
+              </View>
               <View style={styles.toolbarActions}>
                 <Pressable accessibilityRole="button" accessibilityLabel="목표 기록 보기"
                   onPress={() => setGoalHistoryOpen(true)}
@@ -120,24 +163,22 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
                   style={({ pressed }) => [styles.todayButton, pressed && styles.pressed]}>
                   <Text style={styles.todayButtonText}>오늘로</Text>
                 </Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel="달력 접기 또는 펼치기"
+                  accessibilityState={{ expanded: calendarExpanded }}
+                  onPress={() => setCalendarExpanded((value) => !value)}
+                  style={({ pressed }) => [styles.calendarToggleButton, pressed && styles.pressed]}>
+                  <Text style={styles.calendarToggleText}>{calendarExpanded ? '접기' : '펼치기'}</Text>
+                </Pressable>
               </View>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="달력 접기 또는 펼치기"
-              accessibilityState={{ expanded: calendarExpanded }}
-              onPress={() => setCalendarExpanded((value) => !value)}
-              style={({ pressed }) => [styles.sectionToggle, pressed && styles.pressed]}>
-              <View style={styles.sectionHeading}>
-                <Text style={styles.dateTitle}>달력</Text>
-                <Text style={styles.dateStatus}>선택 {month}월 {day}일</Text>
-              </View>
-              <Text style={styles.toggleLabel}>{calendarExpanded ? '접기 −' : '펼치기 +'}</Text>
-            </Pressable>
-            <View style={!calendarExpanded && styles.collapsed}>
+            <View style={[styles.calendarPanel, !calendarExpanded && styles.collapsed]}>
             <Calendar
               key={calendarKey}
               initialDate={today}
               monthFormat="yyyy년 M월"
               theme={theme}
+              style={styles.calendar}
+              hideExtraDays
               disableAllTouchEventsForDisabledDays
               accessibilityLabel="월별 할 일 캘린더"
               dayComponent={({ date, state }) => (
@@ -301,7 +342,7 @@ function CalendarDay({ date, hidden, selected, today, onSelect, record }: {
   date?: DateData; hidden: boolean; selected: string; today: string; onSelect: (date: string) => void;
   record?: CalendarRecord;
 }) {
-  if (!date || hidden) return <View style={styles.day} />;
+  if (!date || hidden) return <View style={styles.emptyDay} />;
   const weekday = new Date(date.year, date.month - 1, date.day).getDay();
   const isSelected = selected === date.dateString;
   const isToday = today === date.dateString;
@@ -324,35 +365,71 @@ function CalendarDay({ date, hidden, selected, today, onSelect, record }: {
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(49,42,35,0.58)' },
-  frame: { width: '100%', maxWidth: 390, maxHeight: '94%', backgroundColor: '#fff8ea', borderWidth: 2, borderColor: '#3d2d28' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, backgroundColor: '#fff8ea', gap: 8 },
-  eyebrow: { fontFamily, fontSize: 10, color: '#725642', marginBottom: 7 },
-  title: { fontFamily, fontSize: 20, color: '#35281f' },
+  frame: {
+    width: '100%',
+    maxWidth: 390,
+    maxHeight: '94%',
+    backgroundColor: '#fff8ea',
+    borderWidth: 2,
+    borderColor: '#3d2d28',
+    shadowColor: '#3d2d28',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 0.24,
+    shadowRadius: 0,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 10,
+    backgroundColor: '#fff4df',
+    borderBottomWidth: 1,
+    borderBottomColor: '#efd6aa',
+    gap: 8,
+  },
+  headerCopy: { flex: 1, minWidth: 0, alignItems: 'center', paddingLeft: 36 },
+  eyebrow: { fontFamily, fontSize: 9, color: '#8a7765', marginBottom: 5 },
+  title: { fontFamily, fontSize: 18, color: '#35281f', lineHeight: 25 },
   closeButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#6b432f', backgroundColor: '#ffd99e' },
   closeText: { fontFamily, fontSize: 20, color: '#5c3529' },
-  content: { padding: 10 },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4, paddingHorizontal: 4 },
-  subtitle: { fontFamily, fontSize: 10, color: '#786453', flexShrink: 1 },
-  toolbarActions: { flexDirection: 'row', alignItems: 'center', flexShrink: 0, gap: 4 },
-  goalHistoryButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
-  goalHistoryButtonText: { fontFamily, fontSize: 11, color: '#6b432f', textDecorationLine: 'underline' },
-  todayButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
-  todayButtonText: { fontFamily, fontSize: 11, color: '#6b432f', textDecorationLine: 'underline' },
-  monthTitle: { fontFamily, fontSize: 18, color: '#35281f' },
-  arrow: { fontFamily, fontSize: 27, color: '#6b432f' },
-  day: { width: 34, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
-  dayText: { fontFamily, fontSize: 13, color: '#493b30' },
-  sunday: { color: '#b64d48' },
-  saturday: { color: '#456da2' },
-  todayDay: { borderColor: '#9b7145' },
+  content: { paddingHorizontal: 8, paddingTop: 9, paddingBottom: 10 },
+  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 5, paddingBottom: 8 },
+  toolbarCopy: { flex: 1, minWidth: 0 },
+  subtitle: { fontFamily, fontSize: 11, color: '#5f4d3e', flexShrink: 1, lineHeight: 17 },
+  subtitleMuted: { fontFamily, fontSize: 9, color: '#9a8877', flexShrink: 1, lineHeight: 14, marginTop: 1 },
+  toolbarActions: { flexDirection: 'row', alignItems: 'center', flexShrink: 0, gap: 2 },
+  goalHistoryButton: { minHeight: 34, justifyContent: 'center', paddingHorizontal: 6 },
+  goalHistoryButtonText: { fontFamily, fontSize: 10, color: '#7a5b43', textDecorationLine: 'underline' },
+  todayButton: { minHeight: 34, justifyContent: 'center', paddingHorizontal: 7 },
+  todayButtonText: { fontFamily, fontSize: 10, color: '#7a5b43', textDecorationLine: 'underline' },
+  calendarToggleButton: { minHeight: 34, justifyContent: 'center', paddingHorizontal: 6 },
+  calendarToggleText: { fontFamily, fontSize: 10, color: '#7a5b43', textDecorationLine: 'underline' },
+  calendarPanel: {
+    backgroundColor: '#fff8ea',
+    paddingTop: 4,
+    paddingHorizontal: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#e9c98f',
+  },
+  calendar: { backgroundColor: '#fff8ea', paddingLeft: 0, paddingRight: 0 },
+  monthTitle: { fontFamily, fontSize: 17, color: '#35281f', lineHeight: 24, textAlign: 'center' },
+  arrow: { fontFamily, fontSize: 22, color: '#6b432f', lineHeight: 26, paddingHorizontal: 8 },
+  day: { width: 38, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
+  emptyDay: { width: 38, height: 42 },
+  dayText: { fontFamily, fontSize: 14, color: '#6f6256', lineHeight: 19 },
+  sunday: { color: '#e77b70' },
+  saturday: { color: '#6f99ce' },
+  todayDay: { borderColor: '#cfaa78' },
   selectedDay: { backgroundColor: '#dce9ca', borderColor: '#708351' },
-  todayDot: { position: 'absolute', top: 2, left: 2, width: 4, height: 4, backgroundColor: '#8e643e' },
-  completedDay: { backgroundColor: '#f6e8b6' },
-  dayCount: { fontFamily, fontSize: 8, color: '#58683c', marginTop: 2 },
-  dayCheck: { position: 'absolute', right: -2, top: -5, color: '#536a36', fontSize: 11 },
-  goalDayMark: { position: 'absolute', right: 0, top: -1, color: '#b96335', fontSize: 9 },
-  completeMark: { color: '#536a36', fontSize: 12 },
-  goalLegendMark: { color: '#b96335', fontSize: 11 },
+  todayDot: { position: 'absolute', top: 4, left: 5, width: 4, height: 4, backgroundColor: '#9b7145' },
+  completedDay: {},
+  dayCount: { fontFamily, fontSize: 8, color: '#8b796a', lineHeight: 10, marginTop: -1 },
+  dayCheck: { position: 'absolute', right: 2, top: 1, color: '#6f8a45', fontSize: 10, lineHeight: 12 },
+  goalDayMark: { position: 'absolute', right: 2, bottom: 1, color: '#c36b3f', fontSize: 9, lineHeight: 11 },
+  completeMark: { color: '#6f8a45', fontSize: 12, lineHeight: 14 },
+  goalLegendMark: { color: '#c36b3f', fontSize: 11, lineHeight: 14 },
   summary: { fontFamily, fontSize: 12, color: '#536a36', marginTop: 12, lineHeight: 19 },
   readOnly: { fontFamily, fontSize: 10, color: '#786453', marginTop: 8, lineHeight: 17 },
   errorText: { fontFamily, fontSize: 11, color: '#b64d48', marginTop: 10, lineHeight: 18 },
@@ -376,12 +453,12 @@ const styles = StyleSheet.create({
   completedGoalTitle: { fontFamily, fontSize: 12, color: '#35281f', lineHeight: 19 },
   completedGoalMeta: { fontFamily, fontSize: 9, color: '#786453', lineHeight: 15, marginTop: 3 },
   pressed: { opacity: 0.65 },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 14, paddingVertical: 14 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  todaySwatch: { width: 10, height: 10, borderWidth: 1, borderColor: '#9b7145' },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 8, rowGap: 6, paddingTop: 12, paddingBottom: 10 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  todaySwatch: { width: 10, height: 10, borderWidth: 1, borderColor: '#cfaa78' },
   selectedSwatch: { width: 10, height: 10, backgroundColor: '#dce9ca', borderWidth: 1, borderColor: '#708351' },
-  legendText: { fontFamily, fontSize: 10, color: '#786453' },
-  detail: { borderTopWidth: 2, borderTopColor: '#e4cda7', paddingHorizontal: 8, paddingTop: 16, paddingBottom: 8 },
+  legendText: { fontFamily, fontSize: 9, color: '#786453', lineHeight: 14 },
+  detail: { paddingHorizontal: 8, paddingTop: 14, paddingBottom: 8 },
   collapsed: { display: 'none' },
   goalHistoryLayer: { alignItems: 'center', bottom: 0, justifyContent: 'center', left: 0, padding: 12, position: 'absolute', right: 0, top: 0 },
   goalHistoryBackdrop: { backgroundColor: 'rgba(49,42,35,0.32)', bottom: 0, left: 0, position: 'absolute', right: 0, top: 0 },

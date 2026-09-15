@@ -198,6 +198,7 @@ export function HomeScreen() {
     grantCurrencyReward,
     grantExperienceReward,
     generateAdditionalTaskForSelectedGoal,
+    generateBasicTasksForSelectedGoal,
     goalError,
     hasUsedTaskRefresh,
     isGeneratingPlan,
@@ -920,6 +921,7 @@ export function HomeScreen() {
           onAbandonGoal={abandonYearlyGoal}
           onClose={closeTodayTasks}
           onGenerate={generateAdditionalTaskForSelectedGoal}
+          onGenerateTodayTasks={generateBasicTasksForSelectedGoal}
           onOpenGoal={openYearlyGoalFromTodayTasks}
           onRefreshOneTask={refreshOneIncompleteTaskForSelectedGoal}
           onSelectGoal={setSelectedTaskGoalId}

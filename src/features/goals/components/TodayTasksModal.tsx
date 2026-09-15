@@ -28,6 +28,7 @@ type TodayTasksModalProps = {
   onClose: () => void;
   onAbandonGoal: (goalId: string) => void;
   onGenerate: () => void;
+  onGenerateTodayTasks: () => void;
   onOpenGoal: () => void;
   onRefreshOneTask: () => void;
   onSelectGoal: (goalId: string | null) => void;
@@ -47,6 +48,7 @@ export function TodayTasksModal({
   onAbandonGoal,
   onClose,
   onGenerate,
+  onGenerateTodayTasks,
   onOpenGoal,
   onRefreshOneTask,
   onSelectGoal,
@@ -71,6 +73,7 @@ export function TodayTasksModal({
   const hasRefreshableTask = selectedGoalPlans.some(
     (plan) => !isPlanExpired(plan) && plan.tasks.some((task) => !task.done),
   );
+  const hasCurrentSelectedGoalPlan = selectedGoalPlans.some((plan) => !isPlanExpired(plan));
   const showGoalList = !selectedGoal;
 
   useEffect(() => {
@@ -114,7 +117,7 @@ export function TodayTasksModal({
                 <Pressable
                   accessibilityRole="button"
                   disabled={!selectedGoal || isGenerating}
-                  onPress={onGenerate}
+                  onPress={onGenerateTodayTasks}
                   style={[
                     styles.primaryModalButton,
                     (!selectedGoal || isGenerating)
@@ -161,6 +164,23 @@ export function TodayTasksModal({
 
             {errorMessage ? (
               <Text style={styles.goalErrorText}>{errorMessage}</Text>
+            ) : null}
+            {!showGoalList && selectedGoalPlans.length > 0 && !hasCurrentSelectedGoalPlan ? (
+              <Pressable
+                accessibilityRole="button"
+                disabled={isGenerating}
+                onPress={onGenerateTodayTasks}
+                style={[
+                  styles.retryGenerateButton,
+                  isGenerating ? styles.disabledModalButton : null,
+                ]}
+              >
+                {isGenerating ? (
+                  <ActivityIndicator color="#fff8ea" />
+                ) : (
+                  <Text style={styles.primaryModalButtonText}>오늘 할 일 다시 생성</Text>
+                )}
+              </Pressable>
             ) : null}
 
             <ScrollView
@@ -548,6 +568,15 @@ const styles = StyleSheet.create({
     flex: 1.5,
     height: 42,
     justifyContent: 'center',
+  },
+  retryGenerateButton: {
+    alignItems: 'center',
+    backgroundColor: '#b96335',
+    borderColor: '#6b321f',
+    borderWidth: 2,
+    height: 42,
+    justifyContent: 'center',
+    marginTop: 10,
   },
   goalCompleteButton: {
     alignItems: 'center',

@@ -291,6 +291,15 @@ export function useGoalPlanner() {
     await generateDailyPlan([selectedGoal], 'ad');
   };
 
+  const generateBasicTasksForSelectedGoal = async () => {
+    const selectedGoal = yearlyGoals.find((goal) => goal.id === selectedTaskGoalId);
+    if (!selectedGoal || selectedGoal.completedAt != null || selectedGoal.abandonedAt != null) {
+      return;
+    }
+
+    await generateDailyPlan([selectedGoal], 'basic');
+  };
+
   const refreshOneIncompleteTaskForSelectedGoal = async () => {
     const selectedGoal = yearlyGoals.find((goal) => goal.id === selectedTaskGoalId);
     if (!selectedGoal || selectedGoal.completedAt != null || selectedGoal.abandonedAt != null || isGeneratingPlan) {
@@ -507,6 +516,7 @@ export function useGoalPlanner() {
     grantCurrencyReward,
     grantExperienceReward,
     generateAdditionalTaskForSelectedGoal,
+    generateBasicTasksForSelectedGoal,
     goalError,
     hasUsedTaskRefresh,
     isGeneratingPlan,
