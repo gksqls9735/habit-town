@@ -3,10 +3,32 @@ import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { Calendar, DateData, LocaleConfig } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
-import { DailyPlan, goalDifficultyLabels, YearlyGoal } from '../../goals/types';
+import { DailyPlan, YearlyGoal } from '../../goals/types';
 import { canEditPlan, getLocalDateKey, getNextMidnightTimestamp } from '../../goals/utils';
+import { useI18n } from '../../i18n';
+import type { AppLanguage, Translate } from '../../i18n';
 import { CalendarRecord, getCalendarHistory } from '../calendarHistory';
 
+LocaleConfig.locales.en = {
+  monthNames: [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ],
+  monthNamesShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  today: 'Today',
+};
 LocaleConfig.locales.ko = {
   monthNames: Array.from({ length: 12 }, (_, index) => `${index + 1}월`),
   monthNamesShort: Array.from({ length: 12 }, (_, index) => `${index + 1}월`),
@@ -71,8 +93,8 @@ const theme = {
   },
 };
 
-function formatKoreanDate(timestamp: number) {
-  return new Date(timestamp).toLocaleDateString('ko-KR', {
+function formatLocalizedDate(timestamp: number, language: AppLanguage) {
+  return new Date(timestamp).toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -89,6 +111,8 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
   isBusy: boolean;
   errorMessage: string;
 }) {
+  const { language, t } = useI18n();
+  LocaleConfig.defaultLocale = language;
   const [now, setNow] = useState(Date.now);
   const today = getLocalDateKey(now);
   const [selected, setSelected] = useState(today);
@@ -109,6 +133,11 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
   const completedGoalCount = yearlyGoals.filter((goal) => goal.completedAt != null).length;
   const abandonedGoalCount = yearlyGoals.filter((goal) => goal.abandonedAt != null).length;
   const activeGoalCount = yearlyGoals.length - completedGoalCount - abandonedGoalCount;
+  const selectedStatus = selected === today
+    ? t('calendar.today')
+    : selected < today
+      ? t('calendar.statusPast')
+      : t('calendar.statusFuture');
   const sortedGoals = useMemo(
     () => [...yearlyGoals].sort((left, right) => {
       const leftDate = left.completedAt ?? left.abandonedAt ?? left.createdAt;
@@ -138,36 +167,38 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
       <SafeAreaView style={styles.overlay}>
-        <Pressable accessibilityLabel="캘린더 닫기" onPress={onClose} style={styles.backdrop} />
+        <Pressable accessibilityLabel={t('calendar.close')} onPress={onClose} style={styles.backdrop} />
         <View style={styles.frame} accessibilityViewIsModal>
           <View style={styles.header}>
             <View style={styles.headerCopy}>
-              <Text style={styles.eyebrow}>하루하루 쌓이는 작은 노력</Text>
-              <Text style={styles.title}>나의 캘린더</Text>
+              <Text style={styles.eyebrow}>{t('calendar.eyebrow')}</Text>
+              <Text style={styles.title}>{t('calendar.title')}</Text>
             </View>
-            <PopupCloseButton accessibilityLabel="캘린더 닫기" onPress={onClose} />
+            <PopupCloseButton accessibilityLabel={t('calendar.close')} onPress={onClose} />
           </View>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.toolbar}>
               <View style={styles.toolbarCopy}>
-                <Text style={styles.subtitle}>선택 {month}월 {day}일</Text>
-                <Text style={styles.subtitleMuted}>나의 발자국을 모아보세요</Text>
+                <Text style={styles.subtitle}>{t('calendar.selectedDate', { month, day })}</Text>
+                <Text style={styles.subtitleMuted}>{t('calendar.subtitle')}</Text>
               </View>
               <View style={styles.toolbarActions}>
-                <Pressable accessibilityRole="button" accessibilityLabel="목표 기록 보기"
+                <Pressable accessibilityRole="button" accessibilityLabel={t('calendar.goalHistoryOpen')}
                   onPress={() => setGoalHistoryOpen(true)}
                   style={({ pressed }) => [styles.goalHistoryButton, pressed && styles.pressed]}>
-                  <Text style={styles.goalHistoryButtonText}>여정</Text>
+                  <Text style={styles.goalHistoryButtonText}>{t('calendar.journey')}</Text>
                 </Pressable>
                 <Pressable accessibilityRole="button" onPress={showToday}
                   style={({ pressed }) => [styles.todayButton, pressed && styles.pressed]}>
-                  <Text style={styles.todayButtonText}>오늘로</Text>
+                  <Text style={styles.todayButtonText}>{t('calendar.todayButton')}</Text>
                 </Pressable>
-                <Pressable accessibilityRole="button" accessibilityLabel="달력 접기 또는 펼치기"
+                <Pressable accessibilityRole="button" accessibilityLabel={t('calendar.toggle')}
                   accessibilityState={{ expanded: calendarExpanded }}
                   onPress={() => setCalendarExpanded((value) => !value)}
                   style={({ pressed }) => [styles.calendarToggleButton, pressed && styles.pressed]}>
-                  <Text style={styles.calendarToggleText}>{calendarExpanded ? '접기' : '펼치기'}</Text>
+                  <Text style={styles.calendarToggleText}>
+                    {calendarExpanded ? t('calendar.toggleCollapse') : t('calendar.toggleExpand')}
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -175,44 +206,58 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
             <Calendar
               key={calendarKey}
               initialDate={today}
-              monthFormat="yyyy년 M월"
+              monthFormat={t('calendar.monthFormat')}
               theme={theme}
               style={styles.calendar}
               hideExtraDays
               disableAllTouchEventsForDisabledDays
-              accessibilityLabel="월별 할 일 캘린더"
+              accessibilityLabel={t('calendar.calendar')}
               dayComponent={({ date, state }) => (
                 <CalendarDay date={date} hidden={state === 'disabled'} selected={selected}
-                  today={today} onSelect={setSelected} record={isLoading ? undefined : history[date?.dateString ?? '']} />
+                  today={today} onSelect={setSelected} record={isLoading ? undefined : history[date?.dateString ?? '']}
+                  t={t} />
               )}
-              renderHeader={(date) => <Text style={styles.monthTitle}>{date?.toString('yyyy년 M월')}</Text>}
+              renderHeader={(date) => {
+                const monthDate = date?.toString('yyyy-M').split('-').map(Number);
+                return (
+                  <Text style={styles.monthTitle}>
+                    {monthDate ? t('calendar.monthTitle', { year: monthDate[0], month: monthDate[1] }) : ''}
+                  </Text>
+                );
+              }}
               renderArrow={(direction) => <Text style={styles.arrow}>{direction === 'left' ? '‹' : '›'}</Text>}
             />
             <View style={styles.legend}>
-              <View style={styles.legendItem}><View style={styles.todaySwatch} /><Text style={styles.legendText}>오늘</Text></View>
-              <View style={styles.legendItem}><View style={styles.selectedSwatch} /><Text style={styles.legendText}>선택한 날</Text></View>
-              <View style={styles.legendItem}><Text style={styles.completeMark}>✓</Text><Text style={styles.legendText}>모두 완료</Text></View>
-              <View style={styles.legendItem}><Text style={styles.goalLegendMark}>★</Text><Text style={styles.legendText}>목표 완료</Text></View>
+              <View style={styles.legendItem}><View style={styles.todaySwatch} /><Text style={styles.legendText}>{t('calendar.legendToday')}</Text></View>
+              <View style={styles.legendItem}><View style={styles.selectedSwatch} /><Text style={styles.legendText}>{t('calendar.legendSelected')}</Text></View>
+              <View style={styles.legendItem}><Text style={styles.completeMark}>✓</Text><Text style={styles.legendText}>{t('calendar.legendCompleted')}</Text></View>
+              <View style={styles.legendItem}><Text style={styles.goalLegendMark}>★</Text><Text style={styles.legendText}>{t('calendar.legendGoal')}</Text></View>
             </View>
             </View>
             <View style={styles.detail}>
-              <Pressable accessibilityRole="button" accessibilityLabel="할 일 목록 접기 또는 펼치기"
+              <Pressable accessibilityRole="button" accessibilityLabel={t('calendar.taskListToggle')}
                 accessibilityState={{ expanded: tasksExpanded }}
                 onPress={() => setTasksExpanded((value) => !value)}
                 style={({ pressed }) => [styles.sectionToggle, pressed && styles.pressed]}>
                 <View style={styles.sectionHeading}>
-                  <Text style={styles.dateTitle}>{month}월 {day}일 할 일</Text>
-                  <Text style={styles.dateStatus}>{selected === today ? '오늘' : selected < today ? '지난 기록' : '다가오는 날'}</Text>
+                  <Text style={styles.dateTitle}>{t('calendar.dateTasksTitle', { month, day })}</Text>
+                  <Text style={styles.dateStatus}>{selectedStatus}</Text>
                 </View>
-                <Text style={styles.toggleLabel}>{tasksExpanded ? '접기 −' : '펼치기 +'}</Text>
+                <Text style={styles.toggleLabel}>{tasksExpanded ? t('calendar.toggleCollapse') : t('calendar.toggleExpand')}</Text>
               </Pressable>
               {errorMessage ? <Text accessibilityRole="alert" style={styles.errorText}>{errorMessage}</Text> : null}
-              {isLoading ? <Text style={styles.emptyTitle}>할 일 기록을 불러오는 중이에요.</Text>
+              {isLoading ? <Text style={styles.emptyTitle}>{t('calendar.loading')}</Text>
                 : record?.total ? <>
-                  <Text accessibilityLiveRegion="polite" style={styles.summary}>완료 {record.completed} / {record.total}{record.completed === record.total ? ' · 모두 해냈어요!' : ''}</Text>
+                  <Text accessibilityLiveRegion="polite" style={styles.summary}>
+                    {t('calendar.totalSummary', {
+                      completed: record.completed,
+                      total: record.total,
+                      suffix: record.completed === record.total ? t('calendar.allDone') : '',
+                    })}
+                  </Text>
                   {tasksExpanded ? <>
-                  {hasCompletedGoals ? <CompletedGoalList goals={completedGoals} hasTasks={hasTasks} /> : null}
-                  {selected < today ? <Text style={styles.readOnly}>지난 날짜의 기록은 수정할 수 없어요.</Text> : null}
+                  {hasCompletedGoals ? <CompletedGoalList goals={completedGoals} hasTasks={hasTasks} t={t} /> : null}
+                  {selected < today ? <Text style={styles.readOnly}>{t('calendar.readOnlyPast')}</Text> : null}
                   {record.tasks.map(({ plan, task }) => {
                     const goal = goalsById.get(plan.goalId);
                     const goalClosed = goal?.completedAt != null || goal?.abandonedAt != null;
@@ -220,7 +265,7 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
                     const missed = !task.done && !editable;
                     return <Pressable key={`${plan.id}-${task.id}`}
                       accessibilityRole="checkbox" accessibilityState={{ checked: task.done, disabled: !editable }}
-                      accessibilityLabel={`${task.goalTitle}, ${task.title}, ${task.done ? '완료' : '미완료'}`}
+                      accessibilityLabel={`${task.goalTitle}, ${task.title}, ${task.done ? t('calendar.taskDone') : t('calendar.unfinished')}`}
                       disabled={!editable} onPress={() => onToggleTask(plan.id, task.id)}
                       style={({ pressed }) => [styles.taskRow, pressed && styles.pressed]}>
                       <View style={[styles.checkbox, task.done && styles.checked, missed && styles.missed]}>
@@ -236,24 +281,30 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
                   })}
                   </> : null}
                 </> : <>
-                  {tasksExpanded && hasCompletedGoals ? <CompletedGoalList goals={completedGoals} hasTasks={hasTasks} /> : null}
-                  <Text style={styles.emptyTitle}>{errorMessage ? '기록을 표시할 수 없어요' : '배정된 할 일이 없어요'}</Text>
-                  {tasksExpanded ? <Text style={styles.emptyDescription}>{selected === today ? '오늘 할 일에서 목표와 할 일을 만들어보세요.' : hasCompletedGoals ? '이날 목표 완료 기록이 남아 있어요.' : '할 일이 배정된 날짜에 기록이 남아요.'}</Text> : null}
+                  {tasksExpanded && hasCompletedGoals ? <CompletedGoalList goals={completedGoals} hasTasks={hasTasks} t={t} /> : null}
+                  <Text style={styles.emptyTitle}>{errorMessage ? t('calendar.emptyTitleError') : t('calendar.assignedEmpty')}</Text>
+                  {tasksExpanded ? <Text style={styles.emptyDescription}>
+                    {selected === today
+                      ? t('calendar.emptyDescriptionToday')
+                      : hasCompletedGoals
+                        ? t('calendar.emptyCompletedOnly')
+                        : t('calendar.emptyDescriptionFuture')}
+                  </Text> : null}
                 </>}
             </View>
-            <Text style={styles.footnote}>{year}년의 하루하루, 나만의 속도로</Text>
+            <Text style={styles.footnote}>{t('calendar.footnote', { year })}</Text>
           </ScrollView>
           {goalHistoryOpen ? (
             <View style={styles.goalHistoryLayer}>
-              <Pressable accessibilityLabel="목표 기록 닫기" onPress={() => setGoalHistoryOpen(false)}
+              <Pressable accessibilityLabel={t('calendar.historyClose')} onPress={() => setGoalHistoryOpen(false)}
                 style={styles.goalHistoryBackdrop} />
               <View style={styles.goalHistoryPanel}>
                 <View style={styles.goalHistoryHeader}>
                   <View>
-                    <Text style={styles.goalHistoryEyebrow}>나의 업적</Text>
-                    <Text style={styles.goalHistoryTitle}>목표 기록</Text>
+                    <Text style={styles.goalHistoryEyebrow}>{t('calendar.achievementEyebrow')}</Text>
+                    <Text style={styles.goalHistoryTitle}>{t('calendar.goalHistory')}</Text>
                   </View>
-                  <Pressable accessibilityRole="button" accessibilityLabel="목표 기록 닫기"
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('calendar.historyClose')}
                     onPress={() => setGoalHistoryOpen(false)}
                     style={({ pressed }) => [styles.goalHistoryCloseButton, pressed && styles.pressed]}>
                     <Text style={styles.closeText}>x</Text>
@@ -262,21 +313,21 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
                 <View style={styles.goalStatsRow}>
                   <View style={styles.goalStatBox}>
                     <Text style={styles.goalStatValue}>{completedGoalCount}</Text>
-                    <Text style={styles.goalStatLabel}>달성</Text>
+                    <Text style={styles.goalStatLabel}>{t('calendar.goalStatsCompleted')}</Text>
                   </View>
                   <View style={styles.goalStatBox}>
                     <Text style={styles.goalStatValue}>{activeGoalCount}</Text>
-                    <Text style={styles.goalStatLabel}>진행중</Text>
+                    <Text style={styles.goalStatLabel}>{t('calendar.goalStatsActive')}</Text>
                   </View>
                   <View style={styles.goalStatBox}>
                     <Text style={styles.goalStatValue}>{abandonedGoalCount}</Text>
-                    <Text style={styles.goalStatLabel}>포기</Text>
+                    <Text style={styles.goalStatLabel}>{t('calendar.goalStatsAbandoned')}</Text>
                   </View>
                 </View>
                 <ScrollView style={styles.goalHistoryList} contentContainerStyle={styles.goalHistoryListContent}
                   nestedScrollEnabled showsVerticalScrollIndicator={false}>
                   {sortedGoals.length === 0 ? (
-                    <Text style={styles.emptyDescription}>아직 기록할 목표가 없어요.</Text>
+                    <Text style={styles.emptyDescription}>{t('calendar.emptyGoals')}</Text>
                   ) : sortedGoals.map((goal) => {
                     const isAbandoned = goal.abandonedAt != null;
                     const isCompleted = goal.completedAt != null;
@@ -289,18 +340,21 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
                             isCompleted && styles.goalStatusBadgeCompleted,
                             isAbandoned && styles.goalStatusBadgeAbandoned,
                           ]}>
-                            {isCompleted ? '완료' : isAbandoned ? '포기' : '진행중'}
+                            {isCompleted ? t('calendar.completed') : isAbandoned ? t('calendar.abandoned') : t('calendar.active')}
                           </Text>
                         </View>
                         <Text style={styles.goalHistoryMeta}>
-                          시작 {formatKoreanDate(goal.createdAt)} · 난이도 {goalDifficultyLabels[goal.difficulty]}
+                          {t('calendar.goalStartedMeta', {
+                            date: formatLocalizedDate(goal.createdAt, language),
+                            difficulty: t(`difficulty.${goal.difficulty}`),
+                          })}
                         </Text>
                         <Text style={styles.goalHistoryMeta}>
                           {isCompleted
-                            ? `완료 ${formatKoreanDate(goal.completedAt ?? goal.createdAt)}`
+                            ? t('calendar.goalCompletedMeta', { date: formatLocalizedDate(goal.completedAt ?? goal.createdAt, language) })
                             : isAbandoned
-                              ? `포기 ${formatKoreanDate(goal.abandonedAt ?? goal.createdAt)}`
-                              : '아직 진행 중이에요'}
+                              ? t('calendar.goalAbandonedMeta', { date: formatLocalizedDate(goal.abandonedAt ?? goal.createdAt, language) })
+                              : t('calendar.goalStillActive')}
                         </Text>
                       </View>
                     );
@@ -315,20 +369,21 @@ export function CalendarModal({ onClose, plans, yearlyGoals, onToggleTask, isLoa
   );
 }
 
-function CompletedGoalList({ goals, hasTasks }: {
+function CompletedGoalList({ goals, hasTasks, t }: {
   goals: YearlyGoal[];
   hasTasks: boolean;
+  t: Translate;
 }) {
   return (
     <View style={[styles.completedGoalSection, hasTasks && styles.completedGoalSectionWithTasks]}>
-      <Text style={styles.completedGoalHeading}>완료한 목표</Text>
+      <Text style={styles.completedGoalHeading}>{t('calendar.completedGoals')}</Text>
       {goals.map((goal) => (
         <View key={goal.id} style={styles.completedGoalRow}>
           <Text style={styles.completedGoalMark}>★</Text>
           <View style={styles.completedGoalBody}>
             <Text style={styles.completedGoalTitle}>{goal.title}</Text>
             <Text style={styles.completedGoalMeta}>
-              {goalDifficultyLabels[goal.difficulty]} · 목표 완료
+              {t(`difficulty.${goal.difficulty}`)} · {t('calendar.completedGoal')}
             </Text>
           </View>
         </View>
@@ -338,9 +393,10 @@ function CompletedGoalList({ goals, hasTasks }: {
 }
 
 /** Customizes the library's day cell while keeping date calculation in the library. */
-function CalendarDay({ date, hidden, selected, today, onSelect, record }: {
+function CalendarDay({ date, hidden, selected, today, onSelect, record, t }: {
   date?: DateData; hidden: boolean; selected: string; today: string; onSelect: (date: string) => void;
   record?: CalendarRecord;
+  t: Translate;
 }) {
   if (!date || hidden) return <View style={styles.emptyDay} />;
   const weekday = new Date(date.year, date.month - 1, date.day).getDay();
@@ -348,9 +404,18 @@ function CalendarDay({ date, hidden, selected, today, onSelect, record }: {
   const isToday = today === date.dateString;
   const complete = !!record?.total && record.completed === record.total;
   const hasCompletedGoal = !!record?.completedGoals.length;
+  const accessibilityLabel = t('calendar.dayA11y', {
+    year: date.year,
+    month: date.month,
+    day: date.day,
+    today: isToday ? `, ${t('calendar.today')}` : '',
+    tasks: record?.total ? t('calendar.dayTaskCount', { completed: record.completed, total: record.total }) : '',
+    complete: complete ? `, ${t('calendar.legendCompleted')}` : '',
+    goals: hasCompletedGoal ? t('calendar.dayGoalCount', { count: record.completedGoals.length }) : '',
+  });
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`${date.year}년 ${date.month}월 ${date.day}일${isToday ? ', 오늘' : ''}${record?.total ? `, ${record.total}개 중 ${record.completed}개 완료` : ''}${complete ? ', 모두 완료' : ''}${hasCompletedGoal ? `, 완료한 목표 ${record.completedGoals.length}개` : ''}`}
+      accessibilityLabel={accessibilityLabel}
       onPress={() => onSelect(date.dateString)}
       style={({ pressed }) => [styles.day, complete && styles.completedDay, isToday && styles.todayDay, isSelected && styles.selectedDay, pressed && styles.pressed]}>
       <Text style={[styles.dayText, weekday === 0 && styles.sunday, weekday === 6 && styles.saturday]}>{date.day}</Text>
