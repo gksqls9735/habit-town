@@ -29,6 +29,11 @@ type GenerationType = 'basic' | 'ad';
 
 const basicDailyPlanTitle = '오늘 할 일';
 const adDailyPlanTitle = '광고 보상 추가 할 일';
+const maxActiveYearlyGoalCount = 3;
+
+function isActiveYearlyGoal(goal: YearlyGoal) {
+  return goal.completedAt == null && goal.abandonedAt == null;
+}
 
 async function createDailyPlansForGoals(
   targetGoals: YearlyGoal[],
@@ -246,6 +251,13 @@ export function useGoalPlanner() {
       return;
     }
 
+    if (yearlyGoals.filter(isActiveYearlyGoal).length >= maxActiveYearlyGoalCount) {
+      setGoalError(t('goals.error.maxYearlyGoals', {
+        count: maxActiveYearlyGoalCount,
+      }));
+      return;
+    }
+
     const duplicateGoal = findDuplicateYearlyGoal(yearlyGoals, cleanGoal);
     if (duplicateGoal) {
       const closedAt = getGoalClosedAt(duplicateGoal);
@@ -418,9 +430,7 @@ export function useGoalPlanner() {
     persistGoalPlannerData(nextGoals);
   };
 
-  const activeYearlyGoals = yearlyGoals.filter(
-    (goal) => goal.completedAt == null && goal.abandonedAt == null,
-  );
+  const activeYearlyGoals = yearlyGoals.filter(isActiveYearlyGoal);
   const activeDailyPlans = dailyPlans.filter((plan) =>
     activeYearlyGoals.some((goal) => goal.id === plan.goalId));
 
