@@ -812,12 +812,13 @@ export function HomeScreen() {
               />
             </View>
             {placementItem ? (
-              <Pressable
-                accessibilityLabel={t('home.placementA11y', { name: placementItem.name })}
-                accessibilityRole="button"
-                onPress={placeDecorItem}
-                style={styles.placementLayer}
-              >
+              <View style={styles.placementLayer}>
+                <Pressable
+                  accessibilityLabel={t('home.placementA11y', { name: placementItem.name })}
+                  accessibilityRole="button"
+                  onPress={placeDecorItem}
+                  style={styles.placementHitArea}
+                />
                 <View style={styles.placementToolbar}>
                   <Text style={styles.placementText}>{t('home.placementText', { name: placementItem.name })}</Text>
                   <Pressable
@@ -832,7 +833,7 @@ export function HomeScreen() {
                     <Text style={styles.placementCancelText}>{t('actions.cancel')}</Text>
                   </Pressable>
                 </View>
-              </Pressable>
+              </View>
             ) : null}
           </View>
         </View>
@@ -1450,6 +1451,14 @@ const styles = StyleSheet.create({
     top: 0,
     zIndex: 30,
   },
+  placementHitArea: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 0,
+  },
   placementText: {
     color: '#35281f',
     fontFamily: pixelFontFamily,
@@ -1466,6 +1475,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
+    zIndex: 1,
   },
   characterStage: {
     alignItems: 'center',
