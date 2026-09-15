@@ -70,7 +70,7 @@ import { DeliveryRewardPopup } from './components/DeliveryRewardPopup';
 import { EventPopup } from './components/EventPopup';
 import { GiftRewardPopup } from './components/GiftRewardPopup';
 import {
-  PetCareActions,
+  PetCareBubbleActions,
   PetStatusHud,
 } from './components/PetCareOverlay';
 import { HomeActionRail } from './components/HomeActionRail';
@@ -191,6 +191,7 @@ export function HomeScreen() {
   const [petStatusError, setPetStatusError] = useState('');
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [activeCareMeter, setActiveCareMeter] = useState<CareMeterKey | null>(null);
+  const [isPetCareMenuOpen, setIsPetCareMenuOpen] = useState(false);
   const [careUsableItems, setCareUsableItems] = useState<CareUsableItem[]>([]);
   const [careItemError, setCareItemError] = useState('');
   const [isUsingCareItem, setIsUsingCareItem] = useState(false);
@@ -636,6 +637,9 @@ export function HomeScreen() {
       setCareItemError(t('home.error.careLoad'));
     }
   };
+  const selectPetCareAction = (meter: CareMeterKey) => {
+    void openCareItemPopup(meter);
+  };
   const closeCareItemPopup = () => {
     if (isUsingCareItem) return;
 
@@ -795,11 +799,12 @@ export function HomeScreen() {
               />
             ))}
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
+              <PetCareBubbleActions
+                onCareAction={selectPetCareAction}
+                visible={isPetCareMenuOpen}
+              />
               <StaticPet
-                onPress={() => {
-                  setPetStatusError('');
-                  setIsPetStatusOpen(true);
-                }}
+                onPress={() => setIsPetCareMenuOpen((current) => !current)}
                 pet={activePet}
                 petName={activePetDisplayName}
                 stage={currentStage}
@@ -834,16 +839,11 @@ export function HomeScreen() {
 
         <PetStatusHud
           careMeters={careMeters}
-          onPressPet={() => {
-            setPetStatusError('');
-            setIsPetStatusOpen(true);
-          }}
           petImage={activePet.stages[currentStage]}
           petName={activePetDisplayName}
           progress={rewardProgress}
           roomName={activePetRoomName}
         />
-        <PetCareActions onCareAction={openCareItemPopup} />
         <CareItemUsePopup
           errorMessage={careItemError}
           isBusy={isUsingCareItem}

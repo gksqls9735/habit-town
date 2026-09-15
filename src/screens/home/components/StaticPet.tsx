@@ -18,20 +18,15 @@ type StaticPetProps = {
 export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps) {
   const { t } = useI18n();
   const petSource = pet.stages[stage];
-
-  return (
-    <Pressable
-      accessibilityLabel={t('pet.a11y.status', { name: petName })}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[
-        styles.staticPetWrap,
-        {
-          height: size,
-          width: size,
-          },
-        ]}
-    >
+  const containerStyle = [
+    styles.staticPetWrap,
+    {
+      height: size,
+      width: size,
+    },
+  ];
+  const content = (
+    <>
       <View
         style={[
           styles.characterShadow,
@@ -53,6 +48,28 @@ export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps
           },
         ]}
       />
+    </>
+  );
+
+  if (!onPress) {
+    return (
+      <View
+        accessibilityLabel={t('pet.a11y.image', { name: petName })}
+        style={containerStyle}
+      >
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityLabel={t('pet.a11y.status', { name: petName })}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={containerStyle}
+    >
+      {content}
     </Pressable>
   );
 }

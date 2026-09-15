@@ -1,4 +1,5 @@
-import { Image, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageBackground, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 import {
   experiencePerGrowthStage,
@@ -26,6 +27,7 @@ type CareMeterView = {
 };
 
 type CareActionView = {
+  bubbleImage: ImageSourcePropType;
   color: string;
   icon: ImageSourcePropType;
   key: CareMeterKey;
@@ -37,9 +39,34 @@ const previewNeeds: CareMeterView[] = [
   { key: 'loneliness', color: '#e7a28f', icon: lonelinessHeartBubbleIcon },
 ];
 const actions: CareActionView[] = [
-  { key: 'cleanliness', color: '#d9ebea', icon: cleanBrushIcon },
-  { key: 'hunger', color: '#f6e3bb', icon: feedBowlFullIcon },
-  { key: 'loneliness', color: '#f3ded0', icon: playBallIcon },
+  {
+    key: 'cleanliness',
+    bubbleImage: require('../../../../assets/ui/action/clean-action-bubble.png'),
+    color: '#d9ebea',
+    icon: cleanBrushIcon,
+  },
+  {
+    key: 'hunger',
+    bubbleImage: require('../../../../assets/ui/action/feed-action-bubble.png'),
+    color: '#f6e3bb',
+    icon: feedBowlFullIcon,
+  },
+  {
+    key: 'loneliness',
+    bubbleImage: require('../../../../assets/ui/action/play-action-bubble.png'),
+    color: '#f3ded0',
+    icon: playBallIcon,
+  },
+];
+const bubbleActionPositions: ViewStyle[] = [
+  { left: -52, top: 8 },
+  { left: 26, top: -48 },
+  { right: -52, top: 8 },
+];
+const bubbleIconPositions: ImageStyle[] = [
+  { marginLeft: -4, marginTop: -4 },
+  { marginLeft: -2, marginTop: -6 },
+  { marginLeft: 4, marginTop: -4 },
 ];
 const growthRingSegments = 32;
 const pixelStyle = Platform.OS === 'web'
@@ -64,30 +91,41 @@ export function PetStatusHud({
   const { language, t } = useI18n();
   const growthPercent = progress.experience / experiencePerGrowthStage;
   const locale = language === 'ko' ? 'ko-KR' : 'en-US';
+  const portraitContent = (
+    <>
+      <View style={styles.ringInnerShadow} />
+      {Array.from({ length: growthRingSegments }, (_, index) => {
+        const angle = index / growthRingSegments * Math.PI * 2 - Math.PI / 2;
+        const isFilled = index < Math.round(growthPercent * growthRingSegments);
+
+        return <View key={index} style={[styles.ringSegment, {
+          left: 34 + Math.cos(angle) * 30 - 3,
+          top: 34 + Math.sin(angle) * 30 - 3,
+          transform: [{ rotate: `${index / growthRingSegments * 360}deg` }],
+          backgroundColor: isFilled ? '#87a85d' : '#d5c99f',
+          borderColor: isFilled ? '#5d743f' : '#b9a87d',
+        }]} />;
+      })}
+      <View style={styles.portrait}>
+        <Image source={petImage} accessibilityLabel={t('pet.a11y.image', { name: petName })} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
+      </View>
+    </>
+  );
 
   return (
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.statusPanel}>
         <View style={styles.portraitColumn}>
-          <Pressable style={styles.ring} accessibilityRole="button"
-            accessibilityLabel={t('pet.a11y.status', { name: petName })} onPress={onPressPet}>
-            <View style={styles.ringInnerShadow} />
-            {Array.from({ length: growthRingSegments }, (_, index) => {
-              const angle = index / growthRingSegments * Math.PI * 2 - Math.PI / 2;
-              const isFilled = index < Math.round(growthPercent * growthRingSegments);
-
-              return <View key={index} style={[styles.ringSegment, {
-                left: 34 + Math.cos(angle) * 30 - 3,
-                top: 34 + Math.sin(angle) * 30 - 3,
-                transform: [{ rotate: `${index / growthRingSegments * 360}deg` }],
-                backgroundColor: isFilled ? '#87a85d' : '#d5c99f',
-                borderColor: isFilled ? '#5d743f' : '#b9a87d',
-              }]} />;
-            })}
-            <View style={styles.portrait}>
-              <Image source={petImage} accessibilityLabel={t('pet.a11y.image', { name: petName })} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
+          {onPressPet ? (
+            <Pressable style={styles.ring} accessibilityRole="button"
+              accessibilityLabel={t('pet.a11y.status', { name: petName })} onPress={onPressPet}>
+              {portraitContent}
+            </Pressable>
+          ) : (
+            <View style={styles.ring} accessibilityLabel={t('pet.a11y.image', { name: petName })}>
+              {portraitContent}
             </View>
-          </Pressable>
+          )}
           <Text numberOfLines={1} style={styles.stageBadge}>{petName}</Text>
         </View>
         <View style={styles.meters}>
@@ -151,6 +189,56 @@ export function PetCareActions({
   );
 }
 
+/** Pet-side bubble actions open the matching care item flow. */
+export function PetCareBubbleActions({
+  onCareAction,
+  visible,
+}: {
+  onCareAction: (meter: CareMeterKey) => void;
+  visible: boolean;
+}) {
+  const { t } = useI18n();
+
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <View pointerEvents="box-none" style={styles.bubbleMenu}>
+      {actions.map((action, index) => {
+        const label = t(`care.action.${action.key}`);
+
+        return (
+          <Pressable
+            accessibilityLabel={label}
+            accessibilityRole="button"
+            key={action.key}
+            onPress={() => onCareAction(action.key)}
+            style={[
+              styles.bubbleAction,
+              bubbleActionPositions[index],
+            ]}
+          >
+            <ImageBackground
+              accessibilityIgnoresInvertColors
+              resizeMode="contain"
+              source={action.bubbleImage}
+              style={styles.bubbleImage}
+            >
+              <Image
+                source={action.icon}
+                accessibilityLabel={label}
+                resizeMode="contain"
+                style={[styles.bubbleActionIcon, bubbleIconPositions[index]]}
+              />
+            </ImageBackground>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   top: { position: 'absolute', top: 10, left: 10, right: 10, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, zIndex: 10 },
   statusPanel: { width: '50%', maxWidth: 390, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -178,4 +266,23 @@ const styles = StyleSheet.create({
   actionHighlight: { position: 'absolute', top: 2, left: 2, right: 2, height: 2, backgroundColor: '#fffaf0' },
   actionIcon: { width: 48, height: 42 },
   actionLabel: { fontFamily, fontSize: 11, color: '#49372a' },
+  bubbleAction: {
+    alignItems: 'center',
+    height: 78,
+    justifyContent: 'center',
+    position: 'absolute',
+    width: 92,
+    zIndex: 21,
+  },
+  bubbleActionIcon: { height: 34, width: 40 },
+  bubbleImage: { alignItems: 'center', height: '100%', justifyContent: 'center', width: '100%' },
+  bubbleMenu: {
+    height: 146,
+    left: '50%',
+    marginLeft: -73,
+    position: 'absolute',
+    top: -68,
+    width: 146,
+    zIndex: 20,
+  },
 });
