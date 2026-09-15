@@ -20,6 +20,8 @@ import { shopItems, type ShopCategory, type ShopItem } from '../items';
 
 type ShopModalProps = {
   coinBalance: number;
+  getItemPrice?: (item: ShopItem) => number;
+  isItemSoldOut?: (item: ShopItem) => boolean;
   onClose: () => void;
   onPurchase: (item: ShopItem) => Promise<boolean>;
   ownedItemIds: readonly string[];
@@ -40,7 +42,15 @@ const filters: { id: ShopCategory; label: string }[] = [
   { id: 'misc', label: 'shop.category.misc' },
 ];
 
-export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visible }: ShopModalProps) {
+export function ShopModal({
+  coinBalance,
+  getItemPrice = (item) => item.price,
+  isItemSoldOut = () => false,
+  onClose,
+  onPurchase,
+  ownedItemIds,
+  visible,
+}: ShopModalProps) {
   const { t } = useI18n();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -58,7 +68,7 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
   }, [t, visible]);
 
   const buy = async (item: ShopItem) => {
-    if (isOwnedShopItem(item, ownedItemIds) || purchaseInFlight.current) return;
+    if (isOwnedShopItem(item, ownedItemIds) || isItemSoldOut(item) || purchaseInFlight.current) return;
 
     purchaseInFlight.current = true;
     setIsPurchasingId(item.id);
@@ -110,8 +120,9 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
             </View>
             <ScrollView style={styles.scroll} contentContainerStyle={styles.products}>
               {items.map((item) => {
-                const owned = isOwnedShopItem(item, ownedItemIds);
-                const insufficient = coinBalance < item.price;
+                const owned = isOwnedShopItem(item, ownedItemIds) || isItemSoldOut(item);
+                const itemPrice = getItemPrice(item);
+                const insufficient = coinBalance < itemPrice;
                 const isPurchasing = isPurchasingId === item.id;
                 return (
                   <View key={item.id} style={styles.card}>
@@ -132,7 +143,7 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
                       ) : (
                         <View style={styles.priceRow}>
                           <Image accessibilityIgnoresInvertColors source={currencyCoinIcon} resizeMode="contain" style={[styles.priceCoinIcon, pixelatedImageStyle]} />
-                          <Text style={[styles.buyText, insufficient && styles.lowBalanceText]}>{item.price}</Text>
+                          <Text style={[styles.buyText, insufficient && styles.lowBalanceText]}>{itemPrice}</Text>
                         </View>
                       )}
                     </Pressable>

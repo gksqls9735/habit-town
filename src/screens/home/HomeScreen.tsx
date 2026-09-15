@@ -21,10 +21,16 @@ import { InventoryModal } from '../../features/inventory/components/InventoryMod
 import {
   consumeInventoryItem,
   increaseInventoryCapacity,
+  loadInventoryCapacity,
   loadInventoryItems,
+  resetInventory,
   saveInventoryItem,
 } from '../../features/inventory/inventoryRepository';
-import type { InventoryItem } from '../../features/inventory/types';
+import {
+  initialInventorySlotCount,
+  inventoryExpansionSlotCount,
+  type InventoryItem,
+} from '../../features/inventory/types';
 import { getItemImage } from '../../features/items/itemImages';
 import { getItemCareEffect, getItemShopCategory } from '../../features/items/itemCatalog';
 import {
@@ -50,7 +56,7 @@ import {
   saveDecorPlacement,
 } from '../../features/room/decorPlacementRepository';
 import { ShopModal } from '../../features/shop/components/ShopModal';
-import type { ShopItem } from '../../features/shop/items';
+import type { InventoryCapacityShopItem, ShopItem, ShopUpgradeId } from '../../features/shop/items';
 import {
   CareItemUsePopup,
   type CareUsableItem,
@@ -78,6 +84,7 @@ const roomFloorImage = require('../../../assets/png/backgrounds/basic-room-floor
 const pixelFontFamily = 'Galmuri11';
 const localDevCurrencyGrantAmount = 1000;
 const localDevExperienceGrantAmount = 10;
+const maxInventoryCapacityPurchases = 3;
 
 type RoomBackgroundImages = {
   floor: ImageSourcePropType;
@@ -169,6 +176,11 @@ export function HomeScreen() {
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
   const [customPetNames, setCustomPetNames] = useState<PetNameMap>({});
   const [customPetRoomNames, setCustomPetRoomNames] = useState<PetRoomNameMap>({});
+  const [inventoryRefreshVersion, setInventoryRefreshVersion] = useState(0);
+  const [capacityPurchaseCounts, setCapacityPurchaseCounts] = useState<Record<ShopUpgradeId, number>>({
+    'decor-inventory-expansion': 0,
+    'inventory-expansion': 0,
+  });
   const [isSavingPetName, setIsSavingPetName] = useState(false);
   const [petStatusError, setPetStatusError] = useState('');
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
@@ -260,6 +272,17 @@ export function HomeScreen() {
       setIsGiftRewardOpen(true);
     }
   };
+  const refreshCapacityPurchaseCounts = useCallback(async () => {
+    const [generalCapacity, decorCapacity] = await Promise.all([
+      loadInventoryCapacity('general'),
+      loadInventoryCapacity('decor'),
+    ]);
+
+    setCapacityPurchaseCounts({
+      'decor-inventory-expansion': getCapacityPurchaseCount(decorCapacity),
+      'inventory-expansion': getCapacityPurchaseCount(generalCapacity),
+    });
+  }, []);
   const rightRailActions: RailAction[] = [
     ...rightActions.map((action) => {
       const translatedAction = { ...action, label: t(`home.action.${action.id}`, undefined, action.label) };
@@ -321,9 +344,10 @@ export function HomeScreen() {
         ...translatedAction,
         onPress: () => {
           setIsShopOpen(true);
-          void loadInventoryItems().then((items) => {
-            setOwnedShopItemIds(items.map((item) => item.id));
-          });
+          void Promise.all([
+            loadInventoryItems().then((items) => setOwnedShopItemIds(items.map((item) => item.id))),
+            refreshCapacityPurchaseCounts(),
+          ]);
         },
       };
     }
@@ -365,10 +389,13 @@ export function HomeScreen() {
       ));
     });
   }, []);
-
   useEffect(() => {
     refreshRoomBackgroundImages();
   }, [refreshRoomBackgroundImages]);
+
+  useEffect(() => {
+    void refreshCapacityPurchaseCounts();
+  }, [refreshCapacityPurchaseCounts]);
 
   useEffect(() => {
     void loadGiftBoxCount().then(setGiftBoxCount).catch(() => {
@@ -448,6 +475,14 @@ export function HomeScreen() {
 
     if (label === 'reset') {
       resetPetStatus();
+      void resetInventory().then(() => {
+        setCapacityPurchaseCounts({
+          'decor-inventory-expansion': 0,
+          'inventory-expansion': 0,
+        });
+        setInventoryRefreshVersion((version) => version + 1);
+        void refreshRoomBackgroundImages();
+      });
     }
   };
   const closeDeliveryReward = () => {
@@ -479,6 +514,7 @@ export function HomeScreen() {
         grantCurrencyReward(deliveryReward.amount);
       } else {
         await saveInventoryItem(deliveryReward.item);
+        setInventoryRefreshVersion((version) => version + 1);
       }
 
       setDeliveryReward(null);
@@ -623,15 +659,24 @@ export function HomeScreen() {
     }
   };
   const purchaseShopItem = async (item: ShopItem): Promise<boolean> => {
-    if (rewardProgress.coins < item.price) return false;
+    const itemPrice = getShopItemPrice(item, capacityPurchaseCounts);
+    if (rewardProgress.coins < itemPrice) return false;
 
     try {
       if (item.kind === 'inventory-capacity') {
-        const purchased = spendCurrencyReward(item.price);
+        const currentCapacity = await loadInventoryCapacity(item.capacityCategory);
+        const purchaseCount = getCapacityPurchaseCount(currentCapacity);
+
+        if (purchaseCount >= maxInventoryCapacityPurchases) return false;
+
+        const nextPrice = getInventoryCapacityPrice(item, purchaseCount);
+        const purchased = spendCurrencyReward(nextPrice);
 
         if (!purchased) return false;
 
         await increaseInventoryCapacity(item.capacityCategory, item.slotIncrease);
+        await refreshCapacityPurchaseCounts();
+        setInventoryRefreshVersion((version) => version + 1);
         return true;
       }
 
@@ -650,11 +695,21 @@ export function HomeScreen() {
       if (!purchased) return false;
 
       setOwnedShopItemIds((current) => current.includes(item.id) ? current : [...current, item.id]);
+      setInventoryRefreshVersion((version) => version + 1);
       return true;
     } catch {
       return false;
     }
   };
+  const getDisplayedShopItemPrice = useCallback(
+    (item: ShopItem) => getShopItemPrice(item, capacityPurchaseCounts),
+    [capacityPurchaseCounts],
+  );
+  const isShopItemSoldOut = useCallback(
+    (item: ShopItem) => item.kind === 'inventory-capacity'
+      && (capacityPurchaseCounts[item.id] ?? 0) >= maxInventoryCapacityPurchases,
+    [capacityPurchaseCounts],
+  );
   const beginDecorPlacement = (item: InventoryItem) => {
     setPlacementItem(item);
     setIsInventoryOpen(false);
@@ -852,12 +907,16 @@ export function HomeScreen() {
           onBeginDecorPlacement={beginDecorPlacement}
           onInventoryChanged={refreshRoomBackgroundImages}
           onClose={() => setIsInventoryOpen(false)}
+          key={inventoryRefreshVersion}
+          refreshVersion={inventoryRefreshVersion}
           visible={isInventoryOpen}
           width={popupWidth}
         />
 
         <ShopModal
           coinBalance={rewardProgress.coins}
+          getItemPrice={getDisplayedShopItemPrice}
+          isItemSoldOut={isShopItemSoldOut}
           onClose={() => setIsShopOpen(false)}
           onPurchase={purchaseShopItem}
           ownedItemIds={ownedShopItemIds}
@@ -942,6 +1001,27 @@ export function HomeScreen() {
       </View>
     </SafeAreaView>
   );
+}
+
+function getCapacityPurchaseCount(capacity: number): number {
+  return clamp(
+    Math.floor((capacity - initialInventorySlotCount) / inventoryExpansionSlotCount),
+    0,
+    maxInventoryCapacityPurchases,
+  );
+}
+
+function getInventoryCapacityPrice(item: InventoryCapacityShopItem, purchaseCount: number): number {
+  return item.price * (purchaseCount + 1);
+}
+
+function getShopItemPrice(
+  item: ShopItem,
+  capacityPurchaseCounts: Record<ShopUpgradeId, number>,
+): number {
+  return item.kind === 'inventory-capacity'
+    ? getInventoryCapacityPrice(item, capacityPurchaseCounts[item.id] ?? 0)
+    : item.price;
 }
 
 function PlacedDecorObject({

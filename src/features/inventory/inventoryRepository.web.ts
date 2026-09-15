@@ -43,6 +43,12 @@ export async function increaseInventoryCapacity(
   return nextCapacity;
 }
 
+export async function resetInventory(): Promise<void> {
+  writeInventoryItems([]);
+  writeInventoryCapacity('decor', initialInventorySlotCount);
+  writeInventoryCapacity('general', initialInventorySlotCount);
+}
+
 /**
  * Adds an item to browser persistence using the same quantity merge behavior as SQLite.
  */

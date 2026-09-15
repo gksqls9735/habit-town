@@ -77,6 +77,25 @@ export async function increaseInventoryCapacity(
   return nextCapacity;
 }
 
+export async function resetInventory(): Promise<void> {
+  const db = await getInventoryDatabase();
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM inventory_items');
+    await db.runAsync(
+      `DELETE FROM inventory_metadata
+       WHERE key IN (?, ?, ?, 'starter_inventory_seeded')`,
+      inventoryCapacityMetadataKeys.general,
+      inventoryCapacityMetadataKeys.decor,
+      legacyInventoryCapacityMetadataKey,
+    );
+
+    await db.runAsync(
+      "INSERT INTO inventory_metadata (key, value) VALUES ('starter_inventory_seeded', '1')",
+    );
+  });
+}
+
 /**
  * Adds an item while merging quantities for inventory entries already owned.
  */

@@ -23,7 +23,7 @@ const popupBorderWidth = 2;
 const slotColumnCount = 6;
 const slotGap = 4;
 const slotMinimumSize = 34;
-const slotVisibleRowCount = 4;
+const slotMaximumVisibleRowCount = 5;
 const slotTrayBorderWidth = 3;
 const slotTrayPadding = 4;
 
@@ -53,12 +53,14 @@ export function InventoryModal({
   onBeginDecorPlacement,
   onInventoryChanged,
   onClose,
+  refreshVersion = 0,
   visible,
   width,
 }: {
   onBeginDecorPlacement?: (item: InventoryItem) => void;
   onInventoryChanged?: () => void;
   onClose: () => void;
+  refreshVersion?: number;
   visible: boolean;
   width: number;
 }) {
@@ -105,16 +107,18 @@ export function InventoryModal({
   const activeSectionItemCount = sectionCounts[activeSection];
   const activeSectionCapacity = capacities[activeSection === 'decor' ? 'decor' : 'general'];
   const visibleSlotCount = Math.max(activeSectionCapacity, sectionItems.length);
+  const visibleSlotRowCount = Math.ceil(visibleSlotCount / slotColumnCount);
+  const slotViewportRowCount = Math.min(visibleSlotRowCount, slotMaximumVisibleRowCount);
   const slotSize = getResponsiveSlotSize(width);
   const slotGridWidth = (slotSize * slotColumnCount) + (slotGap * (slotColumnCount - 1));
-  const slotGridViewportHeight = (slotSize * slotVisibleRowCount)
-    + (slotGap * (slotVisibleRowCount - 1));
+  const slotGridViewportHeight = (slotSize * slotViewportRowCount)
+    + (slotGap * Math.max(0, slotViewportRowCount - 1));
 
   useEffect(() => {
     if (visible) {
       void refresh();
     }
-  }, [refresh, visible]);
+  }, [refresh, refreshVersion, visible]);
 
   useEffect(() => {
     if (selectedItemId && sectionItems.some((item) => item.id === selectedItemId)) {
