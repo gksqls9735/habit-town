@@ -29,7 +29,9 @@ type GenerationType = 'basic' | 'ad';
 
 const basicDailyPlanTitle = '오늘 할 일';
 const adDailyPlanTitle = '광고 보상 추가 할 일';
-const maxActiveYearlyGoalCount = 3;
+export const goalSlotExpansionCount = 1;
+export const initialActiveYearlyGoalLimit = 3;
+export const maxGoalSlotExpansionPurchases = 3;
 
 function isActiveYearlyGoal(goal: YearlyGoal) {
   return goal.completedAt == null && goal.abandonedAt == null;
@@ -92,6 +94,7 @@ export function useGoalPlanner() {
   const [hasUsedTaskRefresh, setHasUsedTaskRefresh] = useState(false);
   const [isLoadingGoalData, setIsLoadingGoalData] = useState(true);
   const [careMeters, setCareMeters] = useState<CareMeterValues>(initialCareMeters);
+  const [activeYearlyGoalLimit, setActiveYearlyGoalLimit] = useState(initialActiveYearlyGoalLimit);
   const [rewardProgress, setRewardProgress] = useState<RewardProgress>(initialRewardProgress);
   const [selectedTaskGoalId, setSelectedTaskGoalId] = useState<string | null>(null);
 
@@ -109,6 +112,7 @@ export function useGoalPlanner() {
         setDailyPlans(savedData.dailyPlans);
         setHasUsedTaskRefresh(savedData.hasUsedTaskRefresh);
         setCareMeters(savedData.careMeters);
+        setActiveYearlyGoalLimit(savedData.activeYearlyGoalLimit);
         setRewardProgress(savedData.rewardProgress);
 
         const goalsMissingTodayPlan = savedData.yearlyGoals.filter(
@@ -140,6 +144,7 @@ export function useGoalPlanner() {
         setDailyPlans(savedPlans);
         await saveGoalPlannerData({
           careMeters: savedData.careMeters,
+          activeYearlyGoalLimit: savedData.activeYearlyGoalLimit,
           dailyPlans: savedPlans,
           hasUsedTaskRefresh: savedData.hasUsedTaskRefresh,
           rewardProgress: savedData.rewardProgress,
@@ -170,8 +175,10 @@ export function useGoalPlanner() {
     nextHasUsedTaskRefresh = hasUsedTaskRefresh,
     nextRewardProgress = rewardProgress,
     nextCareMeters = careMeters,
+    nextActiveYearlyGoalLimit = activeYearlyGoalLimit,
   ) => {
     saveGoalPlannerData({
+      activeYearlyGoalLimit: nextActiveYearlyGoalLimit,
       careMeters: nextCareMeters,
       dailyPlans: nextDailyPlans,
       hasUsedTaskRefresh: nextHasUsedTaskRefresh,
@@ -251,9 +258,9 @@ export function useGoalPlanner() {
       return;
     }
 
-    if (yearlyGoals.filter(isActiveYearlyGoal).length >= maxActiveYearlyGoalCount) {
+    if (yearlyGoals.filter(isActiveYearlyGoal).length >= activeYearlyGoalLimit) {
       setGoalError(t('goals.error.maxYearlyGoals', {
-        count: maxActiveYearlyGoalCount,
+        count: activeYearlyGoalLimit,
       }));
       return;
     }
@@ -493,6 +500,42 @@ export function useGoalPlanner() {
     );
   };
 
+  const increaseActiveYearlyGoalLimit = (amount = goalSlotExpansionCount) => {
+    const nextLimit = activeYearlyGoalLimit + amount;
+
+    setActiveYearlyGoalLimit(nextLimit);
+    persistGoalPlannerData(
+      yearlyGoals,
+      dailyPlans,
+      hasUsedTaskRefresh,
+      rewardProgress,
+      careMeters,
+      nextLimit,
+    );
+  };
+
+  const purchaseGoalSlotExpansion = (coins: number, amount = goalSlotExpansionCount) => {
+    const nextRewardProgress = applyCurrencySpend(rewardProgress, coins);
+
+    if (!nextRewardProgress) {
+      return false;
+    }
+
+    const nextLimit = activeYearlyGoalLimit + amount;
+
+    setRewardProgress(nextRewardProgress);
+    setActiveYearlyGoalLimit(nextLimit);
+    persistGoalPlannerData(
+      yearlyGoals,
+      dailyPlans,
+      hasUsedTaskRefresh,
+      nextRewardProgress,
+      careMeters,
+      nextLimit,
+    );
+    return true;
+  };
+
   const spendCurrencyReward = (coins: number) => {
     const nextRewardProgress = applyCurrencySpend(rewardProgress, coins);
 
@@ -507,6 +550,7 @@ export function useGoalPlanner() {
 
   return {
     abandonYearlyGoal,
+    activeYearlyGoalLimit,
     activeYearlyGoals,
     activeDailyPlans,
     toggleYearlyGoalCompletion,
@@ -518,6 +562,7 @@ export function useGoalPlanner() {
     fillCareMeter,
     grantCurrencyReward,
     grantExperienceReward,
+    increaseActiveYearlyGoalLimit,
     generateAdditionalTaskForSelectedGoal,
     generateBasicTasksForSelectedGoal,
     goalError,
@@ -529,6 +574,7 @@ export function useGoalPlanner() {
     openTodayTasks,
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
+    purchaseGoalSlotExpansion,
     refreshOneIncompleteTaskForSelectedGoal,
     resetPetGrowth,
     resetCareMeters,

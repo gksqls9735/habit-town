@@ -80,12 +80,14 @@ export function ShopModal({
       setMessage(t('shop.insufficientCoins'));
       return;
     }
-    setMessage(item.kind === 'inventory-capacity'
-      ? t('shop.capacityPurchased', {
-        capacity: getCapacityLabel(item.capacityCategory, t),
-        count: item.slotIncrease,
-      })
-      : t('shop.itemPurchased', { item: getLocalizedItemName(item, t) }));
+    setMessage(item.kind === 'goal-capacity'
+      ? t('shop.goalCapacityPurchased', { count: item.slotIncrease })
+      : item.kind === 'inventory-capacity'
+        ? t('shop.capacityPurchased', {
+          capacity: getCapacityLabel(item.capacityCategory, t),
+          count: item.slotIncrease,
+        })
+        : t('shop.itemPurchased', { item: getLocalizedItemName(item, t) }));
   };
 
   return (

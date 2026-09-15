@@ -13,7 +13,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TodayTasksModal } from '../../features/goals/components/TodayTasksModal';
 import { YearlyGoalModal } from '../../features/goals/components/YearlyGoalModal';
-import { useGoalPlanner } from '../../features/goals/hooks/useGoalPlanner';
+import {
+  goalSlotExpansionCount,
+  initialActiveYearlyGoalLimit,
+  maxGoalSlotExpansionPurchases,
+  useGoalPlanner,
+} from '../../features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
 import { useI18n } from '../../features/i18n';
@@ -56,7 +61,7 @@ import {
   saveDecorPlacement,
 } from '../../features/room/decorPlacementRepository';
 import { ShopModal } from '../../features/shop/components/ShopModal';
-import type { InventoryCapacityShopItem, ShopItem, ShopUpgradeId } from '../../features/shop/items';
+import type { GoalCapacityShopItem, InventoryCapacityShopItem, ShopItem } from '../../features/shop/items';
 import {
   CareItemUsePopup,
   type CareUsableItem,
@@ -85,6 +90,7 @@ const pixelFontFamily = 'Galmuri11';
 const localDevCurrencyGrantAmount = 1000;
 const localDevExperienceGrantAmount = 10;
 const maxInventoryCapacityPurchases = 3;
+type InventoryCapacityPurchaseCounts = Record<InventoryCapacityShopItem['id'], number>;
 
 type RoomBackgroundImages = {
   floor: ImageSourcePropType;
@@ -177,7 +183,7 @@ export function HomeScreen() {
   const [customPetNames, setCustomPetNames] = useState<PetNameMap>({});
   const [customPetRoomNames, setCustomPetRoomNames] = useState<PetRoomNameMap>({});
   const [inventoryRefreshVersion, setInventoryRefreshVersion] = useState(0);
-  const [capacityPurchaseCounts, setCapacityPurchaseCounts] = useState<Record<ShopUpgradeId, number>>({
+  const [capacityPurchaseCounts, setCapacityPurchaseCounts] = useState<InventoryCapacityPurchaseCounts>({
     'decor-inventory-expansion': 0,
     'inventory-expansion': 0,
   });
@@ -199,6 +205,7 @@ export function HomeScreen() {
   const goalPlanner = useGoalPlanner();
   const {
     abandonYearlyGoal,
+    activeYearlyGoalLimit,
     addYearlyGoal,
     careMeters,
     closeTodayTasks,
@@ -218,6 +225,7 @@ export function HomeScreen() {
     openTodayTasks,
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
+    purchaseGoalSlotExpansion,
     refreshOneIncompleteTaskForSelectedGoal,
     resetPetStatus,
     rewardProgress,
@@ -659,7 +667,7 @@ export function HomeScreen() {
     }
   };
   const purchaseShopItem = async (item: ShopItem): Promise<boolean> => {
-    const itemPrice = getShopItemPrice(item, capacityPurchaseCounts);
+    const itemPrice = getShopItemPrice(item, capacityPurchaseCounts, activeYearlyGoalLimit);
     if (rewardProgress.coins < itemPrice) return false;
 
     try {
@@ -677,6 +685,19 @@ export function HomeScreen() {
         await increaseInventoryCapacity(item.capacityCategory, item.slotIncrease);
         await refreshCapacityPurchaseCounts();
         setInventoryRefreshVersion((version) => version + 1);
+        return true;
+      }
+
+      if (item.kind === 'goal-capacity') {
+        const purchaseCount = getGoalSlotExpansionPurchaseCount(activeYearlyGoalLimit);
+
+        if (purchaseCount >= maxGoalSlotExpansionPurchases) return false;
+
+        const nextPrice = getGoalCapacityPrice(item, purchaseCount);
+        const purchased = purchaseGoalSlotExpansion(nextPrice, item.slotIncrease);
+
+        if (!purchased) return false;
+
         return true;
       }
 
@@ -702,13 +723,16 @@ export function HomeScreen() {
     }
   };
   const getDisplayedShopItemPrice = useCallback(
-    (item: ShopItem) => getShopItemPrice(item, capacityPurchaseCounts),
-    [capacityPurchaseCounts],
+    (item: ShopItem) => getShopItemPrice(item, capacityPurchaseCounts, activeYearlyGoalLimit),
+    [activeYearlyGoalLimit, capacityPurchaseCounts],
   );
   const isShopItemSoldOut = useCallback(
-    (item: ShopItem) => item.kind === 'inventory-capacity'
-      && (capacityPurchaseCounts[item.id] ?? 0) >= maxInventoryCapacityPurchases,
-    [capacityPurchaseCounts],
+    (item: ShopItem) =>
+      (item.kind === 'inventory-capacity'
+        && (capacityPurchaseCounts[item.id] ?? 0) >= maxInventoryCapacityPurchases)
+      || (item.kind === 'goal-capacity'
+        && getGoalSlotExpansionPurchaseCount(activeYearlyGoalLimit) >= maxGoalSlotExpansionPurchases),
+    [activeYearlyGoalLimit, capacityPurchaseCounts],
   );
   const beginDecorPlacement = (item: InventoryItem) => {
     setPlacementItem(item);
@@ -971,6 +995,7 @@ export function HomeScreen() {
           difficulty={yearlyGoalDifficulty}
           errorMessage={goalError}
           isGenerating={isGeneratingPlan || isLoadingGoalData}
+          maxActiveGoals={activeYearlyGoalLimit}
           onChangeDifficulty={setYearlyGoalDifficulty}
           onChangeDraft={setYearlyGoalDraft}
           onClose={closeYearlyGoal}
@@ -1015,13 +1040,32 @@ function getInventoryCapacityPrice(item: InventoryCapacityShopItem, purchaseCoun
   return item.price * (purchaseCount + 1);
 }
 
+function getGoalCapacityPrice(item: GoalCapacityShopItem, purchaseCount: number): number {
+  return item.price * (purchaseCount + 1);
+}
+
+function getGoalSlotExpansionPurchaseCount(activeYearlyGoalLimit: number): number {
+  return clamp(
+    Math.floor((activeYearlyGoalLimit - initialActiveYearlyGoalLimit) / goalSlotExpansionCount),
+    0,
+    maxGoalSlotExpansionPurchases,
+  );
+}
+
 function getShopItemPrice(
   item: ShopItem,
-  capacityPurchaseCounts: Record<ShopUpgradeId, number>,
+  capacityPurchaseCounts: InventoryCapacityPurchaseCounts,
+  activeYearlyGoalLimit: number,
 ): number {
-  return item.kind === 'inventory-capacity'
-    ? getInventoryCapacityPrice(item, capacityPurchaseCounts[item.id] ?? 0)
-    : item.price;
+  if (item.kind === 'inventory-capacity') {
+    return getInventoryCapacityPrice(item, capacityPurchaseCounts[item.id] ?? 0);
+  }
+
+  if (item.kind === 'goal-capacity') {
+    return getGoalCapacityPrice(item, getGoalSlotExpansionPurchaseCount(activeYearlyGoalLimit));
+  }
+
+  return item.price;
 }
 
 function PlacedDecorObject({
@@ -1451,6 +1495,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-
-

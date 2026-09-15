@@ -22,6 +22,7 @@ type YearlyGoalModalProps = {
   errorMessage: string;
   difficulty: GoalDifficulty;
   isGenerating: boolean;
+  maxActiveGoals: number;
   onChangeDraft: (value: string) => void;
   onChangeDifficulty: (value: GoalDifficulty) => void;
   onClose: () => void;
@@ -35,6 +36,7 @@ export function YearlyGoalModal({
   errorMessage,
   difficulty,
   isGenerating,
+  maxActiveGoals,
   onChangeDifficulty,
   onChangeDraft,
   onClose,
@@ -58,7 +60,7 @@ export function YearlyGoalModal({
           <View style={styles.simpleModalPanel}>
             <Text style={styles.simpleModalTitle}>{t('goal.title')}</Text>
             <Text style={styles.simpleModalDescription}>
-              {t('goal.addDescription')}
+              {t('goal.addDescription', { count: maxActiveGoals })}
             </Text>
             <Text style={styles.fieldLabel}>{t('goal.difficulty')}</Text>
             <View style={styles.difficultySegment}>

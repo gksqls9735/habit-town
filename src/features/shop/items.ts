@@ -9,7 +9,7 @@ import {
 } from '../inventory/types';
 
 export type ShopCategory = 'action' | 'object' | 'wallpaper' | 'flooring' | 'misc';
-export type ShopUpgradeId = 'decor-inventory-expansion' | 'inventory-expansion';
+export type ShopUpgradeId = 'decor-inventory-expansion' | 'goal-slot-expansion' | 'inventory-expansion';
 
 type BaseShopItem = {
   category: ShopCategory;
@@ -33,12 +33,18 @@ export type InventoryShopItem = BaseShopItem & {
 
 export type InventoryCapacityShopItem = BaseShopItem & {
   capacityCategory: InventoryCapacityCategory;
-  id: ShopUpgradeId;
+  id: Exclude<ShopUpgradeId, 'goal-slot-expansion'>;
   kind: 'inventory-capacity';
   slotIncrease: number;
 };
 
-export type ShopItem = InventoryCapacityShopItem | InventoryShopItem;
+export type GoalCapacityShopItem = BaseShopItem & {
+  id: 'goal-slot-expansion';
+  kind: 'goal-capacity';
+  slotIncrease: number;
+};
+
+export type ShopItem = GoalCapacityShopItem | InventoryCapacityShopItem | InventoryShopItem;
 
 const shopItemCodes = [
   'pet-rug',
@@ -101,7 +107,18 @@ const inventoryShopItems: InventoryShopItem[] = shopItemCodes.map((id) => {
   };
 });
 
-const upgradeShopItems: InventoryCapacityShopItem[] = [
+const upgradeShopItems: (GoalCapacityShopItem | InventoryCapacityShopItem)[] = [
+  {
+    category: 'misc',
+    description: '올해 목표 입력 가능 개수가 1개 늘어나요.',
+    id: 'goal-slot-expansion',
+    image: require('../../../assets/png/objects/misc/goal-slot-expansion-icon.png'),
+    kind: 'goal-capacity',
+    name: '목표 슬롯 추가',
+    price: 1000,
+    slotIncrease: 1,
+    symbol: '+',
+  },
   {
     capacityCategory: 'general',
     category: 'misc',
