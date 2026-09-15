@@ -13,6 +13,7 @@ import {
   InventoryItem,
 } from '../types';
 import { getItemShopCategory } from '../../items/itemCatalog';
+import { useI18n } from '../../i18n';
 
 const inventoryLoadTimeoutMs = 8_000;
 
@@ -20,6 +21,7 @@ const inventoryLoadTimeoutMs = 8_000;
  * Manages inventory loading and item state while keeping storage failures recoverable.
  */
 export function useInventory() {
+  const { t } = useI18n();
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -43,11 +45,11 @@ export function useInventory() {
         general: generalCapacity,
       });
     } catch {
-      setErrorMessage('가방을 불러오지 못했어요. 다시 열어 주세요.');
+      setErrorMessage(t('inventory.error.load'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -56,10 +58,10 @@ export function useInventory() {
     try {
       await markInventoryItemSeen(id);
     } catch {
-      setErrorMessage('아이템 확인 상태를 저장하지 못했어요.');
+      setErrorMessage(t('inventory.error.markSeen'));
       await refresh();
     }
-  }, [refresh]);
+  }, [refresh, t]);
 
   const toggleEquipped = useCallback(async (id: string) => {
     const item = items.find((candidate) => candidate.id === id);
@@ -86,10 +88,10 @@ export function useInventory() {
         await setInventoryItemEquipped(id, equipped);
       }
     } catch {
-      setErrorMessage('장착 상태를 저장하지 못했어요.');
+      setErrorMessage(t('inventory.error.equip'));
       await refresh();
     }
-  }, [items, refresh]);
+  }, [items, refresh, t]);
 
   const deleteItem = useCallback(async (id: string): Promise<boolean> => {
     const item = items.find((candidate) => candidate.id === id);
@@ -101,11 +103,11 @@ export function useInventory() {
       setErrorMessage('');
       return true;
     } catch {
-      setErrorMessage('아이템을 버리지 못했어요. 다시 시도해 주세요.');
+      setErrorMessage(t('inventory.error.delete'));
       await refresh();
       return false;
     }
-  }, [items, refresh]);
+  }, [items, refresh, t]);
 
   return { capacities, deleteItem, errorMessage, isLoading, items, refresh, selectItem, toggleEquipped };
 }

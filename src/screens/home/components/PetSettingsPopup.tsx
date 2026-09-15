@@ -1,13 +1,12 @@
 import { Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { AppLanguage, useI18n } from '../../../features/i18n';
 
 const pixelFontFamily = 'Galmuri11';
 
-export type PetSettingsLanguage = 'ko' | 'en';
-
 type PetSettingsPopupProps = {
-  language: PetSettingsLanguage;
-  onChangeLanguage: (language: PetSettingsLanguage) => void;
+  language: AppLanguage;
+  onChangeLanguage: (language: AppLanguage) => void;
   onClose: () => void;
   onTogglePushNotifications: () => void;
   pushNotificationsEnabled: boolean;
@@ -15,7 +14,7 @@ type PetSettingsPopupProps = {
   width: number;
 };
 
-const languageOptions: readonly { label: string; value: PetSettingsLanguage }[] = [
+const languageOptions: readonly { label: string; value: AppLanguage }[] = [
   { label: '한국어', value: 'ko' },
   { label: 'English', value: 'en' },
 ];
@@ -29,6 +28,8 @@ export function PetSettingsPopup({
   visible,
   width,
 }: PetSettingsPopupProps) {
+  const { t } = useI18n();
+
   if (!visible) {
     return null;
   }
@@ -44,10 +45,10 @@ export function PetSettingsPopup({
           <View style={styles.header}>
             <View>
               <Text style={styles.eyebrow}>PET SETTINGS</Text>
-              <Text style={styles.title}>설정</Text>
+              <Text style={styles.title}>{t('settings.title')}</Text>
             </View>
             <PopupCloseButton
-              accessibilityLabel="펫 설정 팝업 닫기"
+              accessibilityLabel={t('settings.close')}
               onPress={onClose}
             />
           </View>
@@ -55,8 +56,8 @@ export function PetSettingsPopup({
           <View style={styles.content}>
             <View style={styles.settingBlock}>
               <View style={styles.settingCopy}>
-                <Text style={styles.settingLabel}>언어</Text>
-                <Text style={styles.settingDescription}>한국어 / 영어 번역</Text>
+                <Text style={styles.settingLabel}>{t('settings.language')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.languageDescription')}</Text>
               </View>
               <View style={styles.segmentedControl}>
                 {languageOptions.map((option) => {
@@ -64,7 +65,7 @@ export function PetSettingsPopup({
 
                   return (
                     <Pressable
-                      accessibilityLabel={`언어 ${option.label}`}
+                      accessibilityLabel={t('settings.languageA11y', { language: option.label })}
                       accessibilityRole="button"
                       accessibilityState={{ selected }}
                       key={option.value}
@@ -91,11 +92,11 @@ export function PetSettingsPopup({
 
             <View style={styles.settingBlock}>
               <View style={styles.settingCopy}>
-                <Text style={styles.settingLabel}>Push 알림</Text>
-                <Text style={styles.settingDescription}>할 일과 성장 알림 받기</Text>
+                <Text style={styles.settingLabel}>{t('settings.push')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.pushDescription')}</Text>
               </View>
               <Pressable
-                accessibilityLabel="Push 알림"
+                accessibilityLabel={t('settings.push')}
                 accessibilityRole="switch"
                 accessibilityState={{ checked: pushNotificationsEnabled }}
                 onPress={onTogglePushNotifications}

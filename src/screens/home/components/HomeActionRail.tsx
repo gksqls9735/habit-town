@@ -40,7 +40,7 @@ export function HomeActionRail({ actions, metrics, style }: HomeActionRailProps)
   return (
     <View style={[styles.rail, style]}>
       {actions.map((action) => (
-        <RailButton action={action} key={action.label} metrics={metrics} />
+        <RailButton action={action} key={action.id} metrics={metrics} />
       ))}
     </View>
   );
@@ -57,6 +57,7 @@ function RailButton({
 
   return (
     <Pressable
+      accessibilityLabel={action.label}
       accessibilityRole="button"
       onPress={action.onPress}
       style={[

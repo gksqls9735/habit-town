@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../../features/i18n';
 
 const septemberAttendanceEventBannerImage = require('../../../../assets/ui/event/attendance-banners/september-attendance-event.png');
 const octoberAttendanceEventBannerImage = require('../../../../assets/ui/event/attendance-banners/october-attendance-event.png');
@@ -65,6 +66,7 @@ type EventPopupProps = {
 
 export function EventPopup({ onClose, visible, width }: EventPopupProps) {
   const [selectedBanner, setSelectedBanner] = useState<EventBanner | null>(null);
+  const { t } = useI18n();
 
   if (!visible) {
     return null;
@@ -91,10 +93,10 @@ export function EventPopup({ onClose, visible, width }: EventPopupProps) {
             <View style={styles.header}>
               <View style={styles.headerCopy}>
                 <Text style={styles.eyebrow}>EVENT BOARD</Text>
-                <Text style={styles.title}>이벤트</Text>
+                <Text style={styles.title}>{t('home.action.event')}</Text>
               </View>
               <PopupCloseButton
-                accessibilityLabel="이벤트 팝업 닫기"
+                accessibilityLabel={t('common.closePopup')}
                 onPress={closePopup}
               />
             </View>
@@ -107,7 +109,7 @@ export function EventPopup({ onClose, visible, width }: EventPopupProps) {
               <View style={styles.bannerList}>
                 {eventBanners.map((banner) => (
                   <Pressable
-                    accessibilityLabel={`${banner.title}, ${banner.dateText}`}
+                    accessibilityLabel={`${t(`event.${banner.id}.title`, undefined, banner.title)}, ${banner.dateText}`}
                     accessibilityRole="button"
                     key={banner.id}
                     onPress={() => setSelectedBanner(banner)}
@@ -131,6 +133,7 @@ export function EventPopup({ onClose, visible, width }: EventPopupProps) {
         <EventDetailPopup
           banner={selectedBanner}
           onClose={() => setSelectedBanner(null)}
+          t={t}
           width={width}
         />
       ) : null}
@@ -141,10 +144,12 @@ export function EventPopup({ onClose, visible, width }: EventPopupProps) {
 function EventDetailPopup({
   banner,
   onClose,
+  t,
   width,
 }: {
   banner: EventBanner;
   onClose: () => void;
+  t: (key: string, params?: Record<string, number | string>, fallback?: string) => string;
   width: number;
 }) {
   return (
@@ -164,11 +169,11 @@ function EventDetailPopup({
               <View style={styles.headerCopy}>
                 <Text style={styles.eyebrow}>EVENT DETAIL</Text>
                 <Text numberOfLines={1} style={styles.title}>
-                  {banner.title}
+                  {t(`event.${banner.id}.title`, undefined, banner.title)}
                 </Text>
               </View>
               <PopupCloseButton
-                accessibilityLabel="이벤트 상세 팝업 닫기"
+                accessibilityLabel={t('common.closePopup')}
                 onPress={onClose}
               />
             </View>

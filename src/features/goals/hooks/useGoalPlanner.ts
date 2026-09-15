@@ -13,6 +13,7 @@ import type { CareMeterKey, CareMeterValues, RewardProgress } from '../../reward
 import { generateDailyTasksForGoal } from '../goalAiService';
 import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
 import type { DailyPlan, GoalDifficulty, YearlyGoal } from '../types';
+import { useI18n } from '../../i18n';
 import {
   canEditPlan,
   duplicateClosedGoalCooldownDays,
@@ -74,6 +75,7 @@ function hasEditableBasicDailyPlan(
 }
 
 export function useGoalPlanner() {
+  const { t } = useI18n();
   const [isTodayTasksOpen, setIsTodayTasksOpen] = useState(false);
   const [isYearlyGoalOpen, setIsYearlyGoalOpen] = useState(false);
   const [yearlyGoals, setYearlyGoals] = useState<YearlyGoal[]>([]);
@@ -138,12 +140,9 @@ export function useGoalPlanner() {
           rewardProgress: savedData.rewardProgress,
           yearlyGoals: savedData.yearlyGoals,
         });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : '저장된 목표 데이터를 불러오지 못했습니다.';
-
+      } catch {
         if (isMounted) {
-          setGoalError(message);
+          setGoalError(t('goals.error.load'));
         }
       } finally {
         if (isMounted) {
@@ -158,7 +157,7 @@ export function useGoalPlanner() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   const persistGoalPlannerData = (
     nextYearlyGoals = yearlyGoals,
@@ -173,11 +172,8 @@ export function useGoalPlanner() {
       hasUsedTaskRefresh: nextHasUsedTaskRefresh,
       rewardProgress: nextRewardProgress,
       yearlyGoals: nextYearlyGoals,
-    }).catch((error) => {
-      const message =
-        error instanceof Error ? error.message : '목표 데이터를 저장하지 못했습니다.';
-
-      setGoalError(message);
+    }).catch(() => {
+      setGoalError(t('goals.error.save'));
     });
   };
 
@@ -217,7 +213,7 @@ export function useGoalPlanner() {
     );
     if (targetGoals.length === 0 || isGeneratingPlan) {
       if (targetGoals.length === 0) {
-        setGoalError('먼저 올해 목표를 입력해 주세요.');
+        setGoalError(t('goals.error.needGoal'));
         setIsYearlyGoalOpen(true);
       }
       return;
@@ -237,11 +233,8 @@ export function useGoalPlanner() {
 
       setDailyPlans(savedPlans);
       persistGoalPlannerData(yearlyGoalsOverride, savedPlans);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '오늘 할 일을 생성하지 못했습니다.';
-
-      setGoalError(message);
+    } catch {
+      setGoalError(t('goals.error.generate'));
     } finally {
       setIsGeneratingPlan(false);
     }
@@ -257,8 +250,11 @@ export function useGoalPlanner() {
     if (duplicateGoal) {
       const closedAt = getGoalClosedAt(duplicateGoal);
       setGoalError(closedAt == null
-        ? `이미 비슷한 목표가 있어요: ${duplicateGoal.title}`
-        : `최근 ${duplicateClosedGoalCooldownDays}일 안에 끝낸 비슷한 목표가 있어요: ${duplicateGoal.title}`);
+        ? t('goals.error.duplicateActive', { title: duplicateGoal.title })
+        : t('goals.error.duplicateClosed', {
+          days: duplicateClosedGoalCooldownDays,
+          title: duplicateGoal.title,
+        }));
       return;
     }
 
@@ -307,7 +303,7 @@ export function useGoalPlanner() {
     }
 
     if (hasUsedTaskRefresh) {
-      setGoalError('새로고침은 한 번만 사용할 수 있어요.');
+      setGoalError(t('goals.error.refreshUsed'));
       return;
     }
 
@@ -322,7 +318,7 @@ export function useGoalPlanner() {
     });
 
     if (refreshCandidates.length === 0) {
-      setGoalError('새로고침할 미완료 할 일이 없어요.');
+      setGoalError(t('goals.error.noRefreshableTask'));
       return;
     }
 
@@ -354,11 +350,8 @@ export function useGoalPlanner() {
       setDailyPlans(nextPlans);
       setHasUsedTaskRefresh(true);
       persistGoalPlannerData(yearlyGoals, nextPlans, true);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '할 일을 새로고침하지 못했습니다.';
-
-      setGoalError(message);
+    } catch {
+      setGoalError(t('goals.error.refreshFailed'));
     } finally {
       setIsGeneratingPlan(false);
     }

@@ -11,8 +11,10 @@ import {
 } from 'react-native';
 import type { InventoryItem } from '../../../features/inventory/types';
 import { getItemImage } from '../../../features/items/itemImages';
+import { getLocalizedInventoryItem } from '../../../features/items/localizedItems';
 import type { CareMeterKey } from '../../../features/rewards/rewardSystem';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../../features/i18n';
 
 export type CareUsableItem = InventoryItem & {
   careEffect: {
@@ -48,6 +50,7 @@ export function CareItemUsePopup({
   visible,
   width,
 }: CareItemUsePopupProps) {
+  const { t } = useI18n();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const selectedItem = useMemo(
@@ -84,7 +87,7 @@ export function CareItemUsePopup({
   return (
     <View style={styles.layer}>
       <Pressable
-        accessibilityLabel="돌봄 아이템 사용 닫기"
+        accessibilityLabel={t('common.closePopup')}
         accessibilityRole="button"
         onPress={onClose}
         style={styles.backdrop}
@@ -94,11 +97,11 @@ export function CareItemUsePopup({
           <View>
             <Text style={styles.eyebrow}>CARE ITEMS</Text>
             <Text accessibilityRole="header" style={styles.title}>
-              {getMeterActionTitle(meter)}
+              {getMeterActionTitle(meter, t)}
             </Text>
           </View>
           <PopupCloseButton
-            accessibilityLabel="돌봄 아이템 팝업 닫기"
+            accessibilityLabel={t('common.closePopup')}
             onPress={onClose}
           />
         </View>
@@ -108,10 +111,16 @@ export function CareItemUsePopup({
             <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
               {items.map((item) => {
                 const selected = selectedItem?.id === item.id;
+                const localizedItem = getLocalizedInventoryItem(item, t);
+                const effectLabel = getCareEffectLabel(item.careEffect, t);
 
                 return (
                   <Pressable
-                    accessibilityLabel={`${item.name}, ${item.quantity}개, ${getCareEffectLabel(item.careEffect)}`}
+                    accessibilityLabel={t('care.itemA11y', {
+                      effect: effectLabel,
+                      name: localizedItem.name,
+                      quantity: t('common.quantity', { count: item.quantity }),
+                    })}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
                     key={item.id}
@@ -129,11 +138,11 @@ export function CareItemUsePopup({
                       <CareItemImage item={item} />
                     </View>
                     <View style={styles.itemCopy}>
-                      <Text style={styles.itemName}>{item.name}</Text>
+                      <Text style={styles.itemName}>{localizedItem.name}</Text>
                       <Text numberOfLines={2} style={styles.itemDescription}>
-                        {item.description}
+                        {localizedItem.description}
                       </Text>
-                      <Text style={styles.effectText}>{getCareEffectLabel(item.careEffect)}</Text>
+                      <Text style={styles.effectText}>{effectLabel}</Text>
                     </View>
                     <View style={styles.quantityBadge}>
                       <Text style={styles.quantityBadgeText}>{item.quantity}</Text>
@@ -146,7 +155,7 @@ export function CareItemUsePopup({
             <View style={styles.usePanel}>
               <View style={styles.stepper}>
                 <Pressable
-                  accessibilityLabel="사용 수량 줄이기"
+                  accessibilityLabel={t('care.stepDown')}
                   accessibilityRole="button"
                   disabled={!selectedItem || quantity <= 1 || isBusy}
                   onPress={() => setQuantity((current) => Math.max(1, current - 1))}
@@ -162,7 +171,7 @@ export function CareItemUsePopup({
                   <Text style={styles.quantityText}>{quantity}</Text>
                 </View>
                 <Pressable
-                  accessibilityLabel="사용 수량 늘리기"
+                  accessibilityLabel={t('care.stepUp')}
                   accessibilityRole="button"
                   disabled={!selectedItem || quantity >= selectedItem.quantity || isBusy}
                   onPress={() => setQuantity((current) =>
@@ -177,9 +186,11 @@ export function CareItemUsePopup({
                   <Text style={styles.stepButtonText}>+</Text>
                 </Pressable>
               </View>
-              <Text style={styles.totalText}>{getMeterLabel(meter)} +{Math.round(totalIncrease * 100)}%</Text>
+              <Text style={styles.totalText}>
+                {t('care.effect', { meter: getMeterLabel(meter, t), percent: Math.round(totalIncrease * 100) })}
+              </Text>
               <Pressable
-                accessibilityLabel="돌봄 아이템 사용하기"
+                accessibilityLabel={t('actions.use')}
                 accessibilityRole="button"
                 disabled={!canUse}
                 onPress={() => {
@@ -192,14 +203,14 @@ export function CareItemUsePopup({
                   pressed && styles.pressed,
                 ]}
               >
-                <Text style={styles.useButtonText}>{isBusy ? '사용 중' : '사용하기'}</Text>
+                <Text style={styles.useButtonText}>{isBusy ? t('actions.using') : t('actions.use')}</Text>
               </Pressable>
             </View>
           </>
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>{getMeterLabel(meter)}을 채울 아이템이 없어요.</Text>
-            <Text style={styles.emptySubText}>상점의 돌봄 탭에서 아이템을 구매해 주세요.</Text>
+            <Text style={styles.emptyText}>{t('care.empty', { meter: getMeterLabel(meter, t) })}</Text>
+            <Text style={styles.emptySubText}>{t('care.emptyHint')}</Text>
           </View>
         )}
 
@@ -226,20 +237,19 @@ function CareItemImage({ item }: { item: InventoryItem }) {
   return <Text style={styles.fallbackSymbol}>{item.symbol}</Text>;
 }
 
-function getCareEffectLabel(effect: CareUsableItem['careEffect']) {
-  return `${getMeterLabel(effect.meter)} +${Math.round(effect.increase * 100)}%`;
+function getCareEffectLabel(effect: CareUsableItem['careEffect'], t: (key: string, params?: Record<string, string | number>) => string) {
+  return t('care.effect', {
+    meter: getMeterLabel(effect.meter, t),
+    percent: Math.round(effect.increase * 100),
+  });
 }
 
-function getMeterActionTitle(meter: CareMeterKey) {
-  if (meter === 'cleanliness') return '청소 아이템';
-  if (meter === 'hunger') return '밥 아이템';
-  return '놀이 아이템';
+function getMeterActionTitle(meter: CareMeterKey, t: (key: string) => string) {
+  return t(`care.title.${meter}`);
 }
 
-function getMeterLabel(meter: CareMeterKey) {
-  if (meter === 'cleanliness') return '청결도';
-  if (meter === 'hunger') return '포만감';
-  return '친밀도';
+function getMeterLabel(meter: CareMeterKey, t: (key: string) => string) {
+  return t(`care.meter.${meter}`);
 }
 
 const styles = StyleSheet.create({

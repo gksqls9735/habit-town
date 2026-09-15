@@ -8,6 +8,7 @@ import type {
   CareMeterValues,
   RewardProgress,
 } from '../../../features/rewards/rewardSystem';
+import { useI18n } from '../../../features/i18n';
 
 const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
@@ -22,26 +23,23 @@ type CareMeterView = {
   color: string;
   icon: ImageSourcePropType;
   key: CareMeterKey;
-  label: string;
-  name: string;
 };
 
 type CareActionView = {
   color: string;
   icon: ImageSourcePropType;
   key: CareMeterKey;
-  label: string;
 };
 
 const previewNeeds: CareMeterView[] = [
-  { key: 'cleanliness', label: '청', name: '청결도', color: '#8fbcc0', icon: cleanlinessBubblesIcon },
-  { key: 'hunger', label: '굶', name: '포만감', color: '#dfb471', icon: hungerBoltIcon },
-  { key: 'loneliness', label: '외', name: '친밀도', color: '#e7a28f', icon: lonelinessHeartBubbleIcon },
+  { key: 'cleanliness', color: '#8fbcc0', icon: cleanlinessBubblesIcon },
+  { key: 'hunger', color: '#dfb471', icon: hungerBoltIcon },
+  { key: 'loneliness', color: '#e7a28f', icon: lonelinessHeartBubbleIcon },
 ];
 const actions: CareActionView[] = [
-  { key: 'cleanliness', label: '청소하기', color: '#d9ebea', icon: cleanBrushIcon },
-  { key: 'hunger', label: '밥먹이기', color: '#f6e3bb', icon: feedBowlFullIcon },
-  { key: 'loneliness', label: '놀아주기', color: '#f3ded0', icon: playBallIcon },
+  { key: 'cleanliness', color: '#d9ebea', icon: cleanBrushIcon },
+  { key: 'hunger', color: '#f6e3bb', icon: feedBowlFullIcon },
+  { key: 'loneliness', color: '#f3ded0', icon: playBallIcon },
 ];
 const growthRingSegments = 32;
 const pixelStyle = Platform.OS === 'web'
@@ -63,14 +61,16 @@ export function PetStatusHud({
   progress: RewardProgress;
   roomName: string;
 }) {
+  const { language, t } = useI18n();
   const growthPercent = progress.experience / experiencePerGrowthStage;
+  const locale = language === 'ko' ? 'ko-KR' : 'en-US';
 
   return (
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.statusPanel}>
         <View style={styles.portraitColumn}>
           <Pressable style={styles.ring} accessibilityRole="button"
-            accessibilityLabel={`${petName} 상태 보기`} onPress={onPressPet}>
+            accessibilityLabel={t('pet.a11y.status', { name: petName })} onPress={onPressPet}>
             <View style={styles.ringInnerShadow} />
             {Array.from({ length: growthRingSegments }, (_, index) => {
               const angle = index / growthRingSegments * Math.PI * 2 - Math.PI / 2;
@@ -85,7 +85,7 @@ export function PetStatusHud({
               }]} />;
             })}
             <View style={styles.portrait}>
-              <Image source={petImage} accessibilityLabel={`선택한 펫 ${petName}`} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
+              <Image source={petImage} accessibilityLabel={t('pet.a11y.image', { name: petName })} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
             </View>
           </Pressable>
           <Text numberOfLines={1} style={styles.stageBadge}>{petName}</Text>
@@ -94,8 +94,8 @@ export function PetStatusHud({
           {previewNeeds.map((need) => {
             const value = careMeters[need.key];
 
-            return <View key={need.label} style={styles.meterRow}
-              accessibilityRole="progressbar" accessibilityLabel={need.name}
+            return <View key={need.key} style={styles.meterRow}
+              accessibilityRole="progressbar" accessibilityLabel={t(`care.meter.${need.key}`)}
               accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}>
             <Image source={need.icon} resizeMode="contain" style={styles.meterIcon} />
             <View style={styles.track}><View style={[styles.fill, { width: `${value * 100}%`, backgroundColor: need.color }]}>
@@ -106,9 +106,9 @@ export function PetStatusHud({
         </View>
       </View>
       <View style={styles.roomSummary}>
-        <View style={styles.currency} accessibilityLabel={`금색 재화 ${progress.coins}`}>
+        <View style={styles.currency} accessibilityLabel={`${t('common.currency')} ${progress.coins}`}>
           <Image accessibilityIgnoresInvertColors source={coinIcon} resizeMode="contain" style={[styles.coinIcon, pixelStyle]} />
-          <Text style={styles.currencyText}>{progress.coins.toLocaleString('ko-KR')}</Text>
+          <Text style={styles.currencyText}>{progress.coins.toLocaleString(locale)}</Text>
         </View>
         <Text numberOfLines={1} style={styles.roomNameText}>
           {roomName}
@@ -124,20 +124,28 @@ export function PetCareActions({
 }: {
   onCareAction: (meter: CareMeterKey) => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.bottom} pointerEvents="box-none">
       <View style={styles.actions}>
-        {actions.map((action) => <Pressable key={action.label} accessibilityRole="button"
-          accessibilityLabel={action.label}
-          onPress={() => onCareAction(action.key)}
-          style={[styles.action, { backgroundColor: action.color }]}>
-          <View style={styles.actionHighlight} />
-          {action.icon ? (
-            <Image source={action.icon} accessibilityLabel={action.label} resizeMode="contain" style={styles.actionIcon} />
-          ) : (
-            <Text style={styles.actionLabel}>{action.label}</Text>
-          )}
-        </Pressable>)}
+        {actions.map((action) => {
+          const label = t(`care.action.${action.key}`);
+
+          return (
+            <Pressable key={action.key} accessibilityRole="button"
+              accessibilityLabel={label}
+              onPress={() => onCareAction(action.key)}
+              style={[styles.action, { backgroundColor: action.color }]}>
+              <View style={styles.actionHighlight} />
+              {action.icon ? (
+                <Image source={action.icon} accessibilityLabel={label} resizeMode="contain" style={styles.actionIcon} />
+              ) : (
+                <Text style={styles.actionLabel}>{label}</Text>
+              )}
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );

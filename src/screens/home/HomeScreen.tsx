@@ -16,6 +16,7 @@ import { YearlyGoalModal } from '../../features/goals/components/YearlyGoalModal
 import { useGoalPlanner } from '../../features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
+import { useI18n } from '../../features/i18n';
 import { InventoryModal } from '../../features/inventory/components/InventoryModal';
 import {
   consumeInventoryItem,
@@ -64,10 +65,7 @@ import {
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
 import { PetRoomPopup } from './components/PetRoomPopup';
-import {
-  PetSettingsLanguage,
-  PetSettingsPopup,
-} from './components/PetSettingsPopup';
+import { PetSettingsPopup } from './components/PetSettingsPopup';
 import { PetStatusPopup } from './components/PetStatusPopup';
 import { RewardDeliveryEvent } from './components/RewardDeliveryEvent';
 import { StaticPet } from './components/StaticPet';
@@ -173,7 +171,6 @@ export function HomeScreen() {
   const [customPetRoomNames, setCustomPetRoomNames] = useState<PetRoomNameMap>({});
   const [isSavingPetName, setIsSavingPetName] = useState(false);
   const [petStatusError, setPetStatusError] = useState('');
-  const [petSettingsLanguage, setPetSettingsLanguage] = useState<PetSettingsLanguage>('ko');
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [activeCareMeter, setActiveCareMeter] = useState<CareMeterKey | null>(null);
   const [careUsableItems, setCareUsableItems] = useState<CareUsableItem[]>([]);
@@ -186,6 +183,7 @@ export function HomeScreen() {
     floor: roomFloorImage,
     wallpaper: roomWallpaperImage,
   });
+  const { language, setLanguage, t } = useI18n();
   const goalPlanner = useGoalPlanner();
   const {
     abandonYearlyGoal,
@@ -238,8 +236,10 @@ export function HomeScreen() {
   const railTop = compactHeight ? 126 : Math.round(148 * roomScale);
   const sideInset = Math.max(6, Math.round(width * 0.02));
   const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
-  const activePetDisplayName = customPetNames[activePet.id] ?? activePet.name;
-  const activePetRoomName = customPetRoomNames[activePet.id] ?? activePet.roomName;
+  const activePetDefaultName = t(`pet.${activePet.id}.name`, undefined, activePet.name);
+  const activePetDefaultRoomName = t(`pet.${activePet.id}.room`, undefined, activePet.roomName);
+  const activePetDisplayName = customPetNames[activePet.id] ?? activePetDefaultName;
+  const activePetRoomName = customPetRoomNames[activePet.id] ?? activePetDefaultRoomName;
   const currentStage = rewardProgress.stage;
   const previousGrowthStageRef = useRef<GrowthStage | null>(null);
   const characterSize = Math.round(132 * roomScale);
@@ -256,63 +256,69 @@ export function HomeScreen() {
       setGiftBoxCount(nextGiftBoxCount);
       openGiftRewardPopup();
     } catch {
-      setGiftRewardError('선물 상자를 보내지 못했어요. 다시 눌러 주세요.');
+      setGiftRewardError(t('home.error.giftSend'));
       setIsGiftRewardOpen(true);
     }
   };
   const rightRailActions: RailAction[] = [
     ...rightActions.map((action) => {
-      if (action.label === '선물') {
+      const translatedAction = { ...action, label: t(`home.action.${action.id}`, undefined, action.label) };
+
+      if (action.id === 'gift') {
         return {
-          ...action,
+          ...translatedAction,
           badge: giftBoxCount > 0 ? String(giftBoxCount) : undefined,
           onPress: openGiftRewardPopup,
         };
       }
 
-      if (action.label === '가방') {
-        return { ...action, onPress: () => setIsInventoryOpen(true) };
+      if (action.id === 'inventory') {
+        return { ...translatedAction, onPress: () => setIsInventoryOpen(true) };
       }
 
-      return action;
+      return translatedAction;
     }),
     {
+      id: 'petRoom',
       image: require('../../../assets/ui/pet-room-button.png'),
-      label: '펫룸',
+      label: t('home.action.petRoom'),
       onPress: () => setIsPetRoomOpen(true),
       symbol: 'R',
     },
     {
+      id: 'event',
       image: require('../../../assets/ui/event-button.png'),
-      label: '이벤트',
+      label: t('home.action.event'),
       onPress: () => setIsEventOpen(true),
       symbol: 'E',
     },
   ];
   const popupWidth = Math.min(width - 32, 360);
   const leftRailActions: RailAction[] = leftActions.map((action) => {
-    if (action.label === '오늘 할일') {
+    const translatedAction = { ...action, label: t(`home.action.${action.id}`, undefined, action.label) };
+
+    if (action.id === 'todayTasks') {
       return {
-        ...action,
+        ...translatedAction,
         badge: getRemainingTaskBadge(activeDailyPlans),
         onPress: openTodayTasks,
       };
     }
 
-    if (action.label === '올해 목표') {
+    if (action.id === 'yearlyGoal') {
       return {
-        ...action,
+        ...translatedAction,
         onPress: openYearlyGoal,
       };
     }
 
-    if (action.label === '캘린더') {
-      return { ...action, onPress: () => setIsCalendarOpen(true) };
+    if (action.id === 'calendar') {
+      return { ...translatedAction, onPress: () => setIsCalendarOpen(true) };
     }
 
-    if (action.label === '상점') {
+    if (action.id === 'shop') {
       return {
-        ...action,
+        ...translatedAction,
         onPress: () => {
           setIsShopOpen(true);
           void loadInventoryItems().then((items) => {
@@ -322,7 +328,7 @@ export function HomeScreen() {
       };
     }
 
-    return action;
+    return translatedAction;
   });
   const startRewardDelivery = useCallback((reason: DeliveryEventReason = 'manual') => {
     setDeliveryReward(null);
@@ -366,9 +372,9 @@ export function HomeScreen() {
 
   useEffect(() => {
     void loadGiftBoxCount().then(setGiftBoxCount).catch(() => {
-      setGiftRewardError('선물 상자를 불러오지 못했어요.');
+      setGiftRewardError(t('home.error.giftLoad'));
     });
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void Promise.all(
@@ -392,9 +398,9 @@ export function HomeScreen() {
           .map(([petId, , roomName]) => [petId, roomName]),
       ) as PetRoomNameMap);
     }).catch(() => {
-      setPetStatusError('펫 이름과 방 이름을 불러오지 못했어요.');
+      setPetStatusError(t('home.error.profileLoad'));
     });
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (isLoadingGoalData) {
@@ -415,32 +421,32 @@ export function HomeScreen() {
     }
   }, [currentStage, isLoadingGoalData, startRewardDelivery]);
   const handleLocalDevAction = (label: string) => {
-    if (label === '이벤트:택배') {
+    if (label === 'event:parcel') {
       startRewardDelivery();
       return;
     }
 
-    if (label === '이벤트:선물 보내기') {
+    if (label === 'event:gift') {
       void sendGiftReward();
       return;
     }
 
-    if (label === '데이터:재화 증가') {
+    if (label === 'data:currency') {
       grantCurrencyReward(localDevCurrencyGrantAmount);
       return;
     }
 
-    if (label === '데이터:성장치 증가') {
+    if (label === 'data:growth') {
       grantExperienceReward(localDevExperienceGrantAmount);
       return;
     }
 
-    if (label === '데이터:성장치 100%') {
+    if (label === 'data:growthFull') {
       grantExperienceReward(experiencePerGrowthStage);
       return;
     }
 
-    if (label === '리셋') {
+    if (label === 'reset') {
       resetPetStatus();
     }
   };
@@ -458,7 +464,7 @@ export function HomeScreen() {
   };
   const openDeliveryReward = () => {
     setDeliveryReward((current) => current ?? drawDeliveryReward());
-    setDeliveryRewardMessage((current) => current || drawDeliveryMessage(deliveryEventReason));
+    setDeliveryRewardMessage((current) => current || drawDeliveryMessage(deliveryEventReason, t));
     setDeliveryRewardError('');
     setIsDeliveryRewardPopupOpen(true);
   };
@@ -480,7 +486,7 @@ export function HomeScreen() {
       setIsDeliveryRewardPopupOpen(false);
       setIsRewardParcelAvailable(false);
     } catch {
-      setDeliveryRewardError('선물을 저장하지 못했어요. 다시 눌러 주세요.');
+      setDeliveryRewardError(t('home.error.deliverySave'));
     } finally {
       setIsClaimingDeliveryReward(false);
     }
@@ -504,7 +510,7 @@ export function HomeScreen() {
 
       if (nextGiftBoxCount === null) {
         setGiftBoxCount(0);
-        setGiftRewardError('열 수 있는 선물 상자가 없어요.');
+        setGiftRewardError(t('home.error.giftMissing'));
         return;
       }
 
@@ -530,7 +536,7 @@ export function HomeScreen() {
         }
       }
 
-      setGiftRewardError('선물을 열지 못했어요. 다시 눌러 주세요.');
+      setGiftRewardError(t('home.error.giftOpen'));
     } finally {
       setIsClaimingGiftReward(false);
     }
@@ -547,12 +553,12 @@ export function HomeScreen() {
     const normalizedRoomName = roomName.trim();
 
     if (!normalizedName) {
-      setPetStatusError('이름을 입력해 주세요.');
+      setPetStatusError(t('home.error.nameRequired'));
       return;
     }
 
     if (!normalizedRoomName) {
-      setPetStatusError('방 이름을 입력해 주세요.');
+      setPetStatusError(t('home.error.roomNameRequired'));
       return;
     }
 
@@ -569,7 +575,7 @@ export function HomeScreen() {
       setCustomPetRoomNames((current) => ({ ...current, [activePet.id]: savedRoomName }));
       setIsPetStatusOpen(false);
     } catch {
-      setPetStatusError('펫 이름과 방 이름을 저장하지 못했어요. 다시 눌러 주세요.');
+      setPetStatusError(t('home.error.profileSave'));
     } finally {
       setIsSavingPetName(false);
     }
@@ -583,7 +589,7 @@ export function HomeScreen() {
       setCareUsableItems(getCareUsableItems(items, meter));
     } catch {
       setCareUsableItems([]);
-      setCareItemError('돌봄 아이템을 불러오지 못했어요. 다시 눌러 주세요.');
+      setCareItemError(t('home.error.careLoad'));
     }
   };
   const closeCareItemPopup = () => {
@@ -603,7 +609,7 @@ export function HomeScreen() {
       const consumed = await consumeInventoryItem(item.id, quantity);
 
       if (!consumed) {
-        setCareItemError('사용할 수량이 부족해요. 가방을 다시 확인해 주세요.');
+        setCareItemError(t('home.error.careQuantity'));
         return;
       }
 
@@ -611,7 +617,7 @@ export function HomeScreen() {
       setActiveCareMeter(null);
       setCareUsableItems([]);
     } catch {
-      setCareItemError('아이템을 사용하지 못했어요. 다시 시도해 주세요.');
+      setCareItemError(t('home.error.careUse'));
     } finally {
       setIsUsingCareItem(false);
     }
@@ -723,15 +729,15 @@ export function HomeScreen() {
             </View>
             {placementItem ? (
               <Pressable
-                accessibilityLabel={`${placementItem.name} 배치 위치 선택`}
+                accessibilityLabel={t('home.placementA11y', { name: placementItem.name })}
                 accessibilityRole="button"
                 onPress={placeDecorItem}
                 style={styles.placementLayer}
               >
                 <View style={styles.placementToolbar}>
-                  <Text style={styles.placementText}>{placementItem.name} 배치</Text>
+                  <Text style={styles.placementText}>{t('home.placementText', { name: placementItem.name })}</Text>
                   <Pressable
-                    accessibilityLabel="배치 취소"
+                    accessibilityLabel={t('home.placementCancel')}
                     accessibilityRole="button"
                     onPress={(event) => {
                       event.stopPropagation();
@@ -739,7 +745,7 @@ export function HomeScreen() {
                     }}
                     style={styles.placementCancelButton}
                   >
-                    <Text style={styles.placementCancelText}>취소</Text>
+                    <Text style={styles.placementCancelText}>{t('actions.cancel')}</Text>
                   </Pressable>
                 </View>
               </Pressable>
@@ -817,8 +823,8 @@ export function HomeScreen() {
         ) : null}
 
         <PetStatusPopup
-          defaultName={activePet.name}
-          defaultRoomName={activePet.roomName}
+          defaultName={activePetDefaultName}
+          defaultRoomName={activePetDefaultRoomName}
           displayName={activePetDisplayName}
           displayRoomName={activePetRoomName}
           errorMessage={petStatusError}
@@ -833,8 +839,8 @@ export function HomeScreen() {
         />
 
         <PetSettingsPopup
-          language={petSettingsLanguage}
-          onChangeLanguage={setPetSettingsLanguage}
+          language={language}
+          onChangeLanguage={setLanguage}
           onClose={() => setIsPetSettingsOpen(false)}
           onTogglePushNotifications={() => setPushNotificationsEnabled((current) => !current)}
           pushNotificationsEnabled={pushNotificationsEnabled}
@@ -949,12 +955,13 @@ function PlacedDecorObject({
   x: number;
   y: number;
 }) {
+  const { t } = useI18n();
   const image = getItemImage(item.id);
   const size = Math.round(64 * roomScale);
 
   return (
     <View
-      accessibilityLabel={`배치된 ${item.name}`}
+      accessibilityLabel={t('home.placedDecorA11y', { name: item.name })}
       style={[
         styles.placedDecorObject,
         {

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Image,
   ImageStyle,
@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../i18n';
+import { getLocalizedItemDescription, getLocalizedItemName } from '../../items/localizedItems';
 import type { InventoryCapacityCategory } from '../../inventory/types';
 import { shopItems, type ShopCategory, type ShopItem } from '../items';
 
@@ -31,22 +33,29 @@ const pixelatedImageStyle =
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
     : null;
 const filters: { id: ShopCategory; label: string }[] = [
-  { id: 'object', label: '가구/소품' },
-  { id: 'action', label: '돌봄' },
-  { id: 'wallpaper', label: '벽지' },
-  { id: 'flooring', label: '바닥재' },
-  { id: 'misc', label: '기타' },
+  { id: 'object', label: 'shop.category.object' },
+  { id: 'action', label: 'shop.category.action' },
+  { id: 'wallpaper', label: 'shop.category.wallpaper' },
+  { id: 'flooring', label: 'shop.category.flooring' },
+  { id: 'misc', label: 'shop.category.misc' },
 ];
 
 export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visible }: ShopModalProps) {
+  const { t } = useI18n();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<ShopCategory>('object');
   const [isPurchasingId, setIsPurchasingId] = useState<string | null>(null);
-  const [message, setMessage] = useState('마음에 드는 방 꾸미기 아이템을 골라보세요.');
+  const [message, setMessage] = useState(t('shop.defaultMessage'));
   const purchaseInFlight = useRef(false);
   const panelWidth = Math.min(width - 32, 520);
   const items = shopItems.filter((item) => item.category === category);
+
+  useEffect(() => {
+    if (visible) {
+      setMessage(t('shop.defaultMessage'));
+    }
+  }, [t, visible]);
 
   const buy = async (item: ShopItem) => {
     if (isOwnedShopItem(item, ownedItemIds) || purchaseInFlight.current) return;
@@ -58,38 +67,44 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
     setIsPurchasingId(null);
 
     if (!purchased) {
-      setMessage('코인이 조금 부족해요. 할 일을 완료해 코인을 모아보세요!');
+      setMessage(t('shop.insufficientCoins'));
       return;
     }
     setMessage(item.kind === 'inventory-capacity'
-      ? `${getCapacityLabel(item.capacityCategory)}이 ${item.slotIncrease}칸 넓어졌어요.`
-      : `${item.name} 구매 완료! 가방에 담았어요.`);
+      ? t('shop.capacityPurchased', {
+        capacity: getCapacityLabel(item.capacityCategory, t),
+        count: item.slotIncrease,
+      })
+      : t('shop.itemPurchased', { item: getLocalizedItemName(item, t) }));
   };
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
       <View style={[styles.layer, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="상점 닫기" onPress={onClose} style={styles.backdrop} />
+        <Pressable accessibilityRole="button" accessibilityLabel={t('shop.close')} onPress={onClose} style={styles.backdrop} />
         <View style={{ width: panelWidth, maxHeight: height - insets.top - insets.bottom - 32 }}>
           <View accessibilityViewIsModal style={styles.panel}>
             <View style={styles.header}>
               <Image source={require('../../../../assets/ui/shop-button.png')} resizeMode="contain" style={styles.shopIcon} />
               <View style={styles.heading}>
                 <Text style={styles.eyebrow}>ROOM SHOP</Text>
-                <Text accessibilityRole="header" style={styles.title}>꾸미기 상점</Text>
+                <Text accessibilityRole="header" style={styles.title}>{t('shop.title')}</Text>
               </View>
               <View style={styles.balance}>
                 <Image accessibilityIgnoresInvertColors source={currencyCoinIcon} resizeMode="contain" style={[styles.coinIcon, pixelatedImageStyle]} />
                 <Text style={styles.balanceText}>{coinBalance.toLocaleString()}</Text>
               </View>
-              <PopupCloseButton accessibilityLabel="상점 팝업 닫기" onPress={onClose} />
+              <PopupCloseButton accessibilityLabel={t('shop.close')} onPress={onClose} />
             </View>
             <View style={styles.filters}>
               {filters.map((filter) => (
                 <Pressable key={filter.id} accessibilityRole="button" accessibilityState={{ selected: category === filter.id }}
-                  onPress={() => { setCategory(filter.id); setMessage(`${filter.label} 상품을 둘러보세요.`); }}
+                  onPress={() => {
+                    setCategory(filter.id);
+                    setMessage(t('shop.browse', { category: t(filter.label) }));
+                  }}
                   style={({ pressed }) => [styles.filter, category === filter.id && styles.activeFilter, pressed && styles.pressed]}>
-                  <Text style={[styles.filterText, category === filter.id && styles.activeFilterText]}>{filter.label}</Text>
+                  <Text style={[styles.filterText, category === filter.id && styles.activeFilterText]}>{t(filter.label)}</Text>
                 </Pressable>
               ))}
             </View>
@@ -102,17 +117,17 @@ export function ShopModal({ coinBalance, onClose, onPurchase, ownedItemIds, visi
                   <View key={item.id} style={styles.card}>
                     <View style={styles.preview}><Image accessibilityIgnoresInvertColors source={item.image} resizeMode="contain" style={styles.previewImage} /></View>
                     <View style={styles.cardCopy}>
-                      <Text style={styles.itemName}>{item.name}</Text>
-                      <Text numberOfLines={2} style={styles.description}>{item.description}</Text>
+                      <Text style={styles.itemName}>{getLocalizedItemName(item, t)}</Text>
+                      <Text numberOfLines={2} style={styles.description}>{getLocalizedItemDescription(item, t)}</Text>
                       {item.kind === 'inventory-item' && item.careEffect ? (
-                        <Text style={styles.careEffectText}>{getCareEffectLabel(item.careEffect)}</Text>
+                        <Text style={styles.careEffectText}>{getCareEffectLabel(item.careEffect, t)}</Text>
                       ) : null}
                     </View>
                     <Pressable accessibilityRole="button" disabled={owned || isPurchasingId !== null} onPress={() => void buy(item)}
                       style={({ pressed }) => [styles.buyButton, owned && styles.ownedButton, insufficient && !owned && styles.lowBalanceButton, pressed && styles.pressed]}>
                       {owned || isPurchasing ? (
                         <Text style={[styles.buyText, insufficient && !owned && styles.lowBalanceText]}>
-                          {owned ? '보유 중' : '담는 중'}
+                          {owned ? t('shop.owned') : t('shop.purchasing')}
                         </Text>
                       ) : (
                         <View style={styles.priceRow}>
@@ -165,16 +180,16 @@ function isOwnedShopItem(item: ShopItem, ownedItemIds: readonly string[]): boole
   return item.kind === 'inventory-item' && item.category !== 'action' && ownedItemIds.includes(item.id);
 }
 
-function getCapacityLabel(category: InventoryCapacityCategory) {
-  return category === 'decor' ? '꾸미기 가방' : '가방';
+function getCapacityLabel(category: InventoryCapacityCategory, t: (key: string) => string) {
+  return category === 'decor' ? t('shop.capacityDecor') : t('shop.capacityGeneral');
 }
 
-function getCareEffectLabel(effect: { increase: number; meter: 'cleanliness' | 'hunger' | 'loneliness' }) {
-  const meterLabel = effect.meter === 'cleanliness'
-    ? '청결도'
-    : effect.meter === 'hunger'
-      ? '포만감'
-      : '친밀도';
-
-  return `${meterLabel} +${Math.round(effect.increase * 100)}%`;
+function getCareEffectLabel(
+  effect: { increase: number; meter: 'cleanliness' | 'hunger' | 'loneliness' },
+  t: (key: string, params?: Record<string, number | string>) => string,
+) {
+  return t('care.effect', {
+    meter: t(`care.meter.${effect.meter}`),
+    percent: Math.round(effect.increase * 100),
+  });
 }

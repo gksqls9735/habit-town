@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import {
   GoalDifficulty,
-  goalDifficultyLabels,
   goalDifficultyOptions,
 } from '../types';
+import { useI18n } from '../../i18n';
 
 const pixelFontFamily = 'Galmuri11';
 
@@ -43,6 +43,8 @@ export function YearlyGoalModal({
   visible,
   width,
 }: YearlyGoalModalProps) {
+  const { t } = useI18n();
+
   return (
     <Modal animationType="fade" transparent visible={visible}>
       <KeyboardAvoidingView
@@ -54,11 +56,11 @@ export function YearlyGoalModal({
         </TouchableWithoutFeedback>
         <View style={[styles.simpleModalFrame, { width }]}>
           <View style={styles.simpleModalPanel}>
-            <Text style={styles.simpleModalTitle}>올해 목표</Text>
+            <Text style={styles.simpleModalTitle}>{t('goal.title')}</Text>
             <Text style={styles.simpleModalDescription}>
-              목표를 여러 개 추가할 수 있어요. 오늘 할 일은 목표 1개당 기본 3개씩 생성됩니다.
+              {t('goal.addDescription')}
             </Text>
-            <Text style={styles.fieldLabel}>난이도</Text>
+            <Text style={styles.fieldLabel}>{t('goal.difficulty')}</Text>
             <View style={styles.difficultySegment}>
               {goalDifficultyOptions.map((option) => {
                 const isSelected = difficulty === option;
@@ -82,7 +84,7 @@ export function YearlyGoalModal({
                         isSelected ? styles.difficultyButtonTextSelected : null,
                       ]}
                     >
-                      {goalDifficultyLabels[option]}
+                      {t(`difficulty.${option}`)}
                     </Text>
                   </Pressable>
                 );
@@ -91,7 +93,7 @@ export function YearlyGoalModal({
             <TextInput
               multiline
               onChangeText={onChangeDraft}
-              placeholder="예: HSK 2급 따기"
+              placeholder={t('goal.placeholder')}
               placeholderTextColor="#9b8064"
               style={styles.goalInput}
               textAlignVertical="top"
@@ -106,7 +108,7 @@ export function YearlyGoalModal({
                 onPress={onClose}
                 style={styles.secondaryModalButton}
               >
-                <Text style={styles.secondaryModalButtonText}>닫기</Text>
+                <Text style={styles.secondaryModalButtonText}>{t('actions.close')}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -120,7 +122,7 @@ export function YearlyGoalModal({
                 {isGenerating ? (
                   <ActivityIndicator color="#fff8ea" />
                 ) : (
-                  <Text style={styles.primaryModalButtonText}>목표 추가</Text>
+                  <Text style={styles.primaryModalButtonText}>{t('actions.addGoal')}</Text>
                 )}
               </Pressable>
             </View>

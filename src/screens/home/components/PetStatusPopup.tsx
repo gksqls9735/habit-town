@@ -12,9 +12,9 @@ import {
   View,
 } from 'react-native';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../../features/i18n';
 import {
   experiencePerGrowthStage,
-  growthStageLabels,
   RewardProgress,
 } from '../../../features/rewards/rewardSystem';
 
@@ -60,6 +60,7 @@ export function PetStatusPopup({
   const normalizedDraftName = draftName.trim();
   const normalizedDraftRoomName = draftRoomName.trim();
   const growthPercent = Math.round(progress.experience / experiencePerGrowthStage * 100);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (visible) {
@@ -83,11 +84,11 @@ export function PetStatusPopup({
           <View style={styles.header}>
             <View>
               <Text style={styles.eyebrow}>PET STATUS</Text>
-              <Text style={styles.title}>펫 상태</Text>
+              <Text style={styles.title}>{t('pet.status.title')}</Text>
             </View>
             <View style={styles.headerActions}>
               <Pressable
-                accessibilityLabel="펫 설정"
+                accessibilityLabel={t('pet.status.settings')}
                 accessibilityRole="button"
                 disabled={isSaving}
                 onPress={onOpenSettings}
@@ -96,7 +97,7 @@ export function PetStatusPopup({
                 <Text style={styles.settingsIconText}>⚙</Text>
               </Pressable>
               <PopupCloseButton
-                accessibilityLabel="펫 상태 팝업 닫기"
+                accessibilityLabel={t('pet.status.close')}
                 disabled={isSaving}
                 onPress={onClose}
               />
@@ -115,31 +116,31 @@ export function PetStatusPopup({
               </View>
               <View style={styles.statPanel}>
                 <Text style={styles.nameText}>{displayName}</Text>
-                <Text style={styles.subText}>기본 이름: {defaultName}</Text>
-                <Text style={styles.subText}>방 이름: {displayRoomName}</Text>
+                <Text style={styles.subText}>{t('pet.status.defaultName', { name: defaultName })}</Text>
+                <Text style={styles.subText}>{t('pet.status.roomName', { name: displayRoomName })}</Text>
                 <View style={styles.statGrid}>
-                  <StatusChip label="단계" value={growthStageLabels[progress.stage]} />
-                  <StatusChip label="성장치" value={`${growthPercent}%`} />
+                  <StatusChip label={t('pet.status.stage')} value={t(`stage.${progress.stage}`)} />
+                  <StatusChip label={t('pet.status.growth')} value={`${growthPercent}%`} />
                 </View>
               </View>
             </View>
 
             <View style={styles.formBlock}>
-              <Text style={styles.inputLabel}>이름 변경</Text>
+              <Text style={styles.inputLabel}>{t('pet.status.nameLabel')}</Text>
               <TextInput
-                accessibilityLabel="펫 이름 입력"
+                accessibilityLabel={t('pet.status.nameInput')}
                 editable={!isSaving}
                 maxLength={12}
                 onChangeText={setDraftName}
-                placeholder="새 이름"
+                placeholder={t('pet.status.newName')}
                 placeholderTextColor="#a98669"
                 style={styles.nameInput}
                 value={draftName}
               />
-              <Text style={styles.helperText}>최대 12자까지 사용할 수 있어요.</Text>
-              <Text style={[styles.inputLabel, styles.roomInputLabel]}>방 이름 변경</Text>
+              <Text style={styles.helperText}>{t('pet.status.helperName')}</Text>
+              <Text style={[styles.inputLabel, styles.roomInputLabel]}>{t('pet.status.roomLabel')}</Text>
               <TextInput
-                accessibilityLabel="방 이름 입력"
+                accessibilityLabel={t('pet.status.roomInput')}
                 editable={!isSaving}
                 maxLength={16}
                 onChangeText={setDraftRoomName}
@@ -148,22 +149,22 @@ export function PetStatusPopup({
                 style={styles.nameInput}
                 value={draftRoomName}
               />
-              <Text style={styles.helperText}>최대 16자까지 사용할 수 있어요. 방 글자까지 직접 정할 수 있어요.</Text>
+              <Text style={styles.helperText}>{t('pet.status.helperRoom')}</Text>
               {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
             </View>
 
             <View style={styles.actionRow}>
               <Pressable
-                accessibilityLabel="펫 상태 팝업 닫기"
+                accessibilityLabel={t('pet.status.close')}
                 accessibilityRole="button"
                 disabled={isSaving}
                 onPress={onClose}
                 style={[styles.actionButton, styles.cancelButton]}
               >
-                <Text style={styles.cancelText}>닫기</Text>
+                <Text style={styles.cancelText}>{t('actions.close')}</Text>
               </Pressable>
               <Pressable
-                accessibilityLabel="펫 이름과 방 이름 저장"
+                accessibilityLabel={t('pet.status.saveA11y')}
                 accessibilityRole="button"
                 disabled={isSaving || !normalizedDraftName || !normalizedDraftRoomName}
                 onPress={() => onSaveProfile(normalizedDraftName, normalizedDraftRoomName)}
@@ -173,7 +174,7 @@ export function PetStatusPopup({
                   !normalizedDraftName || !normalizedDraftRoomName ? styles.actionButtonDisabled : null,
                 ]}
               >
-                <Text style={styles.saveText}>{isSaving ? '저장 중...' : '저장하기'}</Text>
+                <Text style={styles.saveText}>{isSaving ? t('actions.saving') : t('actions.save')}</Text>
               </Pressable>
             </View>
           </View>

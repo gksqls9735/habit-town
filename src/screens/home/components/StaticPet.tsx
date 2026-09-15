@@ -1,4 +1,5 @@
 import { Image, ImageStyle, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useI18n } from '../../../features/i18n';
 import { GrowthStage, PetDefinition } from '../types';
 
 const pixelatedImageStyle =
@@ -15,11 +16,12 @@ type StaticPetProps = {
 };
 
 export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps) {
+  const { t } = useI18n();
   const petSource = pet.stages[stage];
 
   return (
     <Pressable
-      accessibilityLabel={`${petName} 상태 보기`}
+      accessibilityLabel={t('pet.a11y.status', { name: petName })}
       accessibilityRole="button"
       onPress={onPress}
       style={[

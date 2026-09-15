@@ -8,6 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { useI18n } from '../../../features/i18n';
 
 const deliveryTruckImage = require('../../../../assets/event/animal-rescue-reward-truck.png');
 const deliveryParcelImage = require('../../../../assets/event/animal-rescue-reward-gift-box.png');
@@ -33,6 +34,7 @@ export function RewardDeliveryEvent({
   onOpenParcel,
   width,
 }: RewardDeliveryEventProps) {
+  const { t } = useI18n();
   const [isVisible, setIsVisible] = useState(eventKey > 0);
   const [isTruckVisible, setIsTruckVisible] = useState(eventKey > 0);
   const truckWidth = Math.round(Math.min(230, Math.max(148, width * 0.46)));
@@ -156,7 +158,7 @@ export function RewardDeliveryEvent({
         ]}
       >
         <Pressable
-          accessibilityLabel="동물보호협회 택배 선물 열기"
+          accessibilityLabel={t('delivery.title')}
           accessibilityRole="button"
           disabled={!isParcelAvailable}
           onPress={onOpenParcel}

@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../../features/i18n';
 import { GrowthStage, PetDefinition } from '../types';
 
 const pixelFontFamily = 'Galmuri11';
@@ -34,10 +35,12 @@ export function PetRoomPopup({
   scale: number;
   width: number;
 }) {
+  const { t } = useI18n();
   const [selectedPetId, setSelectedPetId] =
     useState<PetDefinition['id']>(activePetId);
   const selectedPet = pets.find((pet) => pet.id === selectedPetId) ?? pets[0];
-  const selectedPetDisplayName = petDisplayNames[selectedPet.id] ?? selectedPet.name;
+  const selectedPetDefaultName = t(`pet.${selectedPet.id}.name`, undefined, selectedPet.name);
+  const selectedPetDisplayName = petDisplayNames[selectedPet.id] ?? selectedPetDefaultName;
   const popupPets = [pets[1], pets[0], pets[2]];
 
   return (
@@ -57,10 +60,10 @@ export function PetRoomPopup({
             <View style={styles.popupHeader}>
               <View>
                 <Text style={styles.popupEyebrow}>CHARACTER SELECT</Text>
-                <Text style={styles.popupTitle}>함께 성장할 친구를 골라주세요</Text>
+                <Text style={styles.popupTitle}>{t('pet.room.title')}</Text>
               </View>
               <PopupCloseButton
-                accessibilityLabel="펫룸 팝업 닫기"
+                accessibilityLabel={t('common.closePopup')}
                 onPress={onClose}
               />
             </View>
@@ -73,8 +76,8 @@ export function PetRoomPopup({
               <View style={styles.petLineup}>
                 {popupPets.map((pet) => {
                   const isSelected = pet.id === selectedPetId;
-                  const petDisplayName = petDisplayNames[pet.id] ?? pet.name;
-                  const petRoomName = petRoomNames[pet.id] ?? pet.roomName;
+                  const petDisplayName = petDisplayNames[pet.id] ?? t(`pet.${pet.id}.name`, undefined, pet.name);
+                  const petRoomName = petRoomNames[pet.id] ?? t(`pet.${pet.id}.room`, undefined, pet.roomName);
 
                   return (
                     <Pressable
@@ -111,7 +114,7 @@ export function PetRoomPopup({
                 })}
               </View>
               <Text style={styles.petConfirmQuestion}>
-                {selectedPetDisplayName}와 함께 시작할까요?
+                {t('pet.room.confirm', { name: selectedPetDisplayName })}
               </Text>
               <View style={styles.popupActions}>
                 <Pressable
@@ -119,7 +122,7 @@ export function PetRoomPopup({
                   onPress={onClose}
                   style={styles.popupCancelButton}
                 >
-                  <Text style={styles.popupCancelText}>취소</Text>
+                  <Text style={styles.popupCancelText}>{t('actions.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
@@ -127,7 +130,7 @@ export function PetRoomPopup({
                   style={styles.popupConfirmButton}
                 >
                   <Text style={styles.popupConfirmText}>
-                    {selectedPetDisplayName} 선택
+                    {t('pet.room.select', { name: selectedPetDisplayName })}
                   </Text>
                 </Pressable>
               </View>
