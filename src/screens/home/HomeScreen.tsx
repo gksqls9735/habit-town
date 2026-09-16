@@ -1043,10 +1043,9 @@ export function HomeScreen() {
                     <Image
                       accessibilityIgnoresInvertColors
                       resizeMode="contain"
-                      source={require('../../../assets/ui/inventory-button.png')}
+                      source={require('../../../assets/ui/return-to-bag-icon.png')}
                       style={styles.returnToBagIcon}
                     />
-                    <Text style={styles.returnToBagText}>{t('home.returnToBag')}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -1752,35 +1751,22 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   returnToBagIcon: {
-    height: 46,
-    width: 46,
+    height: 78,
+    width: 78,
   },
   returnToBagTarget: {
     alignItems: 'center',
-    backgroundColor: '#fff8ea',
-    borderColor: '#3d2d28',
-    borderWidth: 2,
     bottom: 26,
-    minWidth: 82,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    height: 88,
+    justifyContent: 'center',
     position: 'absolute',
     right: 18,
+    width: 88,
     zIndex: 2,
   },
   returnToBagTargetPressed: {
-    backgroundColor: '#ffe0a8',
+    opacity: 0.72,
     transform: [{ translateY: 1 }],
-  },
-  returnToBagText: {
-    color: '#5c3529',
-    fontFamily: pixelFontFamily,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0,
-    lineHeight: 14,
-    marginTop: 3,
-    textAlign: 'center',
   },
   characterStage: {
     alignItems: 'center',
