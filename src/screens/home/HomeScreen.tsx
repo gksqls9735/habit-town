@@ -312,7 +312,7 @@ export function HomeScreen() {
     }),
     {
       id: 'petRoom',
-      image: require('../../../assets/ui/pet-room-button.png'),
+      image: require('../../../assets/ui/pet-room-button-simple.png'),
       label: t('home.action.petRoom'),
       onPress: () => setIsPetRoomOpen(true),
       symbol: 'R',

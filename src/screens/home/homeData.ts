@@ -21,15 +21,15 @@ export const leftActions: RailAction[] = [
   },
   {
     id: 'shop',
-    image: require('../../../assets/ui/shop-button.png'),
+    image: require('../../../assets/ui/shop-button-simple.png'),
     label: 'Shop',
     symbol: '$',
   },
 ];
 
 export const rightActions: RailAction[] = [
-  { id: 'gift', image: require('../../../assets/ui/reward-button.png'), label: 'Gift', symbol: 'G' },
-  { id: 'inventory', image: require('../../../assets/ui/inventory-button.png'), label: 'Bag', symbol: 'I' },
+  { id: 'gift', image: require('../../../assets/ui/reward-button-simple.png'), label: 'Gift', symbol: 'G' },
+  { id: 'inventory', image: require('../../../assets/ui/inventory-button-simple.png'), label: 'Bag', symbol: 'I' },
 ];
 
 export const pets: PetDefinition[] = [
