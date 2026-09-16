@@ -4,7 +4,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -13,10 +12,9 @@ import {
 } from 'react-native';
 import {
   GoalDifficulty,
-  goalDifficultyLabels,
   goalDifficultyOptions,
-  YearlyGoal,
 } from '../types';
+import { useI18n } from '../../i18n';
 
 const pixelFontFamily = 'Galmuri11';
 
@@ -24,6 +22,7 @@ type YearlyGoalModalProps = {
   errorMessage: string;
   difficulty: GoalDifficulty;
   isGenerating: boolean;
+  maxActiveGoals: number;
   onChangeDraft: (value: string) => void;
   onChangeDifficulty: (value: GoalDifficulty) => void;
   onClose: () => void;
@@ -31,13 +30,13 @@ type YearlyGoalModalProps = {
   value: string;
   visible: boolean;
   width: number;
-  yearlyGoals: YearlyGoal[];
 };
 
 export function YearlyGoalModal({
   errorMessage,
   difficulty,
   isGenerating,
+  maxActiveGoals,
   onChangeDifficulty,
   onChangeDraft,
   onClose,
@@ -45,8 +44,9 @@ export function YearlyGoalModal({
   value,
   visible,
   width,
-  yearlyGoals,
 }: YearlyGoalModalProps) {
+  const { t } = useI18n();
+
   return (
     <Modal animationType="fade" transparent visible={visible}>
       <KeyboardAvoidingView
@@ -58,24 +58,11 @@ export function YearlyGoalModal({
         </TouchableWithoutFeedback>
         <View style={[styles.simpleModalFrame, { width }]}>
           <View style={styles.simpleModalPanel}>
-            <Text style={styles.simpleModalTitle}>올해 목표</Text>
+            <Text style={styles.simpleModalTitle}>{t('goal.title')}</Text>
             <Text style={styles.simpleModalDescription}>
-              목표를 여러 개 추가할 수 있어요. 오늘 할 일은 목표 1개당 기본 3개씩 생성됩니다.
+              {t('goal.addDescription', { count: maxActiveGoals })}
             </Text>
-            {yearlyGoals.length > 0 ? (
-              <ScrollView
-                contentContainerStyle={styles.goalListContent}
-                nestedScrollEnabled
-                style={styles.goalListPanel}
-              >
-                {yearlyGoals.map((goal) => (
-                  <Text key={goal.id} style={styles.goalListText}>
-                    - [{goalDifficultyLabels[goal.difficulty]}] {goal.title}
-                  </Text>
-                ))}
-              </ScrollView>
-            ) : null}
-            <Text style={styles.fieldLabel}>난이도</Text>
+            <Text style={styles.fieldLabel}>{t('goal.difficulty')}</Text>
             <View style={styles.difficultySegment}>
               {goalDifficultyOptions.map((option) => {
                 const isSelected = difficulty === option;
@@ -99,7 +86,7 @@ export function YearlyGoalModal({
                         isSelected ? styles.difficultyButtonTextSelected : null,
                       ]}
                     >
-                      {goalDifficultyLabels[option]}
+                      {t(`difficulty.${option}`)}
                     </Text>
                   </Pressable>
                 );
@@ -108,7 +95,7 @@ export function YearlyGoalModal({
             <TextInput
               multiline
               onChangeText={onChangeDraft}
-              placeholder="예: HSK 2급 따기"
+              placeholder={t('goal.placeholder')}
               placeholderTextColor="#9b8064"
               style={styles.goalInput}
               textAlignVertical="top"
@@ -123,7 +110,7 @@ export function YearlyGoalModal({
                 onPress={onClose}
                 style={styles.secondaryModalButton}
               >
-                <Text style={styles.secondaryModalButtonText}>닫기</Text>
+                <Text style={styles.secondaryModalButtonText}>{t('actions.close')}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -137,7 +124,7 @@ export function YearlyGoalModal({
                 {isGenerating ? (
                   <ActivityIndicator color="#fff8ea" />
                 ) : (
-                  <Text style={styles.primaryModalButtonText}>목표 추가</Text>
+                  <Text style={styles.primaryModalButtonText}>{t('actions.addGoal')}</Text>
                 )}
               </Pressable>
             </View>
@@ -192,25 +179,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     lineHeight: 18,
     marginTop: 8,
-  },
-  goalListPanel: {
-    backgroundColor: '#fff0cc',
-    borderColor: '#d7a36d',
-    borderWidth: 2,
-    marginTop: 12,
-    maxHeight: 130,
-  },
-  goalListContent: {
-    padding: 9,
-  },
-  goalListText: {
-    color: '#7a5947',
-    fontFamily: pixelFontFamily,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0,
-    lineHeight: 17,
-    marginTop: 3,
   },
   fieldLabel: {
     color: '#7a5947',

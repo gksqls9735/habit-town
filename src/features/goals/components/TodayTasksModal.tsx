@@ -9,21 +9,34 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../i18n';
 import { calculateTaskReward } from '../../rewards/rewardSystem';
-import { DailyPlan, DailyTask, goalDifficultyLabels, YearlyGoal } from '../types';
+import { DailyPlan, DailyTask, YearlyGoal } from '../types';
 import { isPlanExpired } from '../utils';
 
 const pixelFontFamily = 'Galmuri11';
+
+function getPlanDisplayTitle(plan: DailyPlan, language: string) {
+  const date = new Date(plan.generatedAt);
+  if (language === 'en') {
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  }
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
 
 type TodayTasksModalProps = {
   errorMessage: string;
   hasUsedTaskRefresh: boolean;
   isGenerating: boolean;
   onClose: () => void;
+  onAbandonGoal: (goalId: string) => void;
   onGenerate: () => void;
+  onGenerateTodayTasks: () => void;
   onOpenGoal: () => void;
   onRefreshOneTask: () => void;
   onSelectGoal: (goalId: string | null) => void;
+  onToggleGoalCompletion: (goalId: string) => void;
   onToggleTask: (planId: string, taskId: string) => void;
   plans: DailyPlan[];
   selectedGoalId: string | null;
@@ -36,11 +49,14 @@ export function TodayTasksModal({
   errorMessage,
   hasUsedTaskRefresh,
   isGenerating,
+  onAbandonGoal,
   onClose,
   onGenerate,
+  onGenerateTodayTasks,
   onOpenGoal,
   onRefreshOneTask,
   onSelectGoal,
+  onToggleGoalCompletion,
   onToggleTask,
   plans,
   selectedGoalId,
@@ -48,6 +64,7 @@ export function TodayTasksModal({
   width,
   yearlyGoals,
 }: TodayTasksModalProps) {
+  const { language, t } = useI18n();
   const selectedGoal =
     yearlyGoals.find((goal) => goal.id === selectedGoalId) ?? null;
   const selectedGoalPlans = selectedGoal
@@ -61,6 +78,7 @@ export function TodayTasksModal({
   const hasRefreshableTask = selectedGoalPlans.some(
     (plan) => !isPlanExpired(plan) && plan.tasks.some((task) => !task.done),
   );
+  const hasCurrentSelectedGoalPlan = selectedGoalPlans.some((plan) => !isPlanExpired(plan));
   const showGoalList = !selectedGoal;
 
   useEffect(() => {
@@ -77,21 +95,20 @@ export function TodayTasksModal({
           <View style={styles.tasksModalPanel}>
             <View style={styles.tasksHeader}>
               <View style={styles.tasksHeaderTextWrap}>
-                <Text style={styles.simpleModalTitle}>오늘 할 일</Text>
+                <Text style={styles.simpleModalTitle}>{t('tasks.title')}</Text>
                 <Text style={styles.goalSummaryText}>
                   {showGoalList
-                    ? '올해 목표를 선택해 할 일을 확인하세요.'
-                    : `[${goalDifficultyLabels[selectedGoal.difficulty]}] ${selectedGoal.title}`}
+                    ? t('tasks.instructions')
+                    : t('tasks.goalSummary', {
+                      difficulty: t(`difficulty.${selectedGoal.difficulty}`),
+                      title: selectedGoal.title,
+                    })}
                 </Text>
               </View>
-              <Pressable
-                accessibilityLabel="오늘 할 일 닫기"
-                accessibilityRole="button"
+              <PopupCloseButton
+                accessibilityLabel={t('tasks.close')}
                 onPress={onClose}
-                style={styles.smallCloseButton}
-              >
-                <Text style={styles.smallCloseText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <View style={styles.modalActionRow}>
@@ -101,14 +118,14 @@ export function TodayTasksModal({
                 style={styles.secondaryModalButton}
               >
                 <Text style={styles.secondaryModalButtonText}>
-                  {showGoalList ? '올해 목표' : '목록으로'}
+                  {showGoalList ? t('tasks.goalListButton') : t('actions.backToList')}
                 </Text>
               </Pressable>
               {!showGoalList && selectedGoalPlans.length === 0 ? (
                 <Pressable
                   accessibilityRole="button"
                   disabled={!selectedGoal || isGenerating}
-                  onPress={onGenerate}
+                  onPress={onGenerateTodayTasks}
                   style={[
                     styles.primaryModalButton,
                     (!selectedGoal || isGenerating)
@@ -119,14 +136,59 @@ export function TodayTasksModal({
                   {isGenerating ? (
                     <ActivityIndicator color="#fff8ea" />
                   ) : (
-                    <Text style={styles.primaryModalButtonText}>오늘 할 일 생성</Text>
+                    <Text style={styles.primaryModalButtonText}>{t('actions.generateTodayTasks')}</Text>
                   )}
+                </Pressable>
+              ) : null}
+              {!showGoalList ? (
+                <Pressable
+                  accessibilityLabel={t('goal.abandonA11y', { title: selectedGoal.title })}
+                  accessibilityRole="button"
+                  disabled={isGenerating}
+                  onPress={() => onAbandonGoal(selectedGoal.id)}
+                  style={[
+                    styles.goalAbandonButton,
+                    isGenerating ? styles.disabledModalButton : null,
+                  ]}
+                >
+                  <Text style={styles.goalAbandonButtonText}>{t('goal.abandon')}</Text>
+                </Pressable>
+              ) : null}
+              {!showGoalList ? (
+                <Pressable
+                  accessibilityLabel={t('goal.completeA11y', { title: selectedGoal.title })}
+                  accessibilityRole="button"
+                  disabled={isGenerating}
+                  onPress={() => onToggleGoalCompletion(selectedGoal.id)}
+                  style={[
+                    styles.goalCompleteButton,
+                    isGenerating ? styles.disabledModalButton : null,
+                  ]}
+                >
+                  <Text style={styles.goalCompleteButtonText}>{t('goal.complete')}</Text>
                 </Pressable>
               ) : null}
             </View>
 
             {errorMessage ? (
               <Text style={styles.goalErrorText}>{errorMessage}</Text>
+            ) : null}
+            {!showGoalList && selectedGoalPlans.length > 0 && !hasCurrentSelectedGoalPlan ? (
+              <Pressable
+                accessibilityRole="button"
+                disabled={isGenerating}
+                onPress={onGenerateTodayTasks}
+                style={[
+                  styles.retryGenerateButton,
+                  isGenerating ? styles.disabledModalButton : null,
+                ]}
+              >
+                {isGenerating ? (
+                  <ActivityIndicator color="#fff8ea" />
+                ) : (
+                  <Text style={styles.primaryModalButtonText}>오늘 할 일 다시 생성</Text>
+                )}
+              </Pressable>
             ) : null}
 
             <ScrollView
@@ -138,7 +200,7 @@ export function TodayTasksModal({
               {showGoalList ? (
                 yearlyGoals.length === 0 ? (
                   <Text style={styles.emptyTasksText}>
-                    아직 목표가 없어요. 올해 목표를 먼저 추가해 보세요.
+                    {t('tasks.emptyGoalList')}
                   </Text>
                 ) : (
                   yearlyGoals.map((goal) => (
@@ -147,19 +209,22 @@ export function TodayTasksModal({
                       key={goal.id}
                       onPress={() => onSelectGoal(goal.id)}
                       plans={plans}
+                      t={t}
                     />
                   ))
                 )
               ) : selectedGoalPlans.length === 0 ? (
                 <Text style={styles.emptyTasksText}>
-                  아직 이 목표의 할 일이 없어요. 오늘 할 일을 생성해 보세요.
+                  {t('tasks.emptySelectedGoal')}
                 </Text>
               ) : (
                 selectedGoalPlans.map((plan) => (
                   <PlanSummary
                     key={plan.id}
+                    language={language}
                     onPress={() => setSelectedPlanId(plan.id)}
                     plan={plan}
+                    t={t}
                   />
                 ))
               )}
@@ -178,6 +243,8 @@ export function TodayTasksModal({
             onRefreshOneTask={onRefreshOneTask}
             onToggleTask={onToggleTask}
             plan={selectedPlan}
+            language={language}
+            t={t}
             width={width}
           />
         ) : null}
@@ -190,10 +257,12 @@ function GoalTaskSummary({
   goal,
   onPress,
   plans,
+  t,
 }: {
   goal: YearlyGoal;
   onPress: () => void;
   plans: DailyPlan[];
+  t: (key: string, params?: Record<string, number | string>) => string;
 }) {
   const goalPlans = plans.filter((plan) => plan.goalId === goal.id);
   const totalTasks = goalPlans.reduce((count, plan) => count + plan.tasks.length, 0);
@@ -214,7 +283,7 @@ function GoalTaskSummary({
         </Text>
         <View style={styles.goalSummaryMeta}>
           <Text style={styles.goalDifficultyBadge}>
-            {goalDifficultyLabels[goal.difficulty]}
+            {t(`difficulty.${goal.difficulty}`)}
           </Text>
           <Text style={styles.goalSummaryCount}>
             {completedTasks} / {totalTasks}
@@ -226,17 +295,28 @@ function GoalTaskSummary({
 }
 
 function PlanSummary({
+  language,
   onPress,
   plan,
+  t,
 }: {
+  language: string;
   onPress: () => void;
   plan: DailyPlan;
+  t: (key: string, params?: Record<string, number | string>) => string;
 }) {
   const completedTasks = plan.tasks.filter((task) => task.done).length;
+  const displayTitle = getPlanDisplayTitle(plan, language);
+  const status = isPlanExpired(plan) ? t('tasks.expired') : t('tasks.today');
 
   return (
     <Pressable
-      accessibilityLabel={`${plan.round}회차 ${isPlanExpired(plan) ? '만료됨' : '오늘'}, ${plan.title}, ${completedTasks}개 완료`}
+      accessibilityLabel={t('tasks.planA11y', {
+        completed: completedTasks,
+        round: plan.round,
+        status,
+        title: displayTitle,
+      })}
       accessibilityRole="button"
       onPress={onPress}
       style={styles.planBlock}
@@ -244,9 +324,9 @@ function PlanSummary({
       <View style={styles.planSummaryHeader}>
         <View style={styles.planSummaryTextWrap}>
           <Text style={styles.planRoundText}>
-            {plan.round}회차 {isPlanExpired(plan) ? '만료됨' : '오늘'}
+            {t('tasks.roundStatus', { round: plan.round, status })}
           </Text>
-          <Text style={styles.planTitleText}>{plan.title}</Text>
+          <Text style={styles.planTitleText}>{displayTitle}</Text>
         </View>
         <Text style={styles.planTaskCount}>
           {completedTasks}/{plan.tasks.length}
@@ -267,6 +347,8 @@ function TaskDetailPopup({
   onRefreshOneTask,
   onToggleTask,
   plan,
+  language,
+  t,
   width,
 }: {
   errorMessage: string;
@@ -279,9 +361,13 @@ function TaskDetailPopup({
   onRefreshOneTask: () => void;
   onToggleTask: (planId: string, taskId: string) => void;
   plan: DailyPlan;
+  language: string;
+  t: (key: string, params?: Record<string, number | string>) => string;
   width: number;
 }) {
   const isExpired = isPlanExpired(plan);
+  const displayTitle = getPlanDisplayTitle(plan, language);
+  const status = isExpired ? t('tasks.expired') : t('tasks.today');
 
   return (
     <View style={styles.detailLayer}>
@@ -292,19 +378,15 @@ function TaskDetailPopup({
         <View style={styles.tasksModalPanel}>
           <View style={styles.tasksHeader}>
             <View style={styles.tasksHeaderTextWrap}>
-              <Text style={styles.simpleModalTitle}>{plan.title}</Text>
+              <Text style={styles.simpleModalTitle}>{displayTitle}</Text>
               <Text style={styles.goalSummaryText}>
-                {plan.round}회차 {isExpired ? '만료됨' : '오늘'}
+                {t('tasks.roundStatus', { round: plan.round, status })}
               </Text>
             </View>
-            <Pressable
-              accessibilityLabel="할 일 팝업 닫기"
-              accessibilityRole="button"
+            <PopupCloseButton
+              accessibilityLabel={t('tasks.detailClose')}
               onPress={onClose}
-              style={styles.smallCloseButton}
-            >
-              <Text style={styles.smallCloseText}>x</Text>
-            </Pressable>
+            />
           </View>
 
           <View style={styles.modalActionRow}>
@@ -319,7 +401,7 @@ function TaskDetailPopup({
                   : null,
               ]}
             >
-              <Text style={styles.secondaryModalButtonText}>새로고침</Text>
+              <Text style={styles.secondaryModalButtonText}>{t('actions.refresh')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -333,7 +415,7 @@ function TaskDetailPopup({
               {isGenerating ? (
                 <ActivityIndicator color="#fff8ea" />
               ) : (
-                <Text style={styles.primaryModalButtonText}>광고 보고 추가 생성</Text>
+                <Text style={styles.primaryModalButtonText}>{t('actions.generateAdditionalTaskWithAd')}</Text>
               )}
             </Pressable>
           </View>
@@ -355,6 +437,7 @@ function TaskDetailPopup({
                 key={task.id}
                 onPress={() => onToggleTask(plan.id, task.id)}
                 task={task}
+                t={t}
               />
             ))}
           </ScrollView>
@@ -369,11 +452,13 @@ function TaskRow({
   goalDifficulty,
   onPress,
   task,
+  t,
 }: {
   disabled: boolean;
   goalDifficulty: YearlyGoal['difficulty'];
   onPress: () => void;
   task: DailyTask;
+  t: (key: string, params?: Record<string, number | string>) => string;
 }) {
   const reward = calculateTaskReward(task, goalDifficulty);
 
@@ -395,10 +480,10 @@ function TaskRow({
         <Text style={styles.taskGoalText}>{task.goalTitle}</Text>
         <Text style={styles.taskTitleText}>{task.title}</Text>
         <Text style={styles.taskRewardText}>
-          +{reward.experience} EXP · +{reward.coins} 골드
+          {t('tasks.adReward', { coins: reward.coins, experience: reward.experience })}
         </Text>
         <Text style={styles.taskDescriptionText}>{task.description}</Text>
-        {disabled ? <Text style={styles.expiredText}>기한이 지나 완료할 수 없어요.</Text> : null}
+        {disabled ? <Text style={styles.expiredText}>{t('tasks.expiredCannotComplete')}</Text> : null}
       </View>
     </Pressable>
   );
@@ -517,6 +602,33 @@ const styles = StyleSheet.create({
     height: 42,
     justifyContent: 'center',
   },
+  retryGenerateButton: {
+    alignItems: 'center',
+    backgroundColor: '#b96335',
+    borderColor: '#6b321f',
+    borderWidth: 2,
+    height: 42,
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  goalCompleteButton: {
+    alignItems: 'center',
+    backgroundColor: '#6f8d48',
+    borderColor: '#425a2c',
+    borderWidth: 2,
+    flex: 1.1,
+    height: 42,
+    justifyContent: 'center',
+  },
+  goalAbandonButton: {
+    alignItems: 'center',
+    backgroundColor: '#b85b49',
+    borderColor: '#7f352c',
+    borderWidth: 2,
+    flex: 1.1,
+    height: 42,
+    justifyContent: 'center',
+  },
   disabledModalButton: {
     opacity: 0.5,
   },
@@ -531,6 +643,20 @@ const styles = StyleSheet.create({
     color: '#fff8ea',
     fontFamily: pixelFontFamily,
     fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  goalCompleteButtonText: {
+    color: '#fff8ea',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  goalAbandonButtonText: {
+    color: '#fff8ea',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0,
   },

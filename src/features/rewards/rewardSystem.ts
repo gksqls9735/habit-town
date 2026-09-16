@@ -1,4 +1,4 @@
-import { DailyTask, GoalDifficulty } from '../goals/types';
+import type { DailyTask, GoalDifficulty } from '../goals/types';
 
 export type GrowthStage = 'baby' | 'child' | 'teen' | 'adult';
 
@@ -15,16 +15,21 @@ export type RewardProgress = {
   totalExperience: number;
 };
 
+export type CareMeterKey = 'cleanliness' | 'hunger' | 'loneliness';
+
+export type CareMeterValues = Record<CareMeterKey, number>;
+
 export const experiencePerGrowthStage = 100;
 export const maxRewardCoins = 99999;
+export const careActionMeterIncrease = 0.2;
 
 export const growthStages: GrowthStage[] = ['baby', 'child', 'teen', 'adult'];
 
 export const growthStageLabels: Record<GrowthStage, string> = {
-  adult: 'ADULT',
-  baby: 'BABY',
-  child: 'CHILD',
-  teen: 'TEEN',
+  adult: '성체',
+  baby: '아기',
+  child: '어린이',
+  teen: '청소년',
 };
 
 export const initialRewardProgress: RewardProgress = {
@@ -33,6 +38,12 @@ export const initialRewardProgress: RewardProgress = {
   level: 1,
   stage: 'baby',
   totalExperience: 0,
+};
+
+export const initialCareMeters: CareMeterValues = {
+  cleanliness: 0,
+  hunger: 0,
+  loneliness: 0,
 };
 
 export function calculateTaskReward(
@@ -111,6 +122,17 @@ export function applyCurrencySpend(
   };
 }
 
+export function applyCareMeterIncrease(
+  careMeters: CareMeterValues,
+  meter: CareMeterKey,
+  increase = careActionMeterIncrease,
+): CareMeterValues {
+  return {
+    ...careMeters,
+    [meter]: clampRatio(careMeters[meter] + Math.max(0, increase)),
+  };
+}
+
 export function normalizeRewardProgress(value: unknown): RewardProgress {
   if (!isRecord(value)) {
     return initialRewardProgress;
@@ -137,6 +159,18 @@ export function normalizeRewardProgress(value: unknown): RewardProgress {
   };
 }
 
+export function normalizeCareMeters(value: unknown): CareMeterValues {
+  if (!isRecord(value)) {
+    return initialCareMeters;
+  }
+
+  return {
+    cleanliness: normalizeRatio(value.cleanliness),
+    hunger: normalizeRatio(value.hunger),
+    loneliness: normalizeRatio(value.loneliness),
+  };
+}
+
 function getDifficultyMultiplier(difficulty: GoalDifficulty) {
   if (difficulty === 'high') {
     return 1.2;
@@ -153,6 +187,16 @@ function normalizeNumber(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.max(0, Math.floor(value))
     : fallback;
+}
+
+function normalizeRatio(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? clampRatio(value)
+    : 0;
+}
+
+function clampRatio(value: number) {
+  return Math.min(1, Math.max(0, value));
 }
 
 function clampCoins(coins: number) {

@@ -186,6 +186,39 @@
       "price": 650
     }
   },
+  "strawberry-cream-wallpaper": {
+    "name": "딸기 크림 벽지",
+    "imageUrl": "assets/png/backgrounds/strawberry-cream-wallpaper.png",
+    "category": "decor",
+    "description": "작은 딸기와 꽃 패턴으로 방을 산뜻하게 꾸며 주는 벽지예요.",
+    "symbol": "R",
+    "shop": {
+      "category": "wallpaper",
+      "price": 680
+    }
+  },
+  "cloud-sky-wallpaper": {
+    "name": "구름 하늘 벽지",
+    "imageUrl": "assets/png/backgrounds/cloud-sky-wallpaper.png",
+    "category": "decor",
+    "description": "포근한 구름과 별 패턴으로 방을 맑게 밝혀 주는 벽지예요.",
+    "symbol": "C",
+    "shop": {
+      "category": "wallpaper",
+      "price": 680
+    }
+  },
+  "sage-flower-wallpaper": {
+    "name": "세이지 플라워 벽지",
+    "imageUrl": "assets/png/backgrounds/sage-flower-wallpaper.png",
+    "category": "decor",
+    "description": "잔잔한 꽃과 잎사귀 패턴으로 방을 차분하게 꾸며 주는 벽지예요.",
+    "symbol": "G",
+    "shop": {
+      "category": "wallpaper",
+      "price": 700
+    }
+  },
   "dark-walnut-flooring": {
     "name": "다크 월넛 바닥재",
     "imageUrl": "assets/png/backgrounds/dark-walnut-flooring.png",
@@ -206,6 +239,234 @@
     "shop": {
       "category": "flooring",
       "price": 720
+    }
+  },
+  "herringbone-oak-flooring": {
+    "name": "헤링본 오크 바닥재",
+    "imageUrl": "assets/png/backgrounds/herringbone-oak-flooring.png",
+    "category": "decor",
+    "description": "사선으로 짜인 오크 무늬가 방을 따뜻하고 단정하게 만들어 줘요.",
+    "symbol": "H",
+    "shop": {
+      "category": "flooring",
+      "price": 820
+    }
+  },
+  "mint-checker-flooring": {
+    "name": "민트 체크 타일",
+    "imageUrl": "assets/png/backgrounds/mint-checker-flooring.png",
+    "category": "decor",
+    "description": "민트와 아이보리 타일로 방에 산뜻한 리듬을 더해 줘요.",
+    "symbol": "M",
+    "shop": {
+      "category": "flooring",
+      "price": 760
+    }
+  },
+  "terracotta-mosaic-flooring": {
+    "name": "테라코타 모자이크 바닥재",
+    "imageUrl": "assets/png/backgrounds/terracotta-mosaic-flooring.png",
+    "category": "decor",
+    "description": "따뜻한 테라코타 조각 패턴으로 방에 포근한 개성을 더해 줘요.",
+    "symbol": "T",
+    "shop": {
+      "category": "flooring",
+      "price": 790
+    }
+  },
+  "clean-action-object": {
+    "name": "청소 도구",
+    "imageUrl": "assets/ui/action/clean-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구의 방을 말끔하게 정리할 때 쓰는 액션 아이템이에요.",
+    "symbol": "C",
+    "shop": {
+      "category": "action",
+      "careMeter": "cleanliness",
+      "careIncrease": 0.1,
+      "price": 60
+    }
+  },
+  "pet-shampoo-action-object": {
+    "name": "펫 샴푸",
+    "imageUrl": "assets/png/objects/care/pet-shampoo-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구의 몸을 보송하게 씻겨 줄 때 쓰는 청결 아이템이에요.",
+    "symbol": "S",
+    "shop": {
+      "category": "action",
+      "careMeter": "cleanliness",
+      "careIncrease": 0.2,
+      "price": 120
+    }
+  },
+  "pet-toothpaste-action-object": {
+    "name": "펫 전용 치약",
+    "imageUrl": "assets/png/objects/care/pet-toothpaste-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구의 이를 깨끗하게 닦아 줄 때 쓰는 청결 아이템이에요.",
+    "symbol": "T",
+    "shop": {
+      "category": "action",
+      "careMeter": "cleanliness",
+      "careIncrease": 0.08,
+      "price": 50
+    }
+  },
+  "dental-chew-action-object": {
+    "name": "클린 덴탈껌",
+    "imageUrl": "assets/png/objects/care/dental-chew-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구가 씹으며 입안을 산뜻하게 관리하는 청결 아이템이에요.",
+    "symbol": "D",
+    "shop": {
+      "category": "action",
+      "careMeter": "cleanliness",
+      "careIncrease": 0.15,
+      "price": 90
+    }
+  },
+  "premium-kibble-action-object": {
+    "name": "프리미엄 사료",
+    "imageUrl": "assets/png/objects/care/premium-kibble-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구에게 든든한 한 끼를 챙겨 줄 때 쓰는 음식 아이템이에요.",
+    "symbol": "K",
+    "shop": {
+      "category": "action",
+      "careMeter": "hunger",
+      "careIncrease": 0.16,
+      "price": 100
+    }
+  },
+  "treat-biscuit-jar-action-object": {
+    "name": "간식 비스킷 병",
+    "imageUrl": "assets/png/objects/care/treat-biscuit-jar-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구에게 달콤한 보상을 줄 때 쓰는 간식 아이템이에요.",
+    "symbol": "J",
+    "shop": {
+      "category": "action",
+      "careMeter": "hunger",
+      "careIncrease": 0.08,
+      "price": 50
+    }
+  },
+  "wet-food-can-action-object": {
+    "name": "촉촉한 습식 캔",
+    "imageUrl": "assets/png/objects/care/wet-food-can-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구의 배고픔을 맛있게 채워 줄 때 쓰는 음식 아이템이에요.",
+    "symbol": "W",
+    "shop": {
+      "category": "action",
+      "careMeter": "hunger",
+      "careIncrease": 0.14,
+      "price": 80
+    }
+  },
+  "special-meal-plate-action-object": {
+    "name": "든든한 특식 접시",
+    "imageUrl": "assets/png/objects/care/special-meal-plate-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구를 위해 정성스럽게 차려 주는 특별한 음식 아이템이에요.",
+    "symbol": "M",
+    "shop": {
+      "category": "action",
+      "careMeter": "hunger",
+      "careIncrease": 0.2,
+      "price": 120
+    }
+  },
+  "bouncy-ball-action-object": {
+    "name": "통통 놀이공",
+    "imageUrl": "assets/png/objects/care/bouncy-ball-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구와 데굴데굴 신나게 놀아 줄 때 쓰는 놀이 아이템이에요.",
+    "symbol": "B",
+    "shop": {
+      "category": "action",
+      "careMeter": "loneliness",
+      "careIncrease": 0.1,
+      "price": 60
+    }
+  },
+  "plush-chick-action-object": {
+    "name": "병아리 인형",
+    "imageUrl": "assets/png/objects/care/plush-chick-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구가 포근하게 안고 놀 수 있는 놀이 아이템이에요.",
+    "symbol": "P",
+    "shop": {
+      "category": "action",
+      "careMeter": "loneliness",
+      "careIncrease": 0.12,
+      "price": 70
+    }
+  },
+  "feather-wand-action-object": {
+    "name": "깃털 낚싯대",
+    "imageUrl": "assets/png/objects/care/feather-wand-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구의 호기심을 살랑살랑 깨워 주는 놀이 아이템이에요.",
+    "symbol": "W",
+    "shop": {
+      "category": "action",
+      "careMeter": "loneliness",
+      "careIncrease": 0.15,
+      "price": 90
+    }
+  },
+  "rope-toy-action-object": {
+    "name": "꼬임 로프 장난감",
+    "imageUrl": "assets/png/objects/care/rope-toy-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구와 잡아당기며 힘차게 놀 수 있는 놀이 아이템이에요.",
+    "symbol": "R",
+    "shop": {
+      "category": "action",
+      "careMeter": "loneliness",
+      "careIncrease": 0.18,
+      "price": 110
+    }
+  },
+  "play-tunnel-action-object": {
+    "name": "놀이 터널",
+    "imageUrl": "assets/png/objects/care/play-tunnel-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구가 쏙 들어가 탐험하며 놀 수 있는 놀이 아이템이에요.",
+    "symbol": "T",
+    "shop": {
+      "category": "action",
+      "careMeter": "loneliness",
+      "careIncrease": 0.2,
+      "price": 120
+    }
+  },
+  "feed-action-object": {
+    "name": "든든한 밥그릇",
+    "imageUrl": "assets/ui/action/feed-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구에게 맛있는 한 끼를 챙겨 줄 때 쓰는 액션 아이템이에요.",
+    "symbol": "F",
+    "shop": {
+      "category": "action",
+      "careMeter": "hunger",
+      "careIncrease": 0.1,
+      "price": 60
+    }
+  },
+  "play-action-object": {
+    "name": "놀이 공",
+    "imageUrl": "assets/ui/action/play-action-object-icon.png",
+    "category": "pet-care",
+    "description": "친구와 신나게 놀아 줄 때 쓰는 액션 아이템이에요.",
+    "symbol": "P",
+    "shop": {
+      "category": "action",
+      "careMeter": "loneliness",
+      "careIncrease": 0.1,
+      "price": 60
     }
   },
   "animal-rescue-snack": {

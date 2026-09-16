@@ -43,6 +43,12 @@ export async function increaseInventoryCapacity(
   return nextCapacity;
 }
 
+export async function resetInventory(): Promise<void> {
+  writeInventoryItems([]);
+  writeInventoryCapacity('decor', initialInventorySlotCount);
+  writeInventoryCapacity('general', initialInventorySlotCount);
+}
+
 /**
  * Adds an item to browser persistence using the same quantity merge behavior as SQLite.
  */
@@ -66,6 +72,37 @@ export async function saveInventoryItem(item: InventoryItem): Promise<void> {
   }
 
   writeInventoryItems(items);
+}
+
+/**
+ * Consumes a positive quantity from an owned item. Empty stacks are removed.
+ */
+export async function consumeInventoryItem(id: string, quantity: number): Promise<boolean> {
+  const consumeQuantity = Math.max(0, Math.floor(quantity));
+
+  if (consumeQuantity <= 0) {
+    return false;
+  }
+
+  const items = readInventoryItems();
+  const itemIndex = items.findIndex((candidate) => candidate.id === id);
+
+  if (itemIndex === -1 || items[itemIndex].quantity < consumeQuantity) {
+    return false;
+  }
+
+  if (items[itemIndex].quantity === consumeQuantity) {
+    items.splice(itemIndex, 1);
+  } else {
+    items[itemIndex] = {
+      ...items[itemIndex],
+      isNew: false,
+      quantity: items[itemIndex].quantity - consumeQuantity,
+    };
+  }
+
+  writeInventoryItems(items);
+  return true;
 }
 
 /**

@@ -9,6 +9,9 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../i18n';
+import { getLocalizedInventoryItem } from '../../items/localizedItems';
 import { useInventory } from '../hooks/useInventory';
 import { InventoryItem, InventoryItemCategory } from '../types';
 import { getItemImage } from '../../items/itemImages';
@@ -20,22 +23,23 @@ const popupBorderWidth = 2;
 const slotColumnCount = 6;
 const slotGap = 4;
 const slotMinimumSize = 34;
-const slotVisibleRowCount = 4;
+const slotMaximumVisibleRowCount = 5;
 const slotTrayBorderWidth = 3;
 const slotTrayPadding = 4;
 
 type InventorySection = 'general' | 'decor';
-type DecorInventoryCategory = 'all' | ItemCatalogShopCategory;
+type DecorShopCategory = Exclude<ItemCatalogShopCategory, 'action'>;
+type DecorInventoryCategory = 'all' | DecorShopCategory;
 
 const inventorySections: readonly { id: InventorySection; label: string }[] = [
-  { id: 'general', label: '일반 아이템' },
-  { id: 'decor', label: '꾸미기 아이템' },
+  { id: 'general', label: 'inventory.general' },
+  { id: 'decor', label: 'inventory.decor' },
 ];
 const decorInventoryCategories: readonly { id: DecorInventoryCategory; label: string }[] = [
-  { id: 'all', label: '전체' },
-  { id: 'object', label: '가구/소품' },
-  { id: 'wallpaper', label: '벽지' },
-  { id: 'flooring', label: '바닥재' },
+  { id: 'all', label: 'shop.category.all' },
+  { id: 'object', label: 'shop.category.object' },
+  { id: 'wallpaper', label: 'shop.category.wallpaper' },
+  { id: 'flooring', label: 'shop.category.flooring' },
 ];
 
 const categoryColors: Record<InventoryItemCategory, string> = {
@@ -46,16 +50,21 @@ const categoryColors: Record<InventoryItemCategory, string> = {
 };
 
 export function InventoryModal({
+  onBeginDecorPlacement,
   onInventoryChanged,
   onClose,
+  refreshVersion = 0,
   visible,
   width,
 }: {
+  onBeginDecorPlacement?: (item: InventoryItem) => void;
   onInventoryChanged?: () => void;
   onClose: () => void;
+  refreshVersion?: number;
   visible: boolean;
   width: number;
 }) {
+  const { t } = useI18n();
   const { capacities, deleteItem, errorMessage, isLoading, items, refresh, selectItem, toggleEquipped } =
     useInventory();
   const [activeSection, setActiveSection] = useState<InventorySection>('general');
@@ -98,16 +107,18 @@ export function InventoryModal({
   const activeSectionItemCount = sectionCounts[activeSection];
   const activeSectionCapacity = capacities[activeSection === 'decor' ? 'decor' : 'general'];
   const visibleSlotCount = Math.max(activeSectionCapacity, sectionItems.length);
+  const visibleSlotRowCount = Math.ceil(visibleSlotCount / slotColumnCount);
+  const slotViewportRowCount = Math.min(visibleSlotRowCount, slotMaximumVisibleRowCount);
   const slotSize = getResponsiveSlotSize(width);
   const slotGridWidth = (slotSize * slotColumnCount) + (slotGap * (slotColumnCount - 1));
-  const slotGridViewportHeight = (slotSize * slotVisibleRowCount)
-    + (slotGap * (slotVisibleRowCount - 1));
+  const slotGridViewportHeight = (slotSize * slotViewportRowCount)
+    + (slotGap * Math.max(0, slotViewportRowCount - 1));
 
   useEffect(() => {
     if (visible) {
       void refresh();
     }
-  }, [refresh, visible]);
+  }, [refresh, refreshVersion, visible]);
 
   useEffect(() => {
     if (selectedItemId && sectionItems.some((item) => item.id === selectedItemId)) {
@@ -180,6 +191,11 @@ export function InventoryModal({
     onInventoryChanged?.();
   };
 
+  const handlePlaceDecorItem = (item: InventoryItem) => {
+    onBeginDecorPlacement?.(item);
+    onClose();
+  };
+
   return (
     <View style={styles.popupLayer}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -196,7 +212,7 @@ export function InventoryModal({
             <View style={styles.header}>
               <View>
                 <Text style={styles.eyebrow}>MY INVENTORY</Text>
-                <Text style={styles.title}>가방</Text>
+                <Text style={styles.title}>{t('inventory.title')}</Text>
               </View>
               <View style={styles.headerActions}>
                 <View style={styles.capacityBadge}>
@@ -204,14 +220,10 @@ export function InventoryModal({
                     {activeSectionItemCount}/{activeSectionCapacity}
                   </Text>
                 </View>
-                <Pressable
-                  accessibilityLabel="가방 닫기"
-                  accessibilityRole="button"
+                <PopupCloseButton
+                  accessibilityLabel={t('inventory.close')}
                   onPress={onClose}
-                  style={styles.closeButton}
-                >
-                  <Text style={styles.closeText}>x</Text>
-                </Pressable>
+                />
               </View>
             </View>
 
@@ -222,7 +234,7 @@ export function InventoryModal({
               {isLoading ? (
                 <View style={styles.loadingState}>
                   <ActivityIndicator color="#a7552e" />
-                  <Text style={styles.loadingText}>가방을 정리하는 중...</Text>
+                  <Text style={styles.loadingText}>{t('inventory.loading')}</Text>
                 </View>
               ) : (
                 <>
@@ -248,7 +260,7 @@ export function InventoryModal({
                               isActive ? styles.sectionTabTextActive : null,
                             ]}
                           >
-                            {section.label} {sectionCounts[section.id]}
+                            {t(section.label)} {sectionCounts[section.id]}
                           </Text>
                         </Pressable>
                       );
@@ -277,7 +289,7 @@ export function InventoryModal({
                                 isActive ? styles.decorCategoryTabTextActive : null,
                               ]}
                             >
-                              {category.label} {decorCategoryCounts[category.id]}
+                              {t(category.label)} {decorCategoryCounts[category.id]}
                             </Text>
                           </Pressable>
                         );
@@ -298,7 +310,7 @@ export function InventoryModal({
                           if (!item) {
                             return (
                               <View
-                                accessibilityLabel={`빈 슬롯 ${index + 1}`}
+                                accessibilityLabel={t('inventory.emptySlot', { index: index + 1 })}
                                 key={`empty-${index}`}
                                 style={[styles.slot, { height: slotSize, width: slotSize }]}
                               />
@@ -306,9 +318,13 @@ export function InventoryModal({
                           }
 
                           const selected = selectedItemId === item.id;
+                          const localizedItem = getLocalizedInventoryItem(item, t);
                           return (
                             <Pressable
-                              accessibilityLabel={`${item.name}, ${item.quantity}개`}
+                              accessibilityLabel={t('inventory.itemA11y', {
+                                name: localizedItem.name,
+                                quantity: t('common.quantity', { count: item.quantity }),
+                              })}
                               accessibilityRole="button"
                               key={item.id}
                               onPress={() => handleSelectItem(item)}
@@ -341,25 +357,34 @@ export function InventoryModal({
                           <PixelItemIcon item={selectedItem} size={34} />
                         </View>
                         <View style={styles.detailCopy}>
-                          <Text style={styles.itemName}>{selectedItem.name}</Text>
+                          <Text style={styles.itemName}>{getLocalizedInventoryItem(selectedItem, t).name}</Text>
                           <Text style={styles.itemDescription}>
-                            {selectedItem.description}
+                            {getLocalizedInventoryItem(selectedItem, t).description}
                           </Text>
                         </View>
                       </View>
                       <View style={styles.detailActions}>
                         <Pressable
-                          accessibilityLabel={`${selectedItem.name} 버리기`}
+                          accessibilityLabel={t('inventory.deleteConfirm', {
+                            name: getLocalizedInventoryItem(selectedItem, t).name,
+                          })}
                           accessibilityRole="button"
                           onPress={() => setPendingDeleteItemId(selectedItem.id)}
                           style={[styles.detailActionButton, styles.detailDeleteButton]}
                         >
-                          <Text style={styles.detailDeleteButtonText}>버리기</Text>
+                          <Text style={styles.detailDeleteButtonText}>{t('actions.delete')}</Text>
                         </Pressable>
                         {canEquipItem(selectedItem) ? (
                         <Pressable
                           accessibilityRole="button"
-                          onPress={() => void handleToggleEquipped(selectedItem.id)}
+                          onPress={() => {
+                            if (isPlaceableDecorObject(selectedItem)) {
+                              handlePlaceDecorItem(selectedItem);
+                              return;
+                            }
+
+                            void handleToggleEquipped(selectedItem.id);
+                          }}
                           style={[
                             styles.detailActionButton,
                             styles.equipButton,
@@ -367,7 +392,7 @@ export function InventoryModal({
                           ]}
                         >
                           <Text style={styles.equipButtonText}>
-                            {getItemActionLabel(selectedItem)}
+                            {getItemActionLabel(selectedItem, t)}
                           </Text>
                         </Pressable>
                         ) : null}
@@ -377,8 +402,8 @@ export function InventoryModal({
                     <View style={styles.emptyDetail}>
                       <Text style={styles.emptyDetailText}>
                         {sectionItems.length > 0
-                          ? '아이템을 선택해 주세요.'
-                          : `${getInventorySectionLabel(activeSection)}이 비어 있어요.`}
+                          ? t('inventory.selectItem')
+                          : t('inventory.empty', { section: getInventorySectionLabel(activeSection, t) })}
                       </Text>
                     </View>
                   )}
@@ -393,6 +418,7 @@ export function InventoryModal({
         item={pendingDeleteItem}
         onCancel={() => setPendingDeleteItemId(null)}
         onConfirm={handleConfirmDelete}
+        t={t}
         width={width}
       />
     </View>
@@ -417,11 +443,13 @@ function DeleteConfirmPopup({
   item,
   onCancel,
   onConfirm,
+  t,
   width,
 }: {
   item: InventoryItem | null;
   onCancel: () => void;
   onConfirm: () => void;
+  t: (key: string, params?: Record<string, number | string>) => string;
   width: number;
 }) {
   if (!item) {
@@ -431,7 +459,7 @@ function DeleteConfirmPopup({
   return (
     <View style={styles.deletePopupLayer}>
       <Pressable
-        accessibilityLabel="아이템 버리기 취소"
+        accessibilityLabel={t('inventory.deleteCancelA11y')}
         accessibilityRole="button"
         onPress={onCancel}
         style={styles.deletePopupBackdrop}
@@ -439,9 +467,9 @@ function DeleteConfirmPopup({
       <View style={[styles.deletePopupFrame, { width: Math.min(width - 28, 320) }]}>
         <View style={styles.deletePopupShadow} />
         <View style={styles.deletePopupPanel}>
-          <Text style={styles.deletePopupTitle}>아이템 버리기</Text>
+          <Text style={styles.deletePopupTitle}>{t('inventory.deleteTitle')}</Text>
           <Text style={styles.deletePopupText}>
-            {item.name} 아이템을 버릴까요?
+            {t('inventory.deleteConfirm', { name: getLocalizedInventoryItem(item, t).name })}
           </Text>
           <View style={styles.deleteConfirmActions}>
             <Pressable
@@ -449,14 +477,14 @@ function DeleteConfirmPopup({
               onPress={onCancel}
               style={[styles.confirmButton, styles.cancelButton]}
             >
-              <Text style={styles.cancelButtonText}>취소</Text>
+              <Text style={styles.cancelButtonText}>{t('actions.cancel')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
               onPress={onConfirm}
               style={[styles.confirmButton, styles.deleteButton]}
             >
-              <Text style={styles.deleteButtonText}>버리기</Text>
+              <Text style={styles.deleteButtonText}>{t('actions.delete')}</Text>
             </Pressable>
           </View>
         </View>
@@ -486,19 +514,24 @@ function getInventorySection(item: InventoryItem): InventorySection {
   return 'general';
 }
 
-function getInventorySectionLabel(section: InventorySection) {
-  return inventorySections.find((entry) => entry.id === section)?.label ?? '아이템';
+function getInventorySectionLabel(section: InventorySection, t: (key: string) => string) {
+  const labelKey = inventorySections.find((entry) => entry.id === section)?.label;
+  return labelKey ? t(labelKey) : t('inventory.item');
 }
 
-function getItemActionLabel(item: InventoryItem) {
-  if (getInventorySection(item) === 'decor') {
-    return item.equipped ? '적용 해제' : '적용하기';
+function getItemActionLabel(item: InventoryItem, t: (key: string) => string) {
+  if (isPlaceableDecorObject(item)) {
+    return t('actions.place');
   }
 
-  return item.equipped ? '장착 해제' : '장착하기';
+  if (getInventorySection(item) === 'decor') {
+    return item.equipped ? t('inventory.unapply') : t('inventory.apply');
+  }
+
+  return item.equipped ? t('actions.unequip') : t('actions.equip');
 }
 
-function getDecorInventoryCategory(item: InventoryItem): ItemCatalogShopCategory | undefined {
+function getDecorInventoryCategory(item: InventoryItem): DecorShopCategory | undefined {
   const shopCategory = getItemShopCategory(item.id);
 
   if (shopCategory === 'wallpaper' || shopCategory === 'flooring') {
@@ -506,6 +539,10 @@ function getDecorInventoryCategory(item: InventoryItem): ItemCatalogShopCategory
   }
 
   return item.category === 'decor' || shopCategory === 'object' ? 'object' : undefined;
+}
+
+function isPlaceableDecorObject(item: InventoryItem): boolean {
+  return getDecorInventoryCategory(item) === 'object';
 }
 
 function matchesDecorInventoryCategory(

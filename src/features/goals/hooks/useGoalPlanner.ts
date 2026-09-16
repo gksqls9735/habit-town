@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react';
 import {
+  applyCareMeterIncrease,
   applyCurrencyReward,
   applyCurrencySpend,
   applyExperienceReward,
   applyTaskReward,
   calculateTaskReward,
+  initialCareMeters,
   initialRewardProgress,
-  RewardProgress,
 } from '../../rewards/rewardSystem';
+import type { CareMeterKey, CareMeterValues, RewardProgress } from '../../rewards/rewardSystem';
 import { generateDailyTasksForGoal } from '../goalAiService';
 import { loadGoalPlannerData, saveGoalPlannerData } from '../goalRepository';
-import { DailyPlan, GoalDifficulty, YearlyGoal } from '../types';
+import type { DailyPlan, GoalDifficulty, YearlyGoal } from '../types';
+import { useI18n } from '../../i18n';
 import {
   canEditPlan,
+  duplicateClosedGoalCooldownDays,
+  findDuplicateYearlyGoal,
   getExcludedTaskTitles,
+  getGoalClosedAt,
   getNextMidnightTimestamp,
   getNextRoundForGoal,
   isPlanExpired,
@@ -23,6 +29,13 @@ type GenerationType = 'basic' | 'ad';
 
 const basicDailyPlanTitle = '오늘 할 일';
 const adDailyPlanTitle = '광고 보상 추가 할 일';
+export const goalSlotExpansionCount = 1;
+export const initialActiveYearlyGoalLimit = 3;
+export const maxGoalSlotExpansionPurchases = 3;
+
+function isActiveYearlyGoal(goal: YearlyGoal) {
+  return goal.completedAt == null && goal.abandonedAt == null;
+}
 
 async function createDailyPlansForGoals(
   targetGoals: YearlyGoal[],
@@ -69,6 +82,7 @@ function hasEditableBasicDailyPlan(
 }
 
 export function useGoalPlanner() {
+  const { t } = useI18n();
   const [isTodayTasksOpen, setIsTodayTasksOpen] = useState(false);
   const [isYearlyGoalOpen, setIsYearlyGoalOpen] = useState(false);
   const [yearlyGoals, setYearlyGoals] = useState<YearlyGoal[]>([]);
@@ -79,6 +93,8 @@ export function useGoalPlanner() {
   const [goalError, setGoalError] = useState('');
   const [hasUsedTaskRefresh, setHasUsedTaskRefresh] = useState(false);
   const [isLoadingGoalData, setIsLoadingGoalData] = useState(true);
+  const [careMeters, setCareMeters] = useState<CareMeterValues>(initialCareMeters);
+  const [activeYearlyGoalLimit, setActiveYearlyGoalLimit] = useState(initialActiveYearlyGoalLimit);
   const [rewardProgress, setRewardProgress] = useState<RewardProgress>(initialRewardProgress);
   const [selectedTaskGoalId, setSelectedTaskGoalId] = useState<string | null>(null);
 
@@ -95,10 +111,15 @@ export function useGoalPlanner() {
         setYearlyGoals(savedData.yearlyGoals);
         setDailyPlans(savedData.dailyPlans);
         setHasUsedTaskRefresh(savedData.hasUsedTaskRefresh);
+        setCareMeters(savedData.careMeters);
+        setActiveYearlyGoalLimit(savedData.activeYearlyGoalLimit);
         setRewardProgress(savedData.rewardProgress);
 
         const goalsMissingTodayPlan = savedData.yearlyGoals.filter(
-          (goal) => !hasEditableBasicDailyPlan(savedData.dailyPlans, goal.id),
+          (goal) =>
+            goal.completedAt == null &&
+            goal.abandonedAt == null &&
+            !hasEditableBasicDailyPlan(savedData.dailyPlans, goal.id),
         );
 
         if (goalsMissingTodayPlan.length === 0) {
@@ -122,17 +143,16 @@ export function useGoalPlanner() {
 
         setDailyPlans(savedPlans);
         await saveGoalPlannerData({
+          careMeters: savedData.careMeters,
+          activeYearlyGoalLimit: savedData.activeYearlyGoalLimit,
           dailyPlans: savedPlans,
           hasUsedTaskRefresh: savedData.hasUsedTaskRefresh,
           rewardProgress: savedData.rewardProgress,
           yearlyGoals: savedData.yearlyGoals,
         });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : '저장된 목표 데이터를 불러오지 못했습니다.';
-
+      } catch {
         if (isMounted) {
-          setGoalError(message);
+          setGoalError(t('goals.error.load'));
         }
       } finally {
         if (isMounted) {
@@ -147,24 +167,25 @@ export function useGoalPlanner() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   const persistGoalPlannerData = (
     nextYearlyGoals = yearlyGoals,
     nextDailyPlans = dailyPlans,
     nextHasUsedTaskRefresh = hasUsedTaskRefresh,
     nextRewardProgress = rewardProgress,
+    nextCareMeters = careMeters,
+    nextActiveYearlyGoalLimit = activeYearlyGoalLimit,
   ) => {
     saveGoalPlannerData({
+      activeYearlyGoalLimit: nextActiveYearlyGoalLimit,
+      careMeters: nextCareMeters,
       dailyPlans: nextDailyPlans,
       hasUsedTaskRefresh: nextHasUsedTaskRefresh,
       rewardProgress: nextRewardProgress,
       yearlyGoals: nextYearlyGoals,
-    }).catch((error) => {
-      const message =
-        error instanceof Error ? error.message : '목표 데이터를 저장하지 못했습니다.';
-
-      setGoalError(message);
+    }).catch(() => {
+      setGoalError(t('goals.error.save'));
     });
   };
 
@@ -199,10 +220,12 @@ export function useGoalPlanner() {
     generationType: GenerationType = 'ad',
     yearlyGoalsOverride = yearlyGoals,
   ) => {
-    const targetGoals = goalsOverride ?? yearlyGoals;
+    const targetGoals = (goalsOverride ?? yearlyGoals).filter(
+      (goal) => goal.completedAt == null && goal.abandonedAt == null,
+    );
     if (targetGoals.length === 0 || isGeneratingPlan) {
       if (targetGoals.length === 0) {
-        setGoalError('먼저 올해 목표를 입력해 주세요.');
+        setGoalError(t('goals.error.needGoal'));
         setIsYearlyGoalOpen(true);
       }
       return;
@@ -222,11 +245,8 @@ export function useGoalPlanner() {
 
       setDailyPlans(savedPlans);
       persistGoalPlannerData(yearlyGoalsOverride, savedPlans);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '오늘 할 일을 생성하지 못했습니다.';
-
-      setGoalError(message);
+    } catch {
+      setGoalError(t('goals.error.generate'));
     } finally {
       setIsGeneratingPlan(false);
     }
@@ -238,9 +258,30 @@ export function useGoalPlanner() {
       return;
     }
 
+    if (yearlyGoals.filter(isActiveYearlyGoal).length >= activeYearlyGoalLimit) {
+      setGoalError(t('goals.error.maxYearlyGoals', {
+        count: activeYearlyGoalLimit,
+      }));
+      return;
+    }
+
+    const duplicateGoal = findDuplicateYearlyGoal(yearlyGoals, cleanGoal);
+    if (duplicateGoal) {
+      const closedAt = getGoalClosedAt(duplicateGoal);
+      setGoalError(closedAt == null
+        ? t('goals.error.duplicateActive', { title: duplicateGoal.title })
+        : t('goals.error.duplicateClosed', {
+          days: duplicateClosedGoalCooldownDays,
+          title: duplicateGoal.title,
+        }));
+      return;
+    }
+
+    const createdAt = Date.now();
     const nextGoal: YearlyGoal = {
+      createdAt,
       difficulty: yearlyGoalDifficulty,
-      id: `${Date.now()}`,
+      id: `${createdAt}`,
       title: cleanGoal,
     };
 
@@ -258,21 +299,30 @@ export function useGoalPlanner() {
 
   const generateAdditionalTaskForSelectedGoal = async () => {
     const selectedGoal = yearlyGoals.find((goal) => goal.id === selectedTaskGoalId);
-    if (!selectedGoal) {
+    if (!selectedGoal || selectedGoal.completedAt != null || selectedGoal.abandonedAt != null) {
       return;
     }
 
     await generateDailyPlan([selectedGoal], 'ad');
   };
 
+  const generateBasicTasksForSelectedGoal = async () => {
+    const selectedGoal = yearlyGoals.find((goal) => goal.id === selectedTaskGoalId);
+    if (!selectedGoal || selectedGoal.completedAt != null || selectedGoal.abandonedAt != null) {
+      return;
+    }
+
+    await generateDailyPlan([selectedGoal], 'basic');
+  };
+
   const refreshOneIncompleteTaskForSelectedGoal = async () => {
     const selectedGoal = yearlyGoals.find((goal) => goal.id === selectedTaskGoalId);
-    if (!selectedGoal || isGeneratingPlan) {
+    if (!selectedGoal || selectedGoal.completedAt != null || selectedGoal.abandonedAt != null || isGeneratingPlan) {
       return;
     }
 
     if (hasUsedTaskRefresh) {
-      setGoalError('새로고침은 한 번만 사용할 수 있어요.');
+      setGoalError(t('goals.error.refreshUsed'));
       return;
     }
 
@@ -287,7 +337,7 @@ export function useGoalPlanner() {
     });
 
     if (refreshCandidates.length === 0) {
-      setGoalError('새로고침할 미완료 할 일이 없어요.');
+      setGoalError(t('goals.error.noRefreshableTask'));
       return;
     }
 
@@ -319,11 +369,8 @@ export function useGoalPlanner() {
       setDailyPlans(nextPlans);
       setHasUsedTaskRefresh(true);
       persistGoalPlannerData(yearlyGoals, nextPlans, true);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '할 일을 새로고침하지 못했습니다.';
-
-      setGoalError(message);
+    } catch {
+      setGoalError(t('goals.error.refreshFailed'));
     } finally {
       setIsGeneratingPlan(false);
     }
@@ -336,7 +383,7 @@ export function useGoalPlanner() {
     }
     const targetTask = targetPlan.tasks.find((task) => task.id === taskId);
     const targetGoal = yearlyGoals.find((goal) => goal.id === targetPlan.goalId);
-    if (!targetTask || !targetGoal) {
+    if (!targetTask || !targetGoal || targetGoal.completedAt != null || targetGoal.abandonedAt != null) {
       return;
     }
     const shouldGrantReward = !targetTask.done && targetTask.rewardGrantedAt === null;
@@ -368,6 +415,32 @@ export function useGoalPlanner() {
     persistGoalPlannerData(yearlyGoals, nextPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
 
+  const toggleYearlyGoalCompletion = (goalId: string) => {
+    if (isLoadingGoalData || isGeneratingPlan) return;
+    const nextGoals = yearlyGoals.map((goal) => goal.id === goalId
+      ? { ...goal, abandonedAt: null, completedAt: goal.completedAt == null ? Date.now() : null }
+      : goal);
+    setYearlyGoals(nextGoals);
+    setGoalError('');
+    setSelectedTaskGoalId(null);
+    persistGoalPlannerData(nextGoals);
+  };
+
+  const abandonYearlyGoal = (goalId: string) => {
+    if (isLoadingGoalData || isGeneratingPlan) return;
+    const nextGoals = yearlyGoals.map((goal) => goal.id === goalId
+      ? { ...goal, abandonedAt: Date.now(), completedAt: null }
+      : goal);
+    setYearlyGoals(nextGoals);
+    setGoalError('');
+    setSelectedTaskGoalId(null);
+    persistGoalPlannerData(nextGoals);
+  };
+
+  const activeYearlyGoals = yearlyGoals.filter(isActiveYearlyGoal);
+  const activeDailyPlans = dailyPlans.filter((plan) =>
+    activeYearlyGoals.some((goal) => goal.id === plan.goalId));
+
   const grantCurrencyReward = (coins: number) => {
     const nextRewardProgress = applyCurrencyReward(rewardProgress, coins);
 
@@ -395,6 +468,74 @@ export function useGoalPlanner() {
     persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, nextRewardProgress);
   };
 
+  const fillCareMeter = (meter: CareMeterKey, increase?: number) => {
+    const nextCareMeters = applyCareMeterIncrease(careMeters, meter, increase);
+
+    setCareMeters(nextCareMeters);
+    persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, rewardProgress, nextCareMeters);
+  };
+
+  const resetCareMeters = () => {
+    setCareMeters(initialCareMeters);
+    persistGoalPlannerData(yearlyGoals, dailyPlans, hasUsedTaskRefresh, rewardProgress, initialCareMeters);
+  };
+
+  const resetPetStatus = () => {
+    const nextRewardProgress: RewardProgress = {
+      ...rewardProgress,
+      experience: initialRewardProgress.experience,
+      level: initialRewardProgress.level,
+      stage: initialRewardProgress.stage,
+      totalExperience: initialRewardProgress.totalExperience,
+    };
+
+    setCareMeters(initialCareMeters);
+    setRewardProgress(nextRewardProgress);
+    persistGoalPlannerData(
+      yearlyGoals,
+      dailyPlans,
+      hasUsedTaskRefresh,
+      nextRewardProgress,
+      initialCareMeters,
+    );
+  };
+
+  const increaseActiveYearlyGoalLimit = (amount = goalSlotExpansionCount) => {
+    const nextLimit = activeYearlyGoalLimit + amount;
+
+    setActiveYearlyGoalLimit(nextLimit);
+    persistGoalPlannerData(
+      yearlyGoals,
+      dailyPlans,
+      hasUsedTaskRefresh,
+      rewardProgress,
+      careMeters,
+      nextLimit,
+    );
+  };
+
+  const purchaseGoalSlotExpansion = (coins: number, amount = goalSlotExpansionCount) => {
+    const nextRewardProgress = applyCurrencySpend(rewardProgress, coins);
+
+    if (!nextRewardProgress) {
+      return false;
+    }
+
+    const nextLimit = activeYearlyGoalLimit + amount;
+
+    setRewardProgress(nextRewardProgress);
+    setActiveYearlyGoalLimit(nextLimit);
+    persistGoalPlannerData(
+      yearlyGoals,
+      dailyPlans,
+      hasUsedTaskRefresh,
+      nextRewardProgress,
+      careMeters,
+      nextLimit,
+    );
+    return true;
+  };
+
   const spendCurrencyReward = (coins: number) => {
     const nextRewardProgress = applyCurrencySpend(rewardProgress, coins);
 
@@ -408,13 +549,22 @@ export function useGoalPlanner() {
   };
 
   return {
+    abandonYearlyGoal,
+    activeYearlyGoalLimit,
+    activeYearlyGoals,
+    activeDailyPlans,
+    toggleYearlyGoalCompletion,
     addYearlyGoal,
+    careMeters,
     closeTodayTasks,
     closeYearlyGoal,
     dailyPlans,
+    fillCareMeter,
     grantCurrencyReward,
     grantExperienceReward,
+    increaseActiveYearlyGoalLimit,
     generateAdditionalTaskForSelectedGoal,
+    generateBasicTasksForSelectedGoal,
     goalError,
     hasUsedTaskRefresh,
     isGeneratingPlan,
@@ -424,8 +574,11 @@ export function useGoalPlanner() {
     openTodayTasks,
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
+    purchaseGoalSlotExpansion,
     refreshOneIncompleteTaskForSelectedGoal,
     resetPetGrowth,
+    resetCareMeters,
+    resetPetStatus,
     rewardProgress,
     selectedTaskGoalId,
     setSelectedTaskGoalId,

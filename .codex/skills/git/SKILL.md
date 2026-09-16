@@ -30,7 +30,12 @@ The standard full-sync workflow is:
 
 - Do not run `git reset --hard`, `git clean`, force push, or destructive checkout commands.
 - Do not overwrite conflict files automatically.
-- Stop and report when merge or rebase conflicts occur.
+- When merge or rebase conflicts occur, resolve them when it is safe to do so:
+  inspect both sides, use available modification dates and commit dates to
+  understand recency, preserve both sides' intended behavior, and report how
+  each conflict was resolved. Stop only when the conflict cannot be resolved
+  without product judgment, secrets, destructive changes, or overwriting
+  unrelated user work.
 - Stop and ask when the repository has no remote or no clear upstream and `origin` cannot be inferred.
 - Do not commit ignored files.
 - Do not commit generated `.codex/workflow/**/*.md` files.
@@ -67,7 +72,35 @@ Pull before committing:
 
 - If the working tree is clean, run `git pull --rebase`.
 - If local changes exist, run `git pull --rebase --autostash`.
-- If pull fails or reports conflicts, stop and summarize the conflict state.
+- If pull fails or reports conflicts, inspect the conflict state before deciding
+  whether to stop:
+
+```bash
+git status --short
+git diff --name-only --diff-filter=U
+git log --date=iso --format="%H%x09%ad%x09%an%x09%s" -- <conflicted-file>
+# PowerShell on Windows:
+Get-Item <conflicted-file> | Select-Object FullName, LastWriteTime
+# POSIX shell:
+stat <conflicted-file>
+```
+
+- For each conflicted file, compare the upstream side and local/stashed side.
+  Use commit dates, file modification dates when available, and nearby code
+  context to identify which change is newer and what each side intended.
+- Prefer a combined resolution that keeps both sides' valid behavior instead
+  of choosing one side wholesale. Examples include preserving newly added
+  remote state wiring while also keeping local UI callbacks, retaining renamed
+  labels while preserving newly moved domain types, or merging adjacent imports
+  and props from both sides.
+- Do not resolve by blindly taking `--ours` or `--theirs` for an entire file.
+  Use whole-side checkout only when one side is clearly obsolete and the reason
+  is verified from dates, commits, and file context.
+- After editing each conflicted file, remove all conflict markers, run targeted
+  checks, and mark the file resolved with `git add <file>`.
+- If a conflict cannot be safely resolved, stop and summarize the unresolved
+  files, the competing changes, the relevant dates, and the user decision
+  needed.
 - After a successful pull, compare the pre-pull HEAD with the new HEAD. If new
   commits were received, collect their dates, subjects, authors, and changed
   files:
@@ -135,6 +168,9 @@ After push, report:
 - Commit hash when a commit was created
 - Pull result
 - Inbound changes from pull, including commit date, commit subject, and what was added or modified
+- Conflict resolutions performed during pull or rebase, including the files
+  involved, the relevant modification or commit dates used, and how both sides
+  were combined
 - Outbound changes pushed, including commit date, commit subject, and what was added or modified
 - Push result
 - Remaining `git status --short`
@@ -153,3 +189,7 @@ If any step fails:
 - Report the failed command and important output.
 - Show the current `git status --short`.
 - Do not attempt unrelated recovery commands.
+
+If conflict resolution was attempted before the failure, include a concise
+record of the conflict files already resolved, the dates or commits used to make
+those decisions, and what remains unresolved.

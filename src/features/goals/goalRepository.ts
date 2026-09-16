@@ -1,12 +1,21 @@
 import * as SQLite from 'expo-sqlite';
-import { normalizeRewardProgress, RewardProgress } from '../rewards/rewardSystem';
-import { DailyPlan, DailyTask, GoalDifficulty, YearlyGoal } from './types';
+import {
+  normalizeCareMeters,
+  normalizeRewardProgress,
+} from '../rewards/rewardSystem';
+import type { CareMeterValues, RewardProgress } from '../rewards/rewardSystem';
+import type { DailyPlan, DailyTask, GoalDifficulty, YearlyGoal } from './types';
 
 const databaseName = 'habit-town.db';
+const careMetersKey = 'careMeters';
+const goalLimitKey = 'activeYearlyGoalLimit';
 const rewardProgressKey = 'rewardProgress';
 const taskRefreshKey = 'hasUsedTaskRefresh';
+const initialActiveYearlyGoalLimit = 3;
 
 type GoalPlannerData = {
+  careMeters: CareMeterValues;
+  activeYearlyGoalLimit: number;
   dailyPlans: DailyPlan[];
   hasUsedTaskRefresh: boolean;
   rewardProgress: RewardProgress;
@@ -14,6 +23,9 @@ type GoalPlannerData = {
 };
 
 type GoalRow = {
+  abandoned_at: number | null;
+  completed_at: number | null;
+  created_at: number;
   difficulty: string | null;
   id: string;
   title: string;
@@ -47,8 +59,9 @@ let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
   const db = await getGoalDatabase();
-  const [goalRows, planRows, taskRows, refreshRow, rewardProgressRow] = await Promise.all([
-    db.getAllAsync<GoalRow>('SELECT id, title, difficulty FROM goals ORDER BY created_at ASC'),
+
+  const [goalRows, planRows, taskRows, refreshRow, rewardProgressRow, careMetersRow, goalLimitRow] = await Promise.all([
+    db.getAllAsync<GoalRow>('SELECT id, title, difficulty, created_at, completed_at, abandoned_at FROM goals ORDER BY created_at ASC'),
     db.getAllAsync<DailyPlanRow>(
       `SELECT id, goal_id, goal_title, title, generated_at, expires_at, round
        FROM daily_plans
@@ -67,6 +80,14 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
     db.getFirstAsync<{ value: string }>(
       'SELECT value FROM app_meta WHERE key = ?',
       rewardProgressKey,
+    ),
+    db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM app_meta WHERE key = ?',
+      careMetersKey,
+    ),
+    db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM app_meta WHERE key = ?',
+      goalLimitKey,
     ),
   ]);
 
@@ -93,6 +114,8 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
   );
 
   return {
+    activeYearlyGoalLimit: parseActiveYearlyGoalLimit(goalLimitRow?.value),
+    careMeters: parseCareMeters(careMetersRow?.value),
     dailyPlans: planRows.map((row) => ({
       expiresAt: row.expires_at,
       generatedAt: row.generated_at,
@@ -106,6 +129,9 @@ export async function loadGoalPlannerData(): Promise<GoalPlannerData> {
     hasUsedTaskRefresh: refreshRow?.value === 'true',
     rewardProgress: parseRewardProgress(rewardProgressRow?.value),
     yearlyGoals: goalRows.map((row) => ({
+      abandonedAt: row.abandoned_at,
+      completedAt: row.completed_at,
+      createdAt: normalizeGoalCreatedAt(row),
       difficulty: getGoalDifficulty(row.difficulty),
       id: row.id,
       title: row.title,
@@ -120,15 +146,23 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
     await db.runAsync('DELETE FROM daily_tasks');
     await db.runAsync('DELETE FROM daily_plans');
     await db.runAsync('DELETE FROM goals');
-    await db.runAsync('DELETE FROM app_meta WHERE key IN (?, ?)', taskRefreshKey, rewardProgressKey);
+    await db.runAsync(
+      'DELETE FROM app_meta WHERE key IN (?, ?, ?, ?)',
+      taskRefreshKey,
+      rewardProgressKey,
+      careMetersKey,
+      goalLimitKey,
+    );
 
-    for (const [index, goal] of data.yearlyGoals.entries()) {
+    for (const goal of data.yearlyGoals) {
       await db.runAsync(
-        'INSERT INTO goals (id, title, difficulty, created_at) VALUES (?, ?, ?, ?)',
+        'INSERT INTO goals (id, title, difficulty, created_at, completed_at, abandoned_at) VALUES (?, ?, ?, ?, ?, ?)',
         goal.id,
         goal.title,
         goal.difficulty,
-        index,
+        goal.createdAt,
+        goal.completedAt ?? null,
+        goal.abandonedAt ?? null,
       );
     }
 
@@ -176,6 +210,16 @@ export async function saveGoalPlannerData(data: GoalPlannerData) {
       'INSERT INTO app_meta (key, value) VALUES (?, ?)',
       rewardProgressKey,
       JSON.stringify(data.rewardProgress),
+    );
+    await db.runAsync(
+      'INSERT INTO app_meta (key, value) VALUES (?, ?)',
+      careMetersKey,
+      JSON.stringify(data.careMeters),
+    );
+    await db.runAsync(
+      'INSERT INTO app_meta (key, value) VALUES (?, ?)',
+      goalLimitKey,
+      String(data.activeYearlyGoalLimit),
     );
   });
 }
@@ -228,6 +272,13 @@ async function openGoalDatabase() {
   `);
 
   await ensureGoalDifficultyColumn(db);
+  const goalColumns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(goals)');
+  if (!goalColumns.some((column) => column.name === 'completed_at')) {
+    await db.execAsync('ALTER TABLE goals ADD COLUMN completed_at INTEGER');
+  }
+  if (!goalColumns.some((column) => column.name === 'abandoned_at')) {
+    await db.execAsync('ALTER TABLE goals ADD COLUMN abandoned_at INTEGER');
+  }
   await ensureTaskRewardGrantedAtColumn(db);
 
   return db;
@@ -261,6 +312,19 @@ function getGoalDifficulty(value: string | null): GoalDifficulty {
   return 'medium';
 }
 
+function normalizeGoalCreatedAt(row: GoalRow) {
+  if (row.created_at > 946684800000) {
+    return row.created_at;
+  }
+
+  const idTimestamp = Number(row.id);
+  if (Number.isFinite(idTimestamp) && idTimestamp > 946684800000) {
+    return idTimestamp;
+  }
+
+  return Date.now();
+}
+
 function parseRewardProgress(value?: string) {
   if (!value) {
     return normalizeRewardProgress(null);
@@ -271,4 +335,24 @@ function parseRewardProgress(value?: string) {
   } catch {
     return normalizeRewardProgress(null);
   }
+}
+
+function parseCareMeters(value?: string) {
+  if (!value) {
+    return normalizeCareMeters(null);
+  }
+
+  try {
+    return normalizeCareMeters(JSON.parse(value));
+  } catch {
+    return normalizeCareMeters(null);
+  }
+}
+
+function parseActiveYearlyGoalLimit(value?: string) {
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed >= initialActiveYearlyGoalLimit
+    ? parsed
+    : initialActiveYearlyGoalLimit;
 }

@@ -1,4 +1,5 @@
-import { Image, ImageStyle, Platform, StyleSheet, View } from 'react-native';
+import { Image, ImageStyle, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useI18n } from '../../../features/i18n';
 import { GrowthStage, PetDefinition } from '../types';
 
 const pixelatedImageStyle =
@@ -7,24 +8,25 @@ const pixelatedImageStyle =
     : null;
 
 type StaticPetProps = {
+  onPress?: () => void;
   pet: PetDefinition;
+  petName: string;
   size: number;
   stage: GrowthStage;
 };
 
-export function StaticPet({ pet, size, stage }: StaticPetProps) {
+export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps) {
+  const { t } = useI18n();
   const petSource = pet.stages[stage];
-
-  return (
-    <View
-      style={[
-        styles.staticPetWrap,
-        {
-          height: size,
-          width: size,
-        },
-      ]}
-    >
+  const containerStyle = [
+    styles.staticPetWrap,
+    {
+      height: size,
+      width: size,
+    },
+  ];
+  const content = (
+    <>
       <View
         style={[
           styles.characterShadow,
@@ -46,7 +48,29 @@ export function StaticPet({ pet, size, stage }: StaticPetProps) {
           },
         ]}
       />
-    </View>
+    </>
+  );
+
+  if (!onPress) {
+    return (
+      <View
+        accessibilityLabel={t('pet.a11y.image', { name: petName })}
+        style={containerStyle}
+      >
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityLabel={t('pet.a11y.status', { name: petName })}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={containerStyle}
+    >
+      {content}
+    </Pressable>
   );
 }
 

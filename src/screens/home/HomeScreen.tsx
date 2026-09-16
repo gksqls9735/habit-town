@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  GestureResponderEvent,
   Image,
   ImageSourcePropType,
+  LayoutChangeEvent,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -10,17 +13,37 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TodayTasksModal } from '../../features/goals/components/TodayTasksModal';
 import { YearlyGoalModal } from '../../features/goals/components/YearlyGoalModal';
-import { useGoalPlanner } from '../../features/goals/hooks/useGoalPlanner';
+import {
+  goalSlotExpansionCount,
+  initialActiveYearlyGoalLimit,
+  maxGoalSlotExpansionPurchases,
+  useGoalPlanner,
+} from '../../features/goals/hooks/useGoalPlanner';
 import { getRemainingTaskBadge } from '../../features/goals/utils';
 import { CalendarModal } from '../../features/calendar/components/CalendarModal';
+import { useI18n } from '../../features/i18n';
 import { InventoryModal } from '../../features/inventory/components/InventoryModal';
 import {
+  consumeInventoryItem,
   increaseInventoryCapacity,
+  loadInventoryCapacity,
   loadInventoryItems,
+  resetInventory,
   saveInventoryItem,
 } from '../../features/inventory/inventoryRepository';
+import {
+  initialInventorySlotCount,
+  inventoryExpansionSlotCount,
+  type InventoryItem,
+} from '../../features/inventory/types';
 import { getItemImage } from '../../features/items/itemImages';
-import { getItemShopCategory } from '../../features/items/itemCatalog';
+import { getItemCareEffect, getItemShopCategory } from '../../features/items/itemCatalog';
+import {
+  loadPetName,
+  loadPetRoomName,
+  savePetName,
+  savePetRoomName,
+} from '../../features/pets/petProfileRepository';
 import {
   DeliveryEventReason,
   drawDeliveryMessage,
@@ -32,19 +55,29 @@ import {
   loadGiftBoxCount,
 } from '../../features/rewards/giftBoxRepository';
 import { experiencePerGrowthStage, growthStages } from '../../features/rewards/rewardSystem';
+import type { CareMeterKey } from '../../features/rewards/rewardSystem';
+import {
+  loadDecorPlacements,
+  saveDecorPlacement,
+} from '../../features/room/decorPlacementRepository';
 import { ShopModal } from '../../features/shop/components/ShopModal';
-import type { ShopItem } from '../../features/shop/items';
+import type { GoalCapacityShopItem, InventoryCapacityShopItem, ShopItem } from '../../features/shop/items';
+import {
+  CareItemUsePopup,
+  type CareUsableItem,
+} from './components/CareItemUsePopup';
 import { DeliveryRewardPopup } from './components/DeliveryRewardPopup';
 import { EventPopup } from './components/EventPopup';
 import { GiftRewardPopup } from './components/GiftRewardPopup';
 import {
-  PetCareActions,
+  PetCareBubbleActions,
   PetStatusHud,
 } from './components/PetCareOverlay';
-import type { PetCareMeterKey, PetCareMeterValues } from './components/PetCareOverlay';
 import { HomeActionRail } from './components/HomeActionRail';
 import { LocalDevControls } from './components/LocalDevControls';
 import { PetRoomPopup } from './components/PetRoomPopup';
+import { PetSettingsPopup } from './components/PetSettingsPopup';
+import { PetStatusPopup } from './components/PetStatusPopup';
 import { RewardDeliveryEvent } from './components/RewardDeliveryEvent';
 import { StaticPet } from './components/StaticPet';
 import { leftActions, pets, rightActions } from './homeData';
@@ -56,25 +89,38 @@ const roomFloorImage = require('../../../assets/png/backgrounds/basic-room-floor
 const pixelFontFamily = 'Galmuri11';
 const localDevCurrencyGrantAmount = 1000;
 const localDevExperienceGrantAmount = 10;
-const careActionMeterIncrease = 0.2;
-const initialCareMeters: PetCareMeterValues = {
-  cleanliness: 0.8,
-  hunger: 0.45,
-  loneliness: 0.3,
-};
-const emptyCareMeters: PetCareMeterValues = {
-  cleanliness: 0,
-  hunger: 0,
-  loneliness: 0,
-};
+const maxInventoryCapacityPurchases = 3;
+type InventoryCapacityPurchaseCounts = Record<InventoryCapacityShopItem['id'], number>;
 
 type RoomBackgroundImages = {
   floor: ImageSourcePropType;
   wallpaper: ImageSourcePropType;
 };
 
+type PetNameMap = Partial<Record<PetDefinition['id'], string>>;
+type PetRoomNameMap = Partial<Record<PetDefinition['id'], string>>;
+
+type PlacedDecorItem = {
+  item: InventoryItem;
+  x: number;
+  y: number;
+};
+
 function getGrowthStageIndex(stage: GrowthStage) {
   return growthStages.indexOf(stage);
+}
+
+function getCareUsableItems(
+  items: readonly InventoryItem[],
+  meter: CareMeterKey,
+): CareUsableItem[] {
+  return items.flatMap((item) => {
+    const careEffect = getItemCareEffect(item.id);
+
+    return careEffect && careEffect.meter === meter && item.quantity > 0
+      ? [{ ...item, careEffect }]
+      : [];
+  });
 }
 /*
  * Animation assets are temporarily disabled. Keep these requires here so the
@@ -113,6 +159,8 @@ type PetAnimationState = {
 export function HomeScreen() {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
+  const [isPetStatusOpen, setIsPetStatusOpen] = useState(false);
+  const [isPetSettingsOpen, setIsPetSettingsOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isGiftRewardOpen, setIsGiftRewardOpen] = useState(false);
@@ -132,20 +180,43 @@ export function HomeScreen() {
   const [isClaimingDeliveryReward, setIsClaimingDeliveryReward] = useState(false);
   const [deliveryRewardError, setDeliveryRewardError] = useState('');
   const [activePetId, setActivePetId] = useState<PetDefinition['id']>('hamster');
-  const [careMeters, setCareMeters] = useState<PetCareMeterValues>(initialCareMeters);
+  const [customPetNames, setCustomPetNames] = useState<PetNameMap>({});
+  const [customPetRoomNames, setCustomPetRoomNames] = useState<PetRoomNameMap>({});
+  const [inventoryRefreshVersion, setInventoryRefreshVersion] = useState(0);
+  const [capacityPurchaseCounts, setCapacityPurchaseCounts] = useState<InventoryCapacityPurchaseCounts>({
+    'decor-inventory-expansion': 0,
+    'inventory-expansion': 0,
+  });
+  const [isSavingPetName, setIsSavingPetName] = useState(false);
+  const [petStatusError, setPetStatusError] = useState('');
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
+  const [activeCareMeter, setActiveCareMeter] = useState<CareMeterKey | null>(null);
+  const [isPetCareMenuOpen, setIsPetCareMenuOpen] = useState(false);
+  const [careUsableItems, setCareUsableItems] = useState<CareUsableItem[]>([]);
+  const [careItemError, setCareItemError] = useState('');
+  const [isUsingCareItem, setIsUsingCareItem] = useState(false);
+  const [placementItem, setPlacementItem] = useState<InventoryItem | null>(null);
+  const [placedDecorItems, setPlacedDecorItems] = useState<Record<string, PlacedDecorItem>>({});
+  const [roomLayout, setRoomLayout] = useState({ height: 0, width: 0 });
   const [roomBackgroundImages, setRoomBackgroundImages] = useState<RoomBackgroundImages>({
     floor: roomFloorImage,
     wallpaper: roomWallpaperImage,
   });
+  const { language, setLanguage, t } = useI18n();
   const goalPlanner = useGoalPlanner();
   const {
+    abandonYearlyGoal,
+    activeYearlyGoalLimit,
     addYearlyGoal,
+    careMeters,
     closeTodayTasks,
     closeYearlyGoal,
     dailyPlans,
+    fillCareMeter,
     grantCurrencyReward,
     grantExperienceReward,
     generateAdditionalTaskForSelectedGoal,
+    generateBasicTasksForSelectedGoal,
     goalError,
     hasUsedTaskRefresh,
     isGeneratingPlan,
@@ -155,8 +226,9 @@ export function HomeScreen() {
     openTodayTasks,
     openYearlyGoal,
     openYearlyGoalFromTodayTasks,
+    purchaseGoalSlotExpansion,
     refreshOneIncompleteTaskForSelectedGoal,
-    resetPetGrowth,
+    resetPetStatus,
     rewardProgress,
     selectedTaskGoalId,
     setSelectedTaskGoalId,
@@ -167,6 +239,9 @@ export function HomeScreen() {
     yearlyGoalDraft,
     yearlyGoalDifficulty,
     yearlyGoals,
+    activeYearlyGoals,
+    activeDailyPlans,
+    toggleYearlyGoalCompletion,
   } = goalPlanner;
   const { height, width } = useWindowDimensions();
   const shortestSide = Math.min(width, height);
@@ -182,6 +257,10 @@ export function HomeScreen() {
   const railTop = compactHeight ? 126 : Math.round(148 * roomScale);
   const sideInset = Math.max(6, Math.round(width * 0.02));
   const activePet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
+  const activePetDefaultName = t(`pet.${activePet.id}.name`, undefined, activePet.name);
+  const activePetDefaultRoomName = t(`pet.${activePet.id}.room`, undefined, activePet.roomName);
+  const activePetDisplayName = customPetNames[activePet.id] ?? activePetDefaultName;
+  const activePetRoomName = customPetRoomNames[activePet.id] ?? activePetDefaultRoomName;
   const currentStage = rewardProgress.stage;
   const previousGrowthStageRef = useRef<GrowthStage | null>(null);
   const characterSize = Math.round(132 * roomScale);
@@ -198,73 +277,91 @@ export function HomeScreen() {
       setGiftBoxCount(nextGiftBoxCount);
       openGiftRewardPopup();
     } catch {
-      setGiftRewardError('선물 상자를 보내지 못했어요. 다시 눌러 주세요.');
+      setGiftRewardError(t('home.error.giftSend'));
       setIsGiftRewardOpen(true);
     }
   };
+  const refreshCapacityPurchaseCounts = useCallback(async () => {
+    const [generalCapacity, decorCapacity] = await Promise.all([
+      loadInventoryCapacity('general'),
+      loadInventoryCapacity('decor'),
+    ]);
+
+    setCapacityPurchaseCounts({
+      'decor-inventory-expansion': getCapacityPurchaseCount(decorCapacity),
+      'inventory-expansion': getCapacityPurchaseCount(generalCapacity),
+    });
+  }, []);
   const rightRailActions: RailAction[] = [
     ...rightActions.map((action) => {
-      if (action.label === '선물') {
+      const translatedAction = { ...action, label: t(`home.action.${action.id}`, undefined, action.label) };
+
+      if (action.id === 'gift') {
         return {
-          ...action,
+          ...translatedAction,
           badge: giftBoxCount > 0 ? String(giftBoxCount) : undefined,
           onPress: openGiftRewardPopup,
         };
       }
 
-      if (action.label === '가방') {
-        return { ...action, onPress: () => setIsInventoryOpen(true) };
+      if (action.id === 'inventory') {
+        return { ...translatedAction, onPress: () => setIsInventoryOpen(true) };
       }
 
-      return action;
+      return translatedAction;
     }),
     {
+      id: 'petRoom',
       image: require('../../../assets/ui/pet-room-button.png'),
-      label: '펫룸',
+      label: t('home.action.petRoom'),
       onPress: () => setIsPetRoomOpen(true),
       symbol: 'R',
     },
     {
+      id: 'event',
       image: require('../../../assets/ui/event-button.png'),
-      label: '이벤트',
+      label: t('home.action.event'),
       onPress: () => setIsEventOpen(true),
       symbol: 'E',
     },
   ];
   const popupWidth = Math.min(width - 32, 360);
   const leftRailActions: RailAction[] = leftActions.map((action) => {
-    if (action.label === '오늘 할일') {
+    const translatedAction = { ...action, label: t(`home.action.${action.id}`, undefined, action.label) };
+
+    if (action.id === 'todayTasks') {
       return {
-        ...action,
-        badge: getRemainingTaskBadge(dailyPlans),
+        ...translatedAction,
+        badge: getRemainingTaskBadge(activeDailyPlans),
         onPress: openTodayTasks,
       };
     }
 
-    if (action.label === '올해 목표') {
+    if (action.id === 'yearlyGoal') {
       return {
-        ...action,
+        ...translatedAction,
         onPress: openYearlyGoal,
       };
     }
 
-    if (action.label === '캘린더') {
-      return { ...action, onPress: () => setIsCalendarOpen(true) };
+    if (action.id === 'calendar') {
+      return { ...translatedAction, onPress: () => setIsCalendarOpen(true) };
     }
 
-    if (action.label === '상점') {
+    if (action.id === 'shop') {
       return {
-        ...action,
+        ...translatedAction,
         onPress: () => {
           setIsShopOpen(true);
-          void loadInventoryItems().then((items) => {
-            setOwnedShopItemIds(items.map((item) => item.id));
-          });
+          void Promise.all([
+            loadInventoryItems().then((items) => setOwnedShopItemIds(items.map((item) => item.id))),
+            refreshCapacityPurchaseCounts(),
+          ]);
         },
       };
     }
 
-    return action;
+    return translatedAction;
   });
   const startRewardDelivery = useCallback((reason: DeliveryEventReason = 'manual') => {
     setDeliveryReward(null);
@@ -275,15 +372,8 @@ export function HomeScreen() {
     setIsRewardParcelAvailable(true);
     setRewardDeliveryEventKey((current) => current + 1);
   }, []);
-  const fillCareMeter = (meter: PetCareMeterKey) => {
-    setCareMeters((current) => ({
-      ...current,
-      [meter]: clamp(current[meter] + careActionMeterIncrease, 0, 1),
-    }));
-  };
-
   const refreshRoomBackgroundImages = useCallback(() => {
-    void loadInventoryItems().then((items) => {
+    void Promise.all([loadInventoryItems(), loadDecorPlacements()]).then(([items, placements]) => {
       const equippedWallpaper = items.find(
         (item) => item.equipped && getItemShopCategory(item.id) === 'wallpaper',
       );
@@ -297,18 +387,56 @@ export function HomeScreen() {
           ? getItemImage(equippedWallpaper.id) ?? roomWallpaperImage
           : roomWallpaperImage,
       });
+      setPlacedDecorItems(Object.fromEntries(
+        placements
+          .map((placement) => {
+            const item = items.find((candidate) => candidate.id === placement.itemId);
+
+            return item ? [item.id, { item, x: placement.x, y: placement.y }] : null;
+          })
+          .filter((entry): entry is [string, PlacedDecorItem] => entry !== null),
+      ));
     });
   }, []);
-
   useEffect(() => {
     refreshRoomBackgroundImages();
   }, [refreshRoomBackgroundImages]);
 
   useEffect(() => {
+    void refreshCapacityPurchaseCounts();
+  }, [refreshCapacityPurchaseCounts]);
+
+  useEffect(() => {
     void loadGiftBoxCount().then(setGiftBoxCount).catch(() => {
-      setGiftRewardError('선물 상자를 불러오지 못했어요.');
+      setGiftRewardError(t('home.error.giftLoad'));
     });
-  }, []);
+  }, [t]);
+
+  useEffect(() => {
+    void Promise.all(
+      pets.map(async (pet) => {
+        const [petName, roomName] = await Promise.all([
+          loadPetName(pet.id),
+          loadPetRoomName(pet.id),
+        ]);
+
+        return [pet.id, petName, roomName] as const;
+      }),
+    ).then((entries) => {
+      setCustomPetNames(Object.fromEntries(
+        entries
+          .filter((entry): entry is readonly [PetDefinition['id'], string, string | null] => Boolean(entry[1]))
+          .map(([petId, petName]) => [petId, petName]),
+      ) as PetNameMap);
+      setCustomPetRoomNames(Object.fromEntries(
+        entries
+          .filter((entry): entry is readonly [PetDefinition['id'], string | null, string] => Boolean(entry[2]))
+          .map(([petId, , roomName]) => [petId, roomName]),
+      ) as PetRoomNameMap);
+    }).catch(() => {
+      setPetStatusError(t('home.error.profileLoad'));
+    });
+  }, [t]);
 
   useEffect(() => {
     if (isLoadingGoalData) {
@@ -329,34 +457,41 @@ export function HomeScreen() {
     }
   }, [currentStage, isLoadingGoalData, startRewardDelivery]);
   const handleLocalDevAction = (label: string) => {
-    if (label === '이벤트:택배') {
+    if (label === 'event:parcel') {
       startRewardDelivery();
       return;
     }
 
-    if (label === '이벤트:선물 보내기') {
+    if (label === 'event:gift') {
       void sendGiftReward();
       return;
     }
 
-    if (label === '데이터:재화 증가') {
+    if (label === 'data:currency') {
       grantCurrencyReward(localDevCurrencyGrantAmount);
       return;
     }
 
-    if (label === '데이터:경험치 증가') {
+    if (label === 'data:growth') {
       grantExperienceReward(localDevExperienceGrantAmount);
       return;
     }
 
-    if (label === '데이터:경험치 100%') {
+    if (label === 'data:growthFull') {
       grantExperienceReward(experiencePerGrowthStage);
       return;
     }
 
-    if (label === '리셋') {
-      setCareMeters(emptyCareMeters);
-      resetPetGrowth();
+    if (label === 'reset') {
+      resetPetStatus();
+      void resetInventory().then(() => {
+        setCapacityPurchaseCounts({
+          'decor-inventory-expansion': 0,
+          'inventory-expansion': 0,
+        });
+        setInventoryRefreshVersion((version) => version + 1);
+        void refreshRoomBackgroundImages();
+      });
     }
   };
   const closeDeliveryReward = () => {
@@ -373,7 +508,7 @@ export function HomeScreen() {
   };
   const openDeliveryReward = () => {
     setDeliveryReward((current) => current ?? drawDeliveryReward());
-    setDeliveryRewardMessage((current) => current || drawDeliveryMessage(deliveryEventReason));
+    setDeliveryRewardMessage((current) => current || drawDeliveryMessage(deliveryEventReason, t));
     setDeliveryRewardError('');
     setIsDeliveryRewardPopupOpen(true);
   };
@@ -388,6 +523,7 @@ export function HomeScreen() {
         grantCurrencyReward(deliveryReward.amount);
       } else {
         await saveInventoryItem(deliveryReward.item);
+        setInventoryRefreshVersion((version) => version + 1);
       }
 
       setDeliveryReward(null);
@@ -395,7 +531,7 @@ export function HomeScreen() {
       setIsDeliveryRewardPopupOpen(false);
       setIsRewardParcelAvailable(false);
     } catch {
-      setDeliveryRewardError('선물을 저장하지 못했어요. 다시 눌러 주세요.');
+      setDeliveryRewardError(t('home.error.deliverySave'));
     } finally {
       setIsClaimingDeliveryReward(false);
     }
@@ -419,7 +555,7 @@ export function HomeScreen() {
 
       if (nextGiftBoxCount === null) {
         setGiftBoxCount(0);
-        setGiftRewardError('열 수 있는 선물 상자가 없어요.');
+        setGiftRewardError(t('home.error.giftMissing'));
         return;
       }
 
@@ -445,21 +581,127 @@ export function HomeScreen() {
         }
       }
 
-      setGiftRewardError('선물을 열지 못했어요. 다시 눌러 주세요.');
+      setGiftRewardError(t('home.error.giftOpen'));
     } finally {
       setIsClaimingGiftReward(false);
     }
   };
+  const closePetStatus = () => {
+    if (isSavingPetName) return;
+
+    setPetStatusError('');
+    setIsPetSettingsOpen(false);
+    setIsPetStatusOpen(false);
+  };
+  const updateActivePetProfile = async (name: string, roomName: string) => {
+    const normalizedName = name.trim();
+    const normalizedRoomName = roomName.trim();
+
+    if (!normalizedName) {
+      setPetStatusError(t('home.error.nameRequired'));
+      return;
+    }
+
+    if (!normalizedRoomName) {
+      setPetStatusError(t('home.error.roomNameRequired'));
+      return;
+    }
+
+    setIsSavingPetName(true);
+    setPetStatusError('');
+
+    try {
+      const [savedName, savedRoomName] = await Promise.all([
+        savePetName(activePet.id, normalizedName),
+        savePetRoomName(activePet.id, normalizedRoomName),
+      ]);
+
+      setCustomPetNames((current) => ({ ...current, [activePet.id]: savedName }));
+      setCustomPetRoomNames((current) => ({ ...current, [activePet.id]: savedRoomName }));
+      setIsPetStatusOpen(false);
+    } catch {
+      setPetStatusError(t('home.error.profileSave'));
+    } finally {
+      setIsSavingPetName(false);
+    }
+  };
+  const openCareItemPopup = async (meter: CareMeterKey) => {
+    setActiveCareMeter(meter);
+    setCareItemError('');
+
+    try {
+      const items = await loadInventoryItems();
+      setCareUsableItems(getCareUsableItems(items, meter));
+    } catch {
+      setCareUsableItems([]);
+      setCareItemError(t('home.error.careLoad'));
+    }
+  };
+  const selectPetCareAction = (meter: CareMeterKey) => {
+    void openCareItemPopup(meter);
+  };
+  const closeCareItemPopup = () => {
+    if (isUsingCareItem) return;
+
+    setActiveCareMeter(null);
+    setCareUsableItems([]);
+    setCareItemError('');
+  };
+  const useCareItem = async (item: CareUsableItem, quantity: number) => {
+    if (isUsingCareItem) return;
+
+    setIsUsingCareItem(true);
+    setCareItemError('');
+
+    try {
+      const consumed = await consumeInventoryItem(item.id, quantity);
+
+      if (!consumed) {
+        setCareItemError(t('home.error.careQuantity'));
+        return;
+      }
+
+      fillCareMeter(item.careEffect.meter, item.careEffect.increase * quantity);
+      setActiveCareMeter(null);
+      setCareUsableItems([]);
+    } catch {
+      setCareItemError(t('home.error.careUse'));
+    } finally {
+      setIsUsingCareItem(false);
+    }
+  };
   const purchaseShopItem = async (item: ShopItem): Promise<boolean> => {
-    if (rewardProgress.coins < item.price) return false;
+    const itemPrice = getShopItemPrice(item, capacityPurchaseCounts, activeYearlyGoalLimit);
+    if (rewardProgress.coins < itemPrice) return false;
 
     try {
       if (item.kind === 'inventory-capacity') {
-        const purchased = spendCurrencyReward(item.price);
+        const currentCapacity = await loadInventoryCapacity(item.capacityCategory);
+        const purchaseCount = getCapacityPurchaseCount(currentCapacity);
+
+        if (purchaseCount >= maxInventoryCapacityPurchases) return false;
+
+        const nextPrice = getInventoryCapacityPrice(item, purchaseCount);
+        const purchased = spendCurrencyReward(nextPrice);
 
         if (!purchased) return false;
 
         await increaseInventoryCapacity(item.capacityCategory, item.slotIncrease);
+        await refreshCapacityPurchaseCounts();
+        setInventoryRefreshVersion((version) => version + 1);
+        return true;
+      }
+
+      if (item.kind === 'goal-capacity') {
+        const purchaseCount = getGoalSlotExpansionPurchaseCount(activeYearlyGoalLimit);
+
+        if (purchaseCount >= maxGoalSlotExpansionPurchases) return false;
+
+        const nextPrice = getGoalCapacityPrice(item, purchaseCount);
+        const purchased = purchaseGoalSlotExpansion(nextPrice, item.slotIncrease);
+
+        if (!purchased) return false;
+
         return true;
       }
 
@@ -478,17 +720,63 @@ export function HomeScreen() {
       if (!purchased) return false;
 
       setOwnedShopItemIds((current) => current.includes(item.id) ? current : [...current, item.id]);
+      setInventoryRefreshVersion((version) => version + 1);
       return true;
     } catch {
       return false;
     }
+  };
+  const getDisplayedShopItemPrice = useCallback(
+    (item: ShopItem) => getShopItemPrice(item, capacityPurchaseCounts, activeYearlyGoalLimit),
+    [activeYearlyGoalLimit, capacityPurchaseCounts],
+  );
+  const isShopItemSoldOut = useCallback(
+    (item: ShopItem) =>
+      (item.kind === 'inventory-capacity'
+        && (capacityPurchaseCounts[item.id] ?? 0) >= maxInventoryCapacityPurchases)
+      || (item.kind === 'goal-capacity'
+        && getGoalSlotExpansionPurchaseCount(activeYearlyGoalLimit) >= maxGoalSlotExpansionPurchases),
+    [activeYearlyGoalLimit, capacityPurchaseCounts],
+  );
+  const beginDecorPlacement = (item: InventoryItem) => {
+    setPlacementItem(item);
+    setIsInventoryOpen(false);
+  };
+  const updateRoomLayout = (event: LayoutChangeEvent) => {
+    const { height: roomHeight, width: roomWidth } = event.nativeEvent.layout;
+
+    setRoomLayout({ height: roomHeight, width: roomWidth });
+  };
+  const placeDecorItem = (event: GestureResponderEvent) => {
+    if (!placementItem) return;
+
+    const { locationX, locationY } = event.nativeEvent;
+    const x = clamp(locationX / Math.max(roomLayout.width || width, 1), 0.05, 0.95);
+    const y = clamp(locationY / Math.max(roomLayout.height || height, 1), 0.08, 0.94);
+
+    const placement = {
+      item: placementItem,
+      x,
+      y,
+    };
+
+    setPlacedDecorItems((current) => ({
+      ...current,
+      [placementItem.id]: placement,
+    }));
+    void saveDecorPlacement({ itemId: placementItem.id, x, y });
+    setPlacementItem(null);
   };
 
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.shell}>
         <View style={styles.room}>
-          <View accessibilityIgnoresInvertColors style={styles.roomBackground}>
+          <View
+            accessibilityIgnoresInvertColors
+            onLayout={updateRoomLayout}
+            style={styles.roomBackground}
+          >
             <Image
               accessibilityIgnoresInvertColors
               resizeMode="stretch"
@@ -501,26 +789,72 @@ export function HomeScreen() {
               source={roomBackgroundImages.floor}
               style={styles.roomFloorImage}
             />
+            {Object.values(placedDecorItems).map((placedItem) => (
+              <PlacedDecorObject
+                item={placedItem.item}
+                key={placedItem.item.id}
+                roomScale={roomScale}
+                x={placedItem.x}
+                y={placedItem.y}
+              />
+            ))}
             <View style={[styles.characterStage, { bottom: characterBottom }]}>
+              <PetCareBubbleActions
+                onCareAction={selectPetCareAction}
+                visible={isPetCareMenuOpen}
+              />
               <StaticPet
+                onPress={() => setIsPetCareMenuOpen((current) => !current)}
                 pet={activePet}
+                petName={activePetDisplayName}
                 stage={currentStage}
                 size={characterSize}
               />
-              <View style={styles.roomNameTag}>
-                <Text style={styles.roomNameText}>{activePet.roomName}</Text>
-              </View>
             </View>
+            {placementItem ? (
+              <View style={styles.placementLayer}>
+                <Pressable
+                  accessibilityLabel={t('home.placementA11y', { name: placementItem.name })}
+                  accessibilityRole="button"
+                  onPress={placeDecorItem}
+                  style={styles.placementHitArea}
+                />
+                <View style={styles.placementToolbar}>
+                  <Text style={styles.placementText}>{t('home.placementText', { name: placementItem.name })}</Text>
+                  <Pressable
+                    accessibilityLabel={t('home.placementCancel')}
+                    accessibilityRole="button"
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      setPlacementItem(null);
+                    }}
+                    style={styles.placementCancelButton}
+                  >
+                    <Text style={styles.placementCancelText}>{t('actions.cancel')}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
           </View>
         </View>
 
         <PetStatusHud
           careMeters={careMeters}
           petImage={activePet.stages[currentStage]}
-          petName={activePet.name}
+          petName={activePetDisplayName}
           progress={rewardProgress}
+          roomName={activePetRoomName}
         />
-        <PetCareActions onCareAction={fillCareMeter} />
+        <CareItemUsePopup
+          errorMessage={careItemError}
+          isBusy={isUsingCareItem}
+          items={careUsableItems}
+          meter={activeCareMeter}
+          onClose={closeCareItemPopup}
+          onUseItem={(item, quantity) => void useCareItem(item, quantity)}
+          visible={activeCareMeter !== null}
+          width={popupWidth}
+        />
 
         {showLocalDevButton ? (
           <LocalDevControls
@@ -556,6 +890,8 @@ export function HomeScreen() {
             activePetId={activePetId}
             currentStage={currentStage}
             onClose={() => setIsPetRoomOpen(false)}
+            petDisplayNames={customPetNames}
+            petRoomNames={customPetRoomNames}
             onSelectPet={(petId) => {
               setActivePetId(petId);
               setIsPetRoomOpen(false);
@@ -566,15 +902,46 @@ export function HomeScreen() {
           />
         ) : null}
 
+        <PetStatusPopup
+          defaultName={activePetDefaultName}
+          defaultRoomName={activePetDefaultRoomName}
+          displayName={activePetDisplayName}
+          displayRoomName={activePetRoomName}
+          errorMessage={petStatusError}
+          isSaving={isSavingPetName}
+          onClose={closePetStatus}
+          onOpenSettings={() => setIsPetSettingsOpen(true)}
+          onSaveProfile={updateActivePetProfile}
+          petImage={activePet.stages[currentStage]}
+          progress={rewardProgress}
+          visible={isPetStatusOpen}
+          width={popupWidth}
+        />
+
+        <PetSettingsPopup
+          language={language}
+          onChangeLanguage={setLanguage}
+          onClose={() => setIsPetSettingsOpen(false)}
+          onTogglePushNotifications={() => setPushNotificationsEnabled((current) => !current)}
+          pushNotificationsEnabled={pushNotificationsEnabled}
+          visible={isPetSettingsOpen}
+          width={popupWidth}
+        />
+
         <InventoryModal
+          onBeginDecorPlacement={beginDecorPlacement}
           onInventoryChanged={refreshRoomBackgroundImages}
           onClose={() => setIsInventoryOpen(false)}
+          key={inventoryRefreshVersion}
+          refreshVersion={inventoryRefreshVersion}
           visible={isInventoryOpen}
           width={popupWidth}
         />
 
         <ShopModal
           coinBalance={rewardProgress.coins}
+          getItemPrice={getDisplayedShopItemPrice}
+          isItemSoldOut={isShopItemSoldOut}
           onClose={() => setIsShopOpen(false)}
           onPurchase={purchaseShopItem}
           ownedItemIds={ownedShopItemIds}
@@ -604,6 +971,7 @@ export function HomeScreen() {
         {isCalendarOpen ? <CalendarModal
           onClose={() => setIsCalendarOpen(false)}
           plans={dailyPlans}
+          yearlyGoals={yearlyGoals}
           onToggleTask={toggleTask}
           isLoading={goalPlanner.isLoadingGoalData}
           isBusy={isGeneratingPlan}
@@ -627,12 +995,12 @@ export function HomeScreen() {
         <YearlyGoalModal
           difficulty={yearlyGoalDifficulty}
           errorMessage={goalError}
-          isGenerating={isGeneratingPlan}
+          isGenerating={isGeneratingPlan || isLoadingGoalData}
+          maxActiveGoals={activeYearlyGoalLimit}
           onChangeDifficulty={setYearlyGoalDifficulty}
           onChangeDraft={setYearlyGoalDraft}
           onClose={closeYearlyGoal}
           onSave={addYearlyGoal}
-          yearlyGoals={yearlyGoals}
           value={yearlyGoalDraft}
           visible={isYearlyGoalOpen}
           width={popupWidth}
@@ -641,20 +1009,107 @@ export function HomeScreen() {
           errorMessage={goalError}
           hasUsedTaskRefresh={hasUsedTaskRefresh}
           isGenerating={isGeneratingPlan}
+          onAbandonGoal={abandonYearlyGoal}
           onClose={closeTodayTasks}
           onGenerate={generateAdditionalTaskForSelectedGoal}
+          onGenerateTodayTasks={generateBasicTasksForSelectedGoal}
           onOpenGoal={openYearlyGoalFromTodayTasks}
           onRefreshOneTask={refreshOneIncompleteTaskForSelectedGoal}
           onSelectGoal={setSelectedTaskGoalId}
+          onToggleGoalCompletion={toggleYearlyGoalCompletion}
           onToggleTask={toggleTask}
           plans={dailyPlans}
           selectedGoalId={selectedTaskGoalId}
           visible={isTodayTasksOpen}
           width={popupWidth}
-          yearlyGoals={yearlyGoals}
+          yearlyGoals={activeYearlyGoals}
         />
       </View>
     </SafeAreaView>
+  );
+}
+
+function getCapacityPurchaseCount(capacity: number): number {
+  return clamp(
+    Math.floor((capacity - initialInventorySlotCount) / inventoryExpansionSlotCount),
+    0,
+    maxInventoryCapacityPurchases,
+  );
+}
+
+function getInventoryCapacityPrice(item: InventoryCapacityShopItem, purchaseCount: number): number {
+  return item.price * (purchaseCount + 1);
+}
+
+function getGoalCapacityPrice(item: GoalCapacityShopItem, purchaseCount: number): number {
+  return item.price * (purchaseCount + 1);
+}
+
+function getGoalSlotExpansionPurchaseCount(activeYearlyGoalLimit: number): number {
+  return clamp(
+    Math.floor((activeYearlyGoalLimit - initialActiveYearlyGoalLimit) / goalSlotExpansionCount),
+    0,
+    maxGoalSlotExpansionPurchases,
+  );
+}
+
+function getShopItemPrice(
+  item: ShopItem,
+  capacityPurchaseCounts: InventoryCapacityPurchaseCounts,
+  activeYearlyGoalLimit: number,
+): number {
+  if (item.kind === 'inventory-capacity') {
+    return getInventoryCapacityPrice(item, capacityPurchaseCounts[item.id] ?? 0);
+  }
+
+  if (item.kind === 'goal-capacity') {
+    return getGoalCapacityPrice(item, getGoalSlotExpansionPurchaseCount(activeYearlyGoalLimit));
+  }
+
+  return item.price;
+}
+
+function PlacedDecorObject({
+  item,
+  roomScale,
+  x,
+  y,
+}: {
+  item: InventoryItem;
+  roomScale: number;
+  x: number;
+  y: number;
+}) {
+  const { t } = useI18n();
+  const image = getItemImage(item.id);
+  const size = Math.round(64 * roomScale);
+
+  return (
+    <View
+      accessibilityLabel={t('home.placedDecorA11y', { name: item.name })}
+      style={[
+        styles.placedDecorObject,
+        {
+          height: size,
+          left: `${x * 100}%`,
+          marginLeft: -Math.round(size / 2),
+          marginTop: -Math.round(size / 2),
+          top: `${y * 100}%`,
+          width: size,
+        },
+      ]}
+    >
+      {image ? (
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={image}
+          style={styles.placedDecorImage}
+        />
+      ) : (
+        <Text style={styles.placedDecorFallback}>{item.symbol}</Text>
+      )}
+    </View>
   );
 }
 
@@ -953,6 +1408,75 @@ const styles = StyleSheet.create({
     right: 0,
     width: '100%',
   },
+  placedDecorFallback: {
+    color: '#fff8ea',
+    fontFamily: pixelFontFamily,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  placedDecorImage: {
+    height: '100%',
+    width: '100%',
+  },
+  placedDecorObject: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    zIndex: 2,
+  },
+  placementCancelButton: {
+    alignItems: 'center',
+    backgroundColor: '#ffd99e',
+    borderColor: '#6b432f',
+    borderWidth: 2,
+    height: 32,
+    justifyContent: 'center',
+    minWidth: 54,
+    paddingHorizontal: 8,
+  },
+  placementCancelText: {
+    color: '#5c3529',
+    fontFamily: pixelFontFamily,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  placementLayer: {
+    alignItems: 'center',
+    bottom: 0,
+    left: 0,
+    paddingTop: 72,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 30,
+  },
+  placementHitArea: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 0,
+  },
+  placementText: {
+    color: '#35281f',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  placementToolbar: {
+    alignItems: 'center',
+    backgroundColor: '#fff8ea',
+    borderColor: '#3d2d28',
+    borderWidth: 2,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    zIndex: 1,
+  },
   characterStage: {
     alignItems: 'center',
     left: 0,
@@ -980,24 +1504,4 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     textAlign: 'center',
   },
-  roomNameTag: {
-    alignItems: 'center',
-    backgroundColor: '#fff2d8',
-    borderColor: '#76503d',
-    borderWidth: 3,
-    marginTop: -8,
-    minWidth: 86,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  roomNameText: {
-    color: '#5e4235',
-    fontFamily: pixelFontFamily,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0,
-  },
 });
-
-
-

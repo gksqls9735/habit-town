@@ -8,6 +8,8 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../../features/i18n';
 import { GrowthStage, PetDefinition } from '../types';
 
 const pixelFontFamily = 'Galmuri11';
@@ -15,6 +17,8 @@ const pixelFontFamily = 'Galmuri11';
 export function PetRoomPopup({
   activePetId,
   currentStage,
+  petDisplayNames,
+  petRoomNames,
   onClose,
   onSelectPet,
   pets,
@@ -23,15 +27,20 @@ export function PetRoomPopup({
 }: {
   activePetId: PetDefinition['id'];
   currentStage: GrowthStage;
+  petDisplayNames: Partial<Record<PetDefinition['id'], string>>;
+  petRoomNames: Partial<Record<PetDefinition['id'], string>>;
   onClose: () => void;
   onSelectPet: (petId: PetDefinition['id']) => void;
   pets: PetDefinition[];
   scale: number;
   width: number;
 }) {
+  const { t } = useI18n();
   const [selectedPetId, setSelectedPetId] =
     useState<PetDefinition['id']>(activePetId);
   const selectedPet = pets.find((pet) => pet.id === selectedPetId) ?? pets[0];
+  const selectedPetDefaultName = t(`pet.${selectedPet.id}.name`, undefined, selectedPet.name);
+  const selectedPetDisplayName = petDisplayNames[selectedPet.id] ?? selectedPetDefaultName;
   const popupPets = [pets[1], pets[0], pets[2]];
 
   return (
@@ -51,19 +60,12 @@ export function PetRoomPopup({
             <View style={styles.popupHeader}>
               <View>
                 <Text style={styles.popupEyebrow}>CHARACTER SELECT</Text>
-                <Text style={styles.popupTitle}>함께 성장할 친구를 골라주세요</Text>
-                <Text style={styles.popupSubtitle}>
-                  캐릭터의 도트 원본을 그대로 보여드려요.
-                </Text>
+                <Text style={styles.popupTitle}>{t('pet.room.title')}</Text>
               </View>
-              <Pressable
-                accessibilityLabel="펫룸 팝업 닫기"
-                accessibilityRole="button"
+              <PopupCloseButton
+                accessibilityLabel={t('common.closePopup')}
                 onPress={onClose}
-                style={styles.popupCloseButton}
-              >
-                <Text style={styles.popupCloseText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <ScrollView
@@ -74,6 +76,8 @@ export function PetRoomPopup({
               <View style={styles.petLineup}>
                 {popupPets.map((pet) => {
                   const isSelected = pet.id === selectedPetId;
+                  const petDisplayName = petDisplayNames[pet.id] ?? t(`pet.${pet.id}.name`, undefined, pet.name);
+                  const petRoomName = petRoomNames[pet.id] ?? t(`pet.${pet.id}.room`, undefined, pet.roomName);
 
                   return (
                     <Pressable
@@ -102,15 +106,15 @@ export function PetRoomPopup({
                         />
                       </View>
                       <View style={styles.petNamePlate}>
-                        <Text style={styles.petName}>{pet.name}</Text>
+                        <Text numberOfLines={1} style={styles.petName}>{petDisplayName}</Text>
                       </View>
-                      <Text style={styles.petTypeLabel}>GROWTH TYPE</Text>
+                      <Text numberOfLines={1} style={styles.petRoomName}>{petRoomName}</Text>
                     </Pressable>
                   );
                 })}
               </View>
               <Text style={styles.petConfirmQuestion}>
-                {selectedPet.name}와 함께 시작할까요?
+                {t('pet.room.confirm', { name: selectedPetDisplayName })}
               </Text>
               <View style={styles.popupActions}>
                 <Pressable
@@ -118,7 +122,7 @@ export function PetRoomPopup({
                   onPress={onClose}
                   style={styles.popupCancelButton}
                 >
-                  <Text style={styles.popupCancelText}>취소</Text>
+                  <Text style={styles.popupCancelText}>{t('actions.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
@@ -126,7 +130,7 @@ export function PetRoomPopup({
                   style={styles.popupConfirmButton}
                 >
                   <Text style={styles.popupConfirmText}>
-                    {selectedPet.name} 선택
+                    {t('pet.room.select', { name: selectedPetDisplayName })}
                   </Text>
                 </Pressable>
               </View>
@@ -261,14 +265,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
   },
-  popupSubtitle: {
-    color: '#7a5947',
-    fontFamily: pixelFontFamily,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0,
-    marginTop: 6,
-  },
   popupCloseButton: {
     alignItems: 'center',
     backgroundColor: '#ffd99e',
@@ -364,10 +360,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     textAlign: 'center',
   },
-  petTypeLabel: {
+  petRoomName: {
     color: '#b36b31',
     fontFamily: pixelFontFamily,
-    fontSize: 7,
+    fontSize: 8,
     fontWeight: '900',
     letterSpacing: 0,
     marginTop: 4,

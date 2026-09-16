@@ -77,6 +77,25 @@ export async function increaseInventoryCapacity(
   return nextCapacity;
 }
 
+export async function resetInventory(): Promise<void> {
+  const db = await getInventoryDatabase();
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM inventory_items');
+    await db.runAsync(
+      `DELETE FROM inventory_metadata
+       WHERE key IN (?, ?, ?, 'starter_inventory_seeded')`,
+      inventoryCapacityMetadataKeys.general,
+      inventoryCapacityMetadataKeys.decor,
+      legacyInventoryCapacityMetadataKey,
+    );
+
+    await db.runAsync(
+      "INSERT INTO inventory_metadata (key, value) VALUES ('starter_inventory_seeded', '1')",
+    );
+  });
+}
+
 /**
  * Adds an item while merging quantities for inventory entries already owned.
  */
@@ -96,6 +115,46 @@ export async function saveInventoryItem(item: InventoryItem) {
     item.id, item.name, item.description, item.category, item.quantity,
     item.equipped ? 1 : 0, item.isNew ? 1 : 0, item.symbol, Date.now(),
   );
+}
+
+/**
+ * Consumes a positive quantity from an owned item. Empty stacks are removed.
+ */
+export async function consumeInventoryItem(id: string, quantity: number): Promise<boolean> {
+  const consumeQuantity = Math.max(0, Math.floor(quantity));
+
+  if (consumeQuantity <= 0) {
+    return false;
+  }
+
+  const db = await getInventoryDatabase();
+  let consumed = false;
+
+  await db.withTransactionAsync(async () => {
+    const row = await db.getFirstAsync<{ quantity: number }>(
+      'SELECT quantity FROM inventory_items WHERE id = ?',
+      id,
+    );
+
+    if (!row || row.quantity < consumeQuantity) {
+      return;
+    }
+
+    consumed = true;
+
+    if (row.quantity === consumeQuantity) {
+      await db.runAsync('DELETE FROM inventory_items WHERE id = ?', id);
+      return;
+    }
+
+    await db.runAsync(
+      'UPDATE inventory_items SET quantity = quantity - ?, is_new = 0 WHERE id = ?',
+      consumeQuantity,
+      id,
+    );
+  });
+
+  return consumed;
 }
 
 /**

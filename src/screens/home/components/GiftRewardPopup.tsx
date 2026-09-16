@@ -8,6 +8,9 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../../features/i18n';
+import { getLocalizedInventoryItem, getLocalizedItemName } from '../../../features/items/localizedItems';
 import { DeliveryReward, DeliveryRewardRarity } from '../../../features/rewards/eventRewards';
 
 const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
@@ -42,6 +45,8 @@ export function GiftRewardPopup({
   visible,
   width,
 }: GiftRewardPopupProps) {
+  const { t } = useI18n();
+
   if (!visible) {
     return null;
   }
@@ -60,17 +65,13 @@ export function GiftRewardPopup({
             <View style={styles.header}>
               <View>
                 <Text style={styles.eyebrow}>GIFT REWARD</Text>
-                <Text style={styles.title}>선물 상자</Text>
+                <Text style={styles.title}>{t('gift.rewardTitle')}</Text>
               </View>
-              <Pressable
-                accessibilityLabel="선물 팝업 닫기"
-                accessibilityRole="button"
+              <PopupCloseButton
+                accessibilityLabel={t('gift.close')}
                 disabled={isBusy}
                 onPress={onClose}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <View style={styles.content}>
@@ -94,12 +95,12 @@ export function GiftRewardPopup({
                   <View style={styles.rewardCard}>
                     <Text style={styles.cardEyebrow}>UNOPENED</Text>
                     <Text style={styles.rewardTitle}>
-                      {giftBoxCount > 0 ? '선물 상자가 기다려요' : '선물 상자가 없어요'}
+                      {giftBoxCount > 0 ? t('gift.boxReady') : t('gift.boxEmpty')}
                     </Text>
                     <Text style={styles.rewardDescription}>
                       {giftBoxCount > 0
-                        ? '광고를 보고 상자를 열면 재화나 아이템을 받을 수 있어요.'
-                        : '선물 상자가 배송 중이에요.\n조금만 기다려 주세요.'}
+                        ? t('gift.boxReadyDescription')
+                        : t('gift.boxEmptyDescription')}
                     </Text>
                   </View>
                 )}
@@ -107,27 +108,27 @@ export function GiftRewardPopup({
 
               {reward ? (
                 <Pressable
-                  accessibilityLabel="선물 보상 확인"
+                  accessibilityLabel={t('gift.confirmReward')}
                   accessibilityRole="button"
                   disabled={isBusy}
                   onPress={onClose}
                   style={[styles.actionButton, styles.confirmButton]}
                 >
-                  <Text style={styles.claimText}>확인</Text>
+                  <Text style={styles.claimText}>{t('actions.confirm')}</Text>
                 </Pressable>
               ) : (
                 <View style={styles.actionRow}>
                   <Pressable
-                    accessibilityLabel="선물 팝업 닫기"
+                    accessibilityLabel={t('gift.close')}
                     accessibilityRole="button"
                     disabled={isBusy}
                     onPress={onClose}
                     style={[styles.actionButton, styles.closeRewardButton]}
                   >
-                    <Text style={styles.closeRewardText}>나중에</Text>
+                    <Text style={styles.closeRewardText}>{t('actions.later')}</Text>
                   </Pressable>
                   <Pressable
-                    accessibilityLabel="광고 보고 선물 상자 열기"
+                    accessibilityLabel={t('gift.openWithAd')}
                     accessibilityRole="button"
                     disabled={isBusy || !canOpenGiftBox}
                     onPress={onOpenBox}
@@ -137,7 +138,7 @@ export function GiftRewardPopup({
                       !canOpenGiftBox ? styles.actionButtonDisabled : null,
                     ]}
                   >
-                    <Text style={styles.claimText}>{isBusy ? '확인 중...' : '광고 보고 열기'}</Text>
+                    <Text style={styles.claimText}>{isBusy ? t('gift.checking') : t('actions.openGiftWithAd')}</Text>
                   </Pressable>
                 </View>
               )}
@@ -150,17 +151,20 @@ export function GiftRewardPopup({
 }
 
 function RewardCard({ reward }: { reward: DeliveryReward }) {
+  const { language, t } = useI18n();
   const detail = reward.kind === 'currency'
-    ? `${reward.amount.toLocaleString('ko-KR')} 골드`
-    : `${reward.item.name} x${reward.item.quantity}`;
+    ? t('common.rewardCurrency', {
+      amount: reward.amount.toLocaleString(language === 'ko' ? 'ko-KR' : 'en-US'),
+    })
+    : `${getLocalizedInventoryItem(reward.item, t).name} x${reward.item.quantity}`;
   const description = reward.kind === 'currency'
-    ? '상자 안에서 반짝이는 재화가 나왔어요.'
-    : reward.item.description;
+    ? t('gift.currencyDescription')
+    : getLocalizedInventoryItem(reward.item, t).description;
 
   return (
     <View style={styles.rewardCard}>
       <Text style={styles.cardEyebrow}>{rarityLabels[reward.rarity]}</Text>
-      <Text style={styles.rewardTitle}>{reward.name}</Text>
+      <Text style={styles.rewardTitle}>{getLocalizedItemName(reward, t)}</Text>
       <RewardDetail reward={reward} text={detail} />
       <Text style={styles.rewardDescription}>{description}</Text>
     </View>

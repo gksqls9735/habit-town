@@ -13,6 +13,15 @@ Do not mix multiple tools for the same responsibility without a clear reason.
 When adding this harness to an existing project, treat the existing codebase as the source of truth for frontend decisions.
 
 
+## Internationalization
+
+All user-visible screen text must go through the project's i18n layer.
+
+- Do not add hardcoded display strings directly in components, modals, buttons, tabs, empty states, error messages, accessibility labels, placeholders, or user-facing status messages.
+- Add or reuse translation keys for every supported app language when adding visible text.
+- Keep persisted domain data, user-authored content, and non-user-facing prompts or parsing rules separate from display translations.
+
+
 
 ## Common Decision Files
 

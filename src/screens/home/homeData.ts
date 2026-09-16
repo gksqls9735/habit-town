@@ -2,37 +2,41 @@ import { PetDefinition, RailAction } from './types';
 
 export const leftActions: RailAction[] = [
   {
+    id: 'todayTasks',
     image: require('../../../assets/ui/today-tasks-button.png'),
-    label: '오늘 할일',
+    label: 'Today',
     symbol: '!',
   },
   {
+    id: 'yearlyGoal',
     image: require('../../../assets/ui/yearly-goals-button-v2.png'),
-    label: '올해 목표',
+    label: 'Goal',
     symbol: 'Y',
   },
   {
+    id: 'calendar',
     image: require('../../../assets/ui/calendar-button.png'),
-    label: '캘린더',
+    label: 'Calendar',
     symbol: 'C',
   },
   {
+    id: 'shop',
     image: require('../../../assets/ui/shop-button.png'),
-    label: '상점',
+    label: 'Shop',
     symbol: '$',
   },
 ];
 
 export const rightActions: RailAction[] = [
-  { image: require('../../../assets/ui/reward-button.png'), label: '선물', symbol: 'G' },
-  { image: require('../../../assets/ui/inventory-button.png'), label: '가방', symbol: 'I' },
+  { id: 'gift', image: require('../../../assets/ui/reward-button.png'), label: 'Gift', symbol: 'G' },
+  { id: 'inventory', image: require('../../../assets/ui/inventory-button.png'), label: 'Bag', symbol: 'I' },
 ];
 
 export const pets: PetDefinition[] = [
   {
     id: 'cat',
-    name: '고양이',
-    roomName: '고양이 방',
+    name: 'Cat',
+    roomName: "Cat's Room",
     stages: {
       adult: require('../../../assets/png/animals/cat-adult.png'),
       baby: require('../../../assets/png/animals/cat-baby.png'),
@@ -42,8 +46,8 @@ export const pets: PetDefinition[] = [
   },
   {
     id: 'hamster',
-    name: '햄스터',
-    roomName: '햄스터 방',
+    name: 'Hamster',
+    roomName: "Hamster's Room",
     stages: {
       adult: require('../../../assets/png/animals/hamster-adult.png'),
       baby: require('../../../assets/png/animals/hamster-baby.png'),
@@ -53,8 +57,8 @@ export const pets: PetDefinition[] = [
   },
   {
     id: 'dog',
-    name: '강아지',
-    roomName: '강아지 방',
+    name: 'Dog',
+    roomName: "Dog's Room",
     stages: {
       adult: require('../../../assets/png/animals/dog-adult.png'),
       baby: require('../../../assets/png/animals/dog-baby.png'),

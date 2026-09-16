@@ -8,6 +8,9 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
+import { useI18n } from '../../../features/i18n';
+import { getLocalizedInventoryItem, getLocalizedItemName } from '../../../features/items/localizedItems';
 import { DeliveryReward, DeliveryRewardRarity } from '../../../features/rewards/eventRewards';
 
 const parcelImage = require('../../../../assets/event/animal-rescue-reward-gift-box.png');
@@ -44,18 +47,22 @@ export function DeliveryRewardPopup({
   visible,
   width,
 }: DeliveryRewardPopupProps) {
+  const { language, t } = useI18n();
+
   if (!visible || !reward) {
     return null;
   }
 
   const detail =
     reward.kind === 'currency'
-      ? `${reward.amount.toLocaleString('ko-KR')} 골드`
-      : `${reward.item.name} x${reward.item.quantity}`;
+      ? t('common.rewardCurrency', {
+        amount: reward.amount.toLocaleString(language === 'ko' ? 'ko-KR' : 'en-US'),
+      })
+      : `${getLocalizedInventoryItem(reward.item, t).name} x${reward.item.quantity}`;
   const description =
     reward.kind === 'currency'
-      ? '상점과 성장 준비에 사용할 수 있는 재화예요.'
-      : reward.item.description;
+      ? t('delivery.currencyDescription')
+      : getLocalizedInventoryItem(reward.item, t).description;
 
   return (
     <View style={styles.popupLayer}>
@@ -73,17 +80,13 @@ export function DeliveryRewardPopup({
             <View style={styles.header}>
               <View>
                 <Text style={styles.eyebrow}>ANIMAL RESCUE GIFT</Text>
-                <Text style={styles.title}>택배 선물이 도착했어요</Text>
+                <Text style={styles.title}>{t('delivery.title')}</Text>
               </View>
-              <Pressable
-                accessibilityLabel="택배 선물 닫기"
-                accessibilityRole="button"
+              <PopupCloseButton
+                accessibilityLabel={t('delivery.close')}
                 disabled={isBusy}
                 onPress={onClose}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeText}>x</Text>
-              </Pressable>
+              />
             </View>
 
             <View style={styles.content}>
@@ -99,7 +102,7 @@ export function DeliveryRewardPopup({
                 />
                 <View style={styles.rewardCard}>
                   <Text style={styles.rarityText}>{rarityLabels[reward.rarity]}</Text>
-                  <Text style={styles.rewardName}>{reward.name}</Text>
+                  <Text style={styles.rewardName}>{getLocalizedItemName(reward, t)}</Text>
                   <Text style={styles.rewardDetail}>{detail}</Text>
                   <Text style={styles.rewardDescription}>{description}</Text>
                 </View>
@@ -107,22 +110,22 @@ export function DeliveryRewardPopup({
 
               <View style={styles.actionRow}>
                 <Pressable
-                  accessibilityLabel="택배 선물 버리기"
+                  accessibilityLabel={t('delivery.discardA11y')}
                   accessibilityRole="button"
                   disabled={isBusy}
                   onPress={onDiscard}
                   style={[styles.actionButton, styles.discardButton]}
                 >
-                  <Text style={styles.discardText}>버리기</Text>
+                  <Text style={styles.discardText}>{t('actions.discard')}</Text>
                 </Pressable>
                 <Pressable
-                  accessibilityLabel="택배 선물 받기"
+                  accessibilityLabel={t('delivery.acceptA11y')}
                   accessibilityRole="button"
                   disabled={isBusy}
                   onPress={onAccept}
                   style={[styles.actionButton, styles.acceptButton]}
                 >
-                  <Text style={styles.acceptText}>{isBusy ? '받는 중...' : '받기'}</Text>
+                  <Text style={styles.acceptText}>{isBusy ? t('delivery.accepting') : t('actions.accept')}</Text>
                 </Pressable>
               </View>
             </View>

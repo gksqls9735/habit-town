@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useI18n } from '../../../features/i18n';
 
-const localDevActions = ['이벤트', '데이터', '상태', '리셋'] as const;
+const localDevActions = ['event', 'data', 'status', 'reset'] as const;
 const localDevSubActions = {
-  이벤트: ['택배', '선물 보내기'],
-  데이터: ['재화 증가', '경험치 증가', '경험치 100%'],
+  data: ['currency', 'growth', 'growthFull'],
+  event: ['parcel', 'gift'],
 } as const;
 const pixelFontFamily = 'Galmuri11';
 const localDevSubMenuRowHeight = 42;
@@ -23,9 +24,10 @@ export function LocalDevControls({
   onToggle,
 }: LocalDevControlsProps) {
   const [activeSubMenu, setActiveSubMenu] = useState<LocalDevSubMenuKey | null>(null);
+  const { t } = useI18n();
 
   const handleActionPress = (label: string) => {
-    if (label === '이벤트' || label === '데이터') {
+    if (label === 'event' || label === 'data') {
       setActiveSubMenu((current) => (current === label ? null : label));
       return;
     }
@@ -53,7 +55,7 @@ export function LocalDevControls({
                   label === activeSubMenu ? styles.localDevMenuButtonActive : null,
                 ]}
               >
-                <Text numberOfLines={1} style={styles.localDevMenuButtonText}>{label}</Text>
+                <Text numberOfLines={1} style={styles.localDevMenuButtonText}>{t(`home.dev.${label}`)}</Text>
               </Pressable>
             ))}
           </View>
@@ -66,13 +68,13 @@ export function LocalDevControls({
             >
               {localDevSubActions[activeSubMenu].map((label) => (
                 <Pressable
-                  accessibilityLabel={`${activeSubMenu} ${label}`}
+                  accessibilityLabel={`${t(`home.dev.${activeSubMenu}`)} ${t(`home.dev.${label}`)}`}
                   accessibilityRole="button"
                   key={label}
                   onPress={() => handleSubActionPress(activeSubMenu, label)}
                   style={styles.localDevSubButton}
                 >
-                  <Text numberOfLines={1} style={styles.localDevSubButtonText}>{label}</Text>
+                  <Text numberOfLines={1} style={styles.localDevSubButtonText}>{t(`home.dev.${label}`)}</Text>
                 </Pressable>
               ))}
             </View>
@@ -80,12 +82,12 @@ export function LocalDevControls({
         </View>
       ) : null}
       <Pressable
-        accessibilityLabel="로컬 개발 메뉴 열기"
+        accessibilityLabel={t('home.dev.open')}
         accessibilityRole="button"
         onPress={onToggle}
         style={styles.localDevButton}
       >
-        <Text style={styles.localDevButtonText}>개발</Text>
+        <Text style={styles.localDevButtonText}>{t('home.dev.menu')}</Text>
       </Pressable>
     </View>
   );

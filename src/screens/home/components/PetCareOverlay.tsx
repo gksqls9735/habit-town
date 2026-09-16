@@ -1,10 +1,15 @@
-import { Image, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageBackground, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 import {
   experiencePerGrowthStage,
-  growthStageLabels,
 } from '../../../features/rewards/rewardSystem';
-import type { RewardProgress } from '../../../features/rewards/rewardSystem';
+import type {
+  CareMeterKey,
+  CareMeterValues,
+  RewardProgress,
+} from '../../../features/rewards/rewardSystem';
+import { useI18n } from '../../../features/i18n';
 
 const fontFamily = 'Galmuri11';
 const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
@@ -15,83 +20,120 @@ const hungerBoltIcon = require('../../../../assets/ui/needs/hunger-bolt-icon.png
 const lonelinessHeartBubbleIcon = require('../../../../assets/ui/needs/loneliness-heart-bubble-icon.png');
 const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
 
-export type PetCareMeterKey = 'cleanliness' | 'hunger' | 'loneliness';
-export type PetCareMeterValues = Record<PetCareMeterKey, number>;
-
 type CareMeterView = {
   color: string;
   icon: ImageSourcePropType;
-  key: PetCareMeterKey;
-  label: string;
-  name: string;
+  key: CareMeterKey;
 };
 
 type CareActionView = {
+  bubbleImage: ImageSourcePropType;
   color: string;
   icon: ImageSourcePropType;
-  key: PetCareMeterKey;
-  label: string;
+  key: CareMeterKey;
 };
 
 const previewNeeds: CareMeterView[] = [
-  { key: 'cleanliness', label: '청', name: '청결도', color: '#8fbcc0', icon: cleanlinessBubblesIcon },
-  { key: 'hunger', label: '굶', name: '포만감', color: '#dfb471', icon: hungerBoltIcon },
-  { key: 'loneliness', label: '외', name: '친밀도', color: '#e7a28f', icon: lonelinessHeartBubbleIcon },
+  { key: 'cleanliness', color: '#8fbcc0', icon: cleanlinessBubblesIcon },
+  { key: 'hunger', color: '#dfb471', icon: hungerBoltIcon },
+  { key: 'loneliness', color: '#e7a28f', icon: lonelinessHeartBubbleIcon },
 ];
 const actions: CareActionView[] = [
-  { key: 'cleanliness', label: '청소하기', color: '#d9ebea', icon: cleanBrushIcon },
-  { key: 'hunger', label: '밥먹이기', color: '#f6e3bb', icon: feedBowlFullIcon },
-  { key: 'loneliness', label: '놀아주기', color: '#f3ded0', icon: playBallIcon },
+  {
+    key: 'cleanliness',
+    bubbleImage: require('../../../../assets/ui/action/clean-action-bubble.png'),
+    color: '#d9ebea',
+    icon: cleanBrushIcon,
+  },
+  {
+    key: 'hunger',
+    bubbleImage: require('../../../../assets/ui/action/feed-action-bubble.png'),
+    color: '#f6e3bb',
+    icon: feedBowlFullIcon,
+  },
+  {
+    key: 'loneliness',
+    bubbleImage: require('../../../../assets/ui/action/play-action-bubble.png'),
+    color: '#f3ded0',
+    icon: playBallIcon,
+  },
 ];
-const experienceRingSegments = 32;
+const bubbleActionPositions: ViewStyle[] = [
+  { left: -52, top: 8 },
+  { left: 26, top: -48 },
+  { right: -52, top: 8 },
+];
+const bubbleIconPositions: ImageStyle[] = [
+  { marginLeft: -4, marginTop: -4 },
+  { marginLeft: -2, marginTop: -6 },
+  { marginLeft: 4, marginTop: -4 },
+];
+const growthRingSegments = 32;
 const pixelStyle = Platform.OS === 'web'
   ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle) : undefined;
 
-/** Shows the selected pet with earned experience and care meters. */
+/** Shows the selected pet with earned growth and care meters. */
 export function PetStatusHud({
   careMeters,
+  onPressPet,
   petImage,
   petName,
   progress,
+  roomName,
 }: {
-  careMeters: PetCareMeterValues;
+  careMeters: CareMeterValues;
+  onPressPet?: () => void;
   petImage: ImageSourcePropType;
   petName: string;
   progress: RewardProgress;
+  roomName: string;
 }) {
-  const experiencePercent = progress.experience / experiencePerGrowthStage;
+  const { language, t } = useI18n();
+  const growthPercent = progress.experience / experiencePerGrowthStage;
+  const locale = language === 'ko' ? 'ko-KR' : 'en-US';
+  const portraitContent = (
+    <>
+      <View style={styles.ringInnerShadow} />
+      {Array.from({ length: growthRingSegments }, (_, index) => {
+        const angle = index / growthRingSegments * Math.PI * 2 - Math.PI / 2;
+        const isFilled = index < Math.round(growthPercent * growthRingSegments);
+
+        return <View key={index} style={[styles.ringSegment, {
+          left: 34 + Math.cos(angle) * 30 - 3,
+          top: 34 + Math.sin(angle) * 30 - 3,
+          transform: [{ rotate: `${index / growthRingSegments * 360}deg` }],
+          backgroundColor: isFilled ? '#87a85d' : '#d5c99f',
+          borderColor: isFilled ? '#5d743f' : '#b9a87d',
+        }]} />;
+      })}
+      <View style={styles.portrait}>
+        <Image source={petImage} accessibilityLabel={t('pet.a11y.image', { name: petName })} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
+      </View>
+    </>
+  );
 
   return (
     <View style={styles.top} pointerEvents="box-none">
       <View style={styles.statusPanel}>
         <View style={styles.portraitColumn}>
-          <View style={styles.ring} accessibilityRole="progressbar"
-            accessibilityLabel={`${petName} 경험치`} accessibilityValue={{ min: 0, max: 100, now: Math.round(experiencePercent * 100) }}>
-            <View style={styles.ringInnerShadow} />
-            {Array.from({ length: experienceRingSegments }, (_, index) => {
-              const angle = index / experienceRingSegments * Math.PI * 2 - Math.PI / 2;
-              const isFilled = index < Math.round(experiencePercent * experienceRingSegments);
-
-              return <View key={index} style={[styles.ringSegment, {
-                left: 34 + Math.cos(angle) * 30 - 3,
-                top: 34 + Math.sin(angle) * 30 - 3,
-                transform: [{ rotate: `${index / experienceRingSegments * 360}deg` }],
-                backgroundColor: isFilled ? '#87a85d' : '#d5c99f',
-                borderColor: isFilled ? '#5d743f' : '#b9a87d',
-              }]} />;
-            })}
-            <View style={styles.portrait}>
-              <Image source={petImage} accessibilityLabel={`선택한 펫 ${petName}`} resizeMode="contain" style={[styles.petImage, pixelStyle]} />
+          {onPressPet ? (
+            <Pressable style={styles.ring} accessibilityRole="button"
+              accessibilityLabel={t('pet.a11y.status', { name: petName })} onPress={onPressPet}>
+              {portraitContent}
+            </Pressable>
+          ) : (
+            <View style={styles.ring} accessibilityLabel={t('pet.a11y.image', { name: petName })}>
+              {portraitContent}
             </View>
-          </View>
-          <Text style={styles.stageBadge}>{growthStageLabels[progress.stage]}</Text>
+          )}
+          <Text numberOfLines={1} style={styles.stageBadge}>{petName}</Text>
         </View>
         <View style={styles.meters}>
           {previewNeeds.map((need) => {
             const value = careMeters[need.key];
 
-            return <View key={need.label} style={styles.meterRow}
-              accessibilityRole="progressbar" accessibilityLabel={need.name}
+            return <View key={need.key} style={styles.meterRow}
+              accessibilityRole="progressbar" accessibilityLabel={t(`care.meter.${need.key}`)}
               accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}>
             <Image source={need.icon} resizeMode="contain" style={styles.meterIcon} />
             <View style={styles.track}><View style={[styles.fill, { width: `${value * 100}%`, backgroundColor: need.color }]}>
@@ -101,35 +143,98 @@ export function PetStatusHud({
           })}
         </View>
       </View>
-      <View style={styles.currency} accessibilityLabel={`금색 재화 ${progress.coins}`}>
-        <Image accessibilityIgnoresInvertColors source={coinIcon} resizeMode="contain" style={[styles.coinIcon, pixelStyle]} />
-        <Text style={styles.currencyText}>{progress.coins.toLocaleString('ko-KR')}</Text>
+      <View style={styles.roomSummary}>
+        <View style={styles.currency} accessibilityLabel={`${t('common.currency')} ${progress.coins}`}>
+          <Image accessibilityIgnoresInvertColors source={coinIcon} resizeMode="contain" style={[styles.coinIcon, pixelStyle]} />
+          <Text style={styles.currencyText}>{progress.coins.toLocaleString(locale)}</Text>
+        </View>
+        <Text numberOfLines={1} style={styles.roomNameText}>
+          {roomName}
+        </Text>
       </View>
     </View>
   );
 }
 
-/** Bottom care actions increase the matching top meter toward full. */
+/** Bottom care actions open the matching care item flow. */
 export function PetCareActions({
   onCareAction,
 }: {
-  onCareAction: (meter: PetCareMeterKey) => void;
+  onCareAction: (meter: CareMeterKey) => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.bottom} pointerEvents="box-none">
       <View style={styles.actions}>
-        {actions.map((action) => <Pressable key={action.label} accessibilityRole="button"
-          accessibilityLabel={action.label}
-          onPress={() => onCareAction(action.key)}
-          style={[styles.action, { backgroundColor: action.color }]}>
-          <View style={styles.actionHighlight} />
-          {action.icon ? (
-            <Image source={action.icon} accessibilityLabel={action.label} resizeMode="contain" style={styles.actionIcon} />
-          ) : (
-            <Text style={styles.actionLabel}>{action.label}</Text>
-          )}
-        </Pressable>)}
+        {actions.map((action) => {
+          const label = t(`care.action.${action.key}`);
+
+          return (
+            <Pressable key={action.key} accessibilityRole="button"
+              accessibilityLabel={label}
+              onPress={() => onCareAction(action.key)}
+              style={[styles.action, { backgroundColor: action.color }]}>
+              <View style={styles.actionHighlight} />
+              {action.icon ? (
+                <Image source={action.icon} accessibilityLabel={label} resizeMode="contain" style={styles.actionIcon} />
+              ) : (
+                <Text style={styles.actionLabel}>{label}</Text>
+              )}
+            </Pressable>
+          );
+        })}
       </View>
+    </View>
+  );
+}
+
+/** Pet-side bubble actions open the matching care item flow. */
+export function PetCareBubbleActions({
+  onCareAction,
+  visible,
+}: {
+  onCareAction: (meter: CareMeterKey) => void;
+  visible: boolean;
+}) {
+  const { t } = useI18n();
+
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <View pointerEvents="box-none" style={styles.bubbleMenu}>
+      {actions.map((action, index) => {
+        const label = t(`care.action.${action.key}`);
+
+        return (
+          <Pressable
+            accessibilityLabel={label}
+            accessibilityRole="button"
+            key={action.key}
+            onPress={() => onCareAction(action.key)}
+            style={[
+              styles.bubbleAction,
+              bubbleActionPositions[index],
+            ]}
+          >
+            <ImageBackground
+              accessibilityIgnoresInvertColors
+              resizeMode="contain"
+              source={action.bubbleImage}
+              style={styles.bubbleImage}
+            >
+              <Image
+                source={action.icon}
+                accessibilityLabel={label}
+                resizeMode="contain"
+                style={[styles.bubbleActionIcon, bubbleIconPositions[index]]}
+              />
+            </ImageBackground>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -143,20 +248,41 @@ const styles = StyleSheet.create({
   ringSegment: { position: 'absolute', width: 6, height: 6, borderWidth: 1 },
   portrait: { position: 'absolute', left: 4, top: 4, width: 58, height: 58, borderRadius: 29, borderWidth: 1, borderColor: '#624936', backgroundColor: '#fffaf0', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   petImage: { width: 86, height: 86, flexShrink: 0, transform: [{ translateX: 3 }, { translateY: 11 }] },
-  stageBadge: { position: 'absolute', bottom: 0, zIndex: 1, fontFamily, fontSize: 9, color: '#624936', backgroundColor: '#fff0cd', borderColor: '#795c43', borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },
+  stageBadge: { position: 'absolute', bottom: 0, zIndex: 1, maxWidth: 86, fontFamily, fontSize: 9, color: '#624936', backgroundColor: '#fff0cd', borderColor: '#795c43', borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },
   meters: { flex: 1, minWidth: 0, gap: 8 },
   meterRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   meterIcon: { width: 14, height: 14 },
   track: { flex: 1, height: 14, borderWidth: 1, borderColor: '#795c43', backgroundColor: '#fffaf0', padding: 2 },
   fill: { height: '100%' },
   highlight: { height: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
-  currency: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 7, height: 34, backgroundColor: '#a3907a', borderWidth: 2, borderColor: '#624936', marginTop: 4 },
-  currencyText: { fontFamily, fontSize: 11, color: '#fff8ea' },
-  coinIcon: { width: 26, height: 26 },
+  roomSummary: { flexShrink: 0, alignItems: 'flex-end', marginTop: 4 },
+  currency: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 2, height: 38, marginTop: 2 },
+  currencyText: { fontFamily, fontSize: 12, fontWeight: '900', color: '#604832', textShadowColor: '#fff8ea', textShadowOffset: { height: 1, width: 1 }, textShadowRadius: 0 },
+  coinIcon: { width: 32, height: 32 },
+  roomNameText: { maxWidth: 132, fontFamily, fontSize: 11, color: '#5e4235', fontWeight: '900', letterSpacing: 0, marginTop: -2, textShadowColor: '#fff8ea', textShadowOffset: { height: 1, width: 1 }, textShadowRadius: 0 },
   bottom: { position: 'absolute', bottom: 14, left: 16, right: 16, alignItems: 'center', zIndex: 10 },
   actions: { flexDirection: 'row', width: '100%', maxWidth: 390, gap: 10 },
   action: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderBottomWidth: 5, borderColor: '#795c43', paddingVertical: 8 },
   actionHighlight: { position: 'absolute', top: 2, left: 2, right: 2, height: 2, backgroundColor: '#fffaf0' },
   actionIcon: { width: 48, height: 42 },
   actionLabel: { fontFamily, fontSize: 11, color: '#49372a' },
+  bubbleAction: {
+    alignItems: 'center',
+    height: 78,
+    justifyContent: 'center',
+    position: 'absolute',
+    width: 92,
+    zIndex: 21,
+  },
+  bubbleActionIcon: { height: 34, width: 40 },
+  bubbleImage: { alignItems: 'center', height: '100%', justifyContent: 'center', width: '100%' },
+  bubbleMenu: {
+    height: 146,
+    left: '50%',
+    marginLeft: -73,
+    position: 'absolute',
+    top: -68,
+    width: 146,
+    zIndex: 20,
+  },
 });

@@ -5,6 +5,7 @@ export type { GrowthStage };
 
 export type RailAction = {
   badge?: string;
+  id: string;
   image?: ImageSourcePropType;
   label: string;
   onPress?: () => void;

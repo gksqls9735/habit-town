@@ -23,7 +23,7 @@ const badgeImages = [
   require('../../../../assets/ui/today-tasks/today-tasks-badge-8.png'),
   require('../../../../assets/ui/today-tasks/today-tasks-badge-9.png'),
 ] as const;
-const badgeOverflowImage = require('../../../../assets/ui/today-tasks/today-tasks-badge-plus.png');
+const badgeOverflowImage = require('../../../../assets/ui/today-tasks/today-tasks-badge-9-plus-clear.png');
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'
@@ -40,7 +40,7 @@ export function HomeActionRail({ actions, metrics, style }: HomeActionRailProps)
   return (
     <View style={[styles.rail, style]}>
       {actions.map((action) => (
-        <RailButton action={action} key={action.label} metrics={metrics} />
+        <RailButton action={action} key={action.id} metrics={metrics} />
       ))}
     </View>
   );
@@ -57,6 +57,7 @@ function RailButton({
 
   return (
     <Pressable
+      accessibilityLabel={action.label}
       accessibilityRole="button"
       onPress={action.onPress}
       style={[
