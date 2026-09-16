@@ -40,6 +40,11 @@ export async function saveDecorPlacement(placement: DecorPlacement): Promise<voi
   );
 }
 
+export async function deleteDecorPlacement(itemId: string): Promise<void> {
+  const db = await getDecorPlacementDatabase();
+  await db.runAsync('DELETE FROM room_decor_placements WHERE item_id = ?', itemId);
+}
+
 async function getDecorPlacementDatabase() {
   databasePromise ??= openDecorPlacementDatabase();
   return databasePromise;

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   GestureResponderEvent,
   Image,
   ImageSourcePropType,
   LayoutChangeEvent,
+  PanResponder,
   Pressable,
   StyleSheet,
   Text,
@@ -38,6 +39,7 @@ import {
 } from '../../features/inventory/types';
 import { getItemImage } from '../../features/items/itemImages';
 import { getItemCareEffect, getItemShopCategory } from '../../features/items/itemCatalog';
+import { getLocalizedInventoryItem } from '../../features/items/localizedItems';
 import {
   loadPetName,
   loadPetRoomName,
@@ -57,6 +59,7 @@ import {
 import { experiencePerGrowthStage, growthStages } from '../../features/rewards/rewardSystem';
 import type { CareMeterKey } from '../../features/rewards/rewardSystem';
 import {
+  deleteDecorPlacement,
   loadDecorPlacements,
   saveDecorPlacement,
 } from '../../features/room/decorPlacementRepository';
@@ -102,6 +105,24 @@ type PetRoomNameMap = Partial<Record<PetDefinition['id'], string>>;
 
 type PlacedDecorItem = {
   item: InventoryItem;
+  x: number;
+  y: number;
+};
+
+type RoomWindowFrame = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+type PendingDecorPlacement = {
+  itemId: string;
+  x: number;
+  y: number;
+};
+
+type PagePoint = {
   x: number;
   y: number;
 };
@@ -196,8 +217,17 @@ export function HomeScreen() {
   const [careItemError, setCareItemError] = useState('');
   const [isUsingCareItem, setIsUsingCareItem] = useState(false);
   const [placementItem, setPlacementItem] = useState<InventoryItem | null>(null);
+  const [placementOriginalItem, setPlacementOriginalItem] = useState<PlacedDecorItem | null>(null);
+  const [isRepositioningPlacedItem, setIsRepositioningPlacedItem] = useState(false);
+  const [placementError, setPlacementError] = useState('');
   const [placedDecorItems, setPlacedDecorItems] = useState<Record<string, PlacedDecorItem>>({});
   const [roomLayout, setRoomLayout] = useState({ height: 0, width: 0 });
+  const [roomWindowFrame, setRoomWindowFrame] = useState<RoomWindowFrame>({
+    height: 0,
+    width: 0,
+    x: 0,
+    y: 0,
+  });
   const [roomBackgroundImages, setRoomBackgroundImages] = useState<RoomBackgroundImages>({
     floor: roomFloorImage,
     wallpaper: roomWallpaperImage,
@@ -261,8 +291,12 @@ export function HomeScreen() {
   const activePetDefaultRoomName = t(`pet.${activePet.id}.room`, undefined, activePet.roomName);
   const activePetDisplayName = customPetNames[activePet.id] ?? activePetDefaultName;
   const activePetRoomName = customPetRoomNames[activePet.id] ?? activePetDefaultRoomName;
+  const placementItemDisplayName = placementItem ? getLocalizedInventoryItem(placementItem, t).name : '';
   const currentStage = rewardProgress.stage;
   const previousGrowthStageRef = useRef<GrowthStage | null>(null);
+  const roomBackgroundRef = useRef<View | null>(null);
+  const pendingPlacementRef = useRef<PendingDecorPlacement | null>(null);
+  const pendingPagePointRef = useRef<PagePoint | null>(null);
   const characterSize = Math.round(132 * roomScale);
   const characterBottom = Math.max(100, Math.round(height * (compactHeight ? 0.15 : 0.18)));
   const showLocalDevButton = isLocalhostDevWeb();
@@ -739,34 +773,202 @@ export function HomeScreen() {
     [activeYearlyGoalLimit, capacityPurchaseCounts],
   );
   const beginDecorPlacement = (item: InventoryItem) => {
+    setPlacementError('');
+    setIsRepositioningPlacedItem(false);
+    setPlacementOriginalItem(placedDecorItems[item.id] ?? null);
+    updateDecorPlacementPreview(item, 0.5, 0.5);
     setPlacementItem(item);
     setIsInventoryOpen(false);
   };
+  const beginPlacedDecorEdit = (item: InventoryItem) => {
+    setPlacementError('');
+    setPlacementOriginalItem(placedDecorItems[item.id] ?? null);
+    setIsRepositioningPlacedItem(true);
+    setPlacementItem(item);
+  };
+  const measureRoomWindowFrame = useCallback(() => {
+    roomBackgroundRef.current?.measureInWindow((x, y, frameWidth, frameHeight) => {
+      setRoomWindowFrame({ height: frameHeight, width: frameWidth, x, y });
+    });
+  }, []);
   const updateRoomLayout = (event: LayoutChangeEvent) => {
     const { height: roomHeight, width: roomWidth } = event.nativeEvent.layout;
 
     setRoomLayout({ height: roomHeight, width: roomWidth });
+    requestAnimationFrame(measureRoomWindowFrame);
   };
-  const placeDecorItem = (event: GestureResponderEvent) => {
-    if (!placementItem) return;
-
+  useEffect(() => {
+    requestAnimationFrame(measureRoomWindowFrame);
+  }, [height, measureRoomWindowFrame, width]);
+  const getPlacementCoordinates = (event: GestureResponderEvent) => {
     const { locationX, locationY } = event.nativeEvent;
-    const x = clamp(locationX / Math.max(roomLayout.width || width, 1), 0.05, 0.95);
-    const y = clamp(locationY / Math.max(roomLayout.height || height, 1), 0.08, 0.94);
 
+    return {
+      x: clamp(locationX / Math.max(roomLayout.width || width, 1), 0.05, 0.95),
+      y: clamp(locationY / Math.max(roomLayout.height || height, 1), 0.08, 0.94),
+    };
+  };
+  const getPlacementCoordinatesFromPage = (pageX: number, pageY: number) => {
+    const frameWidth = roomWindowFrame.width || roomLayout.width || width;
+    const frameHeight = roomWindowFrame.height || roomLayout.height || height;
+
+    return {
+      x: clamp((pageX - roomWindowFrame.x) / Math.max(frameWidth, 1), 0.05, 0.95),
+      y: clamp((pageY - roomWindowFrame.y) / Math.max(frameHeight, 1), 0.08, 0.94),
+    };
+  };
+  const isPointInReturnToBagZone = (pageX: number, pageY: number) => {
+    const frameWidth = roomWindowFrame.width || roomLayout.width || width;
+    const frameHeight = roomWindowFrame.height || roomLayout.height || height;
+    const localX = pageX - roomWindowFrame.x;
+    const localY = pageY - roomWindowFrame.y;
+
+    return localX >= frameWidth - 126 && localY >= frameHeight - 136;
+  };
+  const updateDecorPlacementPreview = (item: InventoryItem, x: number, y: number) => {
     const placement = {
-      item: placementItem,
+      item,
       x,
       y,
     };
 
+    pendingPlacementRef.current = { itemId: item.id, x, y };
     setPlacedDecorItems((current) => ({
       ...current,
-      [placementItem.id]: placement,
+      [item.id]: placement,
     }));
-    void saveDecorPlacement({ itemId: placementItem.id, x, y });
+  };
+  const saveDecorPlacementAndClose = (item: InventoryItem, x: number, y: number) => {
+    const pendingPlacement = pendingPlacementRef.current?.itemId === item.id
+      ? pendingPlacementRef.current
+      : { itemId: item.id, x, y };
+    updateDecorPlacementPreview(item, pendingPlacement.x, pendingPlacement.y);
+    void saveDecorPlacement({
+      itemId: item.id,
+      x: pendingPlacement.x,
+      y: pendingPlacement.y,
+    }).catch(() => {
+      setPlacementError(t('home.error.decorSave'));
+      void refreshRoomBackgroundImages();
+    }).finally(() => {
+      pendingPlacementRef.current = null;
+      pendingPagePointRef.current = null;
+    });
+    setPlacementOriginalItem(null);
+    setIsRepositioningPlacedItem(false);
     setPlacementItem(null);
   };
+  const removePlacedDecorItem = (itemId: string) => {
+    setPlacedDecorItems((current) => {
+      const next = { ...current };
+      delete next[itemId];
+      return next;
+    });
+    pendingPlacementRef.current = null;
+    pendingPagePointRef.current = null;
+    setPlacementOriginalItem(null);
+    setIsRepositioningPlacedItem(false);
+    setPlacementItem(null);
+    setPlacementError('');
+    void deleteDecorPlacement(itemId).catch(() => {
+      setPlacementError(t('home.error.decorReturn'));
+      void refreshRoomBackgroundImages();
+    });
+  };
+  const placeDecorItem = (event: GestureResponderEvent) => {
+    if (!placementItem) return;
+
+    const { x, y } = getPlacementCoordinates(event);
+    saveDecorPlacementAndClose(placementItem, x, y);
+  };
+  const movePlacedDecorFromPagePoint = (item: InventoryItem, pageX: number, pageY: number) => {
+    pendingPagePointRef.current = { x: pageX, y: pageY };
+    const { x, y } = getPlacementCoordinatesFromPage(pageX, pageY);
+    updateDecorPlacementPreview(item, x, y);
+  };
+  const finishPlacedDecorDrag = (item: InventoryItem, pageX: number, pageY: number, didMove: boolean) => {
+    if (!didMove) {
+      beginPlacedDecorEdit(item);
+      return;
+    }
+
+    if (isPointInReturnToBagZone(pageX, pageY)) {
+      removePlacedDecorItem(item.id);
+      return;
+    }
+
+    const { x, y } = getPlacementCoordinatesFromPage(pageX, pageY);
+    saveDecorPlacementAndClose(item, x, y);
+  };
+  const placementDragResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: () => placementItem !== null,
+    onPanResponderMove: (event) => {
+      if (!placementItem) return;
+
+      pendingPagePointRef.current = {
+        x: event.nativeEvent.pageX,
+        y: event.nativeEvent.pageY,
+      };
+      const { x, y } = getPlacementCoordinates(event);
+      updateDecorPlacementPreview(placementItem, x, y);
+    },
+    onPanResponderRelease: (event) => {
+      if (!placementItem) return;
+
+      const { x, y } = getPlacementCoordinates(event);
+      saveDecorPlacementAndClose(placementItem, x, y);
+    },
+    onPanResponderTerminate: (event) => {
+      if (!placementItem) return;
+
+      const { x, y } = getPlacementCoordinates(event);
+      saveDecorPlacementAndClose(placementItem, x, y);
+    },
+    onStartShouldSetPanResponder: () => false,
+  }), [height, placementItem, roomLayout.height, roomLayout.width, width]);
+  const returnPlacedDecorToBag = (event: GestureResponderEvent) => {
+    if (!placementItem) return;
+
+    event.stopPropagation();
+    removePlacedDecorItem(placementItem.id);
+  };
+  useEffect(() => {
+    if (!placementItem || typeof window === 'undefined') return undefined;
+
+    const finishPlacement = () => {
+      const item = placementItem;
+      const pendingPoint = pendingPagePointRef.current;
+      const pendingPlacement = pendingPlacementRef.current;
+
+      if (pendingPoint && isPointInReturnToBagZone(pendingPoint.x, pendingPoint.y)) {
+        removePlacedDecorItem(item.id);
+        return;
+      }
+
+      if (pendingPlacement?.itemId === item.id) {
+        saveDecorPlacementAndClose(item, pendingPlacement.x, pendingPlacement.y);
+      }
+    };
+    const handleTouchEnd = (event: TouchEvent) => {
+      const touch = event.changedTouches[0];
+
+      if (touch) {
+        pendingPagePointRef.current = { x: touch.pageX, y: touch.pageY };
+      }
+      finishPlacement();
+    };
+    const handleMouseUp = (event: MouseEvent) => {
+      pendingPagePointRef.current = { x: event.pageX, y: event.pageY };
+      finishPlacement();
+    };
+
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isPointInReturnToBagZone, placementItem, removePlacedDecorItem, saveDecorPlacementAndClose]);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -775,6 +977,7 @@ export function HomeScreen() {
           <View
             accessibilityIgnoresInvertColors
             onLayout={updateRoomLayout}
+            ref={roomBackgroundRef}
             style={styles.roomBackground}
           >
             <Image
@@ -793,6 +996,9 @@ export function HomeScreen() {
               <PlacedDecorObject
                 item={placedItem.item}
                 key={placedItem.item.id}
+                onDragEnd={finishPlacedDecorDrag}
+                onDragMove={movePlacedDecorFromPagePoint}
+                onLongPress={beginPlacedDecorEdit}
                 roomScale={roomScale}
                 x={placedItem.x}
                 y={placedItem.y}
@@ -814,25 +1020,35 @@ export function HomeScreen() {
             {placementItem ? (
               <View style={styles.placementLayer}>
                 <Pressable
-                  accessibilityLabel={t('home.placementA11y', { name: placementItem.name })}
+                  {...placementDragResponder.panHandlers}
+                  accessibilityLabel={t('home.placementA11y', { name: placementItemDisplayName })}
                   accessibilityRole="button"
                   onPress={placeDecorItem}
                   style={styles.placementHitArea}
                 />
                 <View style={styles.placementToolbar}>
-                  <Text style={styles.placementText}>{t('home.placementText', { name: placementItem.name })}</Text>
-                  <Pressable
-                    accessibilityLabel={t('home.placementCancel')}
-                    accessibilityRole="button"
-                    onPress={(event) => {
-                      event.stopPropagation();
-                      setPlacementItem(null);
-                    }}
-                    style={styles.placementCancelButton}
-                  >
-                    <Text style={styles.placementCancelText}>{t('actions.cancel')}</Text>
-                  </Pressable>
+                  <Text style={styles.placementText}>
+                    {isRepositioningPlacedItem
+                      ? t('home.placementMoveText', { name: placementItemDisplayName })
+                      : t('home.placementText', { name: placementItemDisplayName })}
+                  </Text>
                 </View>
+                {isRepositioningPlacedItem ? (
+                  <Pressable
+                    accessibilityLabel={t('home.returnToBagA11y', { name: placementItemDisplayName })}
+                    accessibilityRole="button"
+                    onPress={returnPlacedDecorToBag}
+                    style={({ pressed }) => [styles.returnToBagTarget, pressed && styles.returnToBagTargetPressed]}
+                  >
+                    <Image
+                      accessibilityIgnoresInvertColors
+                      resizeMode="contain"
+                      source={require('../../../assets/ui/inventory-button.png')}
+                      style={styles.returnToBagIcon}
+                    />
+                    <Text style={styles.returnToBagText}>{t('home.returnToBag')}</Text>
+                  </Pressable>
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -992,6 +1208,11 @@ export function HomeScreen() {
             <Text style={styles.deliveryRewardErrorText}>{deliveryRewardError}</Text>
           </View>
         ) : null}
+        {placementError ? (
+          <View style={styles.deliveryRewardError}>
+            <Text style={styles.deliveryRewardErrorText}>{placementError}</Text>
+          </View>
+        ) : null}
         <YearlyGoalModal
           difficulty={yearlyGoalDifficulty}
           errorMessage={goalError}
@@ -1071,22 +1292,94 @@ function getShopItemPrice(
 
 function PlacedDecorObject({
   item,
+  onDragEnd,
+  onDragMove,
+  onLongPress,
   roomScale,
   x,
   y,
 }: {
   item: InventoryItem;
+  onDragEnd: (item: InventoryItem, pageX: number, pageY: number, didMove: boolean) => void;
+  onDragMove: (item: InventoryItem, pageX: number, pageY: number) => void;
+  onLongPress: (item: InventoryItem) => void;
   roomScale: number;
   x: number;
   y: number;
 }) {
   const { t } = useI18n();
+  const displayName = getLocalizedInventoryItem(item, t).name;
   const image = getItemImage(item.id);
   const size = Math.round(64 * roomScale);
+  const dragEnabledRef = useRef(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startPointRef = useRef({ x: 0, y: 0 });
+  const clearLongPressTimer = () => {
+    if (!longPressTimerRef.current) return;
+
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+  };
+  const dragResponder = useMemo(() => PanResponder.create({
+    onPanResponderGrant: (event) => {
+      startPointRef.current = {
+        x: event.nativeEvent.pageX,
+        y: event.nativeEvent.pageY,
+      };
+      dragEnabledRef.current = false;
+      clearLongPressTimer();
+      longPressTimerRef.current = setTimeout(() => {
+        dragEnabledRef.current = true;
+        onLongPress(item);
+      }, 260);
+    },
+    onPanResponderMove: (event, gestureState) => {
+      if (!dragEnabledRef.current) return;
+
+      onDragMove(
+        item,
+        gestureState.moveX || event.nativeEvent.pageX || startPointRef.current.x,
+        gestureState.moveY || event.nativeEvent.pageY || startPointRef.current.y,
+      );
+    },
+    onPanResponderRelease: (event, gestureState) => {
+      const wasDragging = dragEnabledRef.current;
+      clearLongPressTimer();
+      dragEnabledRef.current = false;
+
+      if (!wasDragging) return;
+
+      const didMove = Math.abs(gestureState.dx) + Math.abs(gestureState.dy) > 6;
+      onDragEnd(
+        item,
+        gestureState.moveX || event.nativeEvent.pageX || startPointRef.current.x,
+        gestureState.moveY || event.nativeEvent.pageY || startPointRef.current.y,
+        didMove,
+      );
+    },
+    onPanResponderTerminate: (event, gestureState) => {
+      const wasDragging = dragEnabledRef.current;
+      clearLongPressTimer();
+      dragEnabledRef.current = false;
+
+      if (!wasDragging) return;
+
+      const didMove = Math.abs(gestureState.dx) + Math.abs(gestureState.dy) > 6;
+      onDragEnd(
+        item,
+        gestureState.moveX || event.nativeEvent.pageX || startPointRef.current.x,
+        gestureState.moveY || event.nativeEvent.pageY || startPointRef.current.y,
+        didMove,
+      );
+    },
+    onStartShouldSetPanResponder: () => true,
+  }), [item, onDragEnd, onDragMove, onLongPress]);
 
   return (
     <View
-      accessibilityLabel={t('home.placedDecorA11y', { name: item.name })}
+      {...dragResponder.panHandlers}
+      accessibilityLabel={t('home.placedDecorA11y', { name: displayName })}
+      accessibilityRole="button"
       style={[
         styles.placedDecorObject,
         {
@@ -1424,23 +1717,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     zIndex: 2,
   },
-  placementCancelButton: {
-    alignItems: 'center',
-    backgroundColor: '#ffd99e',
-    borderColor: '#6b432f',
-    borderWidth: 2,
-    height: 32,
-    justifyContent: 'center',
-    minWidth: 54,
-    paddingHorizontal: 8,
-  },
-  placementCancelText: {
-    color: '#5c3529',
-    fontFamily: pixelFontFamily,
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0,
-  },
   placementLayer: {
     alignItems: 'center',
     bottom: 0,
@@ -1471,11 +1747,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff8ea',
     borderColor: '#3d2d28',
     borderWidth: 2,
-    flexDirection: 'row',
-    gap: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
     zIndex: 1,
+  },
+  returnToBagIcon: {
+    height: 46,
+    width: 46,
+  },
+  returnToBagTarget: {
+    alignItems: 'center',
+    backgroundColor: '#fff8ea',
+    borderColor: '#3d2d28',
+    borderWidth: 2,
+    bottom: 26,
+    minWidth: 82,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    position: 'absolute',
+    right: 18,
+    zIndex: 2,
+  },
+  returnToBagTargetPressed: {
+    backgroundColor: '#ffe0a8',
+    transform: [{ translateY: 1 }],
+  },
+  returnToBagText: {
+    color: '#5c3529',
+    fontFamily: pixelFontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0,
+    lineHeight: 14,
+    marginTop: 3,
+    textAlign: 'center',
   },
   characterStage: {
     alignItems: 'center',

@@ -22,6 +22,10 @@ export async function saveDecorPlacement(placement: DecorPlacement): Promise<voi
   writeDecorPlacements(placements);
 }
 
+export async function deleteDecorPlacement(itemId: string): Promise<void> {
+  writeDecorPlacements(readDecorPlacements().filter((placement) => placement.itemId !== itemId));
+}
+
 function readDecorPlacements(): DecorPlacement[] {
   if (memoryPlacements) {
     return clonePlacements(memoryPlacements);
