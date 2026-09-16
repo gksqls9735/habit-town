@@ -3,19 +3,19 @@ import { PetDefinition, RailAction } from './types';
 export const leftActions: RailAction[] = [
   {
     id: 'todayTasks',
-    image: require('../../../assets/ui/today-tasks-button.png'),
+    image: require('../../../assets/ui/today-tasks-button-simple.png'),
     label: 'Today',
     symbol: '!',
   },
   {
     id: 'yearlyGoal',
-    image: require('../../../assets/ui/yearly-goals-button-v2.png'),
+    image: require('../../../assets/ui/yearly-goals-button-simple.png'),
     label: 'Goal',
     symbol: 'Y',
   },
   {
     id: 'calendar',
-    image: require('../../../assets/ui/calendar-button.png'),
+    image: require('../../../assets/ui/calendar-button-simple.png'),
     label: 'Calendar',
     symbol: 'C',
   },
