@@ -23,7 +23,7 @@ Use these rules for props, furniture, pickups, plants, containers, fixtures, mac
 - Ground the object on a stable bottom-center anchor so it can be placed on the gameplay plane without visual jumping.
 - Keep the full object inside the canvas with a small transparent safety margin. Aim for roughly 70–90% occupancy unless gameplay scale requires otherwise.
 - Do not add a catalog pedestal, decorative frame, full background, or baked cast shadow. Contact pixels may suggest weight, but the scene should provide the environmental shadow.
-- Preserve a consistent canvas size, anchor, visual scale, outline thickness, and light direction across object variants and animation frames.
+- Preserve a consistent canvas size, anchor, visual scale, outline thickness, and light direction across object variants.
 
 ## Material Language
 

@@ -6,7 +6,7 @@ Use an orthographic 2D projection for every generated asset. Perspective depth m
 
 | Asset type | Default view | Use |
 | --- | --- | --- |
-| `char` | `side` | Side-scrolling sprites and animation-ready characters |
+| `char` | `side` | Side-scrolling sprites and readable characters |
 | `object` | `side` | Grounded props and interactables placed in the game world |
 | `bg` | `side` | Compact side-view backgrounds, textures, and tiles |
 | `scene` | `side` | Cinematic side-scrolling environments |
@@ -42,7 +42,6 @@ Use a different supported view only when the user explicitly requests it.
 - Low-angle, high-angle, Dutch-angle, or cinematic lens shots
 - 3D render language, depth of field, lens blur, and perspective foreshortening
 - Converging building edges, roads, floors, or grid lines
-- Viewpoint changes between animation frames
 
 ## Harness Metadata
 

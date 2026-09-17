@@ -14,7 +14,7 @@ Keep source, processed, and runtime-ready files separate so generated drafts do 
 
 Choose the folder from the image's intended use:
 
-- `characters`: character sprites, portraits, growth stages, expressions, and animation sheets
+- `characters`: character sprites, portraits, growth stages, and expressions
 - `rooms`: room backgrounds, fixed room layouts, wall and floor scenes
 - `furniture`: chairs, desks, beds, shelves, lamps, and other placed room objects
 - `decor`: wall items, floor items, collectibles, plants, posters, and nonfunctional props
@@ -65,14 +65,13 @@ src/
         clean/
 ```
 
-Use `raw/` for unprocessed generated files, source sheets, and drafts. Use `clean/` only for verified, accepted, app-ready files. Use `references/` for images that guide generation but are not shipped directly. Use `manifests/` for animation metadata, generation metadata, palette notes, or composition records when the tool supports separate metadata.
+Use `raw/` for unprocessed generated files, source sheets, and drafts. Use `clean/` only for verified, accepted, app-ready files. Use `references/` for images that guide generation but are not shipped directly. Use `manifests/` for generation metadata, palette notes, or composition records when the tool supports separate metadata.
 
 
 ## Naming
 
 - Use descriptive kebab-case names, such as `hamster-baby-idle.png`, `cozy-bed-level-01.png`, or `coin-reward-large.png`.
 - Include the subject, state, stage, variant, or level when it affects runtime selection.
-- Keep animation state names in the filename when the file is a sheet, such as `tuxedo-cat-idle-sheet.png`.
 - Avoid generic names like `image.png`, `asset.png`, `new-icon.png`, or `generated.png`.
 - Do not overwrite an unrelated accepted asset. Create a new versioned or variant filename when the visual meaning changes.
 
