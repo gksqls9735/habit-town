@@ -13,18 +13,20 @@ import {
 } from 'react-native';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { useI18n } from '../../../features/i18n';
-import {
-  experiencePerGrowthStage,
-  RewardProgress,
-} from '../../../features/rewards/rewardSystem';
+import { experiencePerGrowthStage } from '../../../features/rewards/rewardSystem';
+import type { CareMeterValues, RewardProgress } from '../../../features/rewards/rewardSystem';
 
 const pixelFontFamily = 'Galmuri11';
+const petSummaryHeight = 154;
+const statusChipWidth = 62;
+const statusChipHeight = 42;
 const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
     : null;
 
 type PetStatusPopupProps = {
+  careMeters: CareMeterValues;
   defaultName: string;
   defaultRoomName: string;
   displayName: string;
@@ -41,6 +43,7 @@ type PetStatusPopupProps = {
 };
 
 export function PetStatusPopup({
+  careMeters,
   defaultName,
   defaultRoomName,
   displayName,
@@ -61,6 +64,11 @@ export function PetStatusPopup({
   const normalizedDraftRoomName = draftRoomName.trim();
   const growthPercent = Math.round(progress.experience / experiencePerGrowthStage * 100);
   const { t } = useI18n();
+  const careStats = [
+    { label: t('pet.status.hunger'), value: careMeters.hunger },
+    { label: t('pet.status.satisfaction'), value: careMeters.loneliness },
+    { label: t('pet.status.cleanliness'), value: careMeters.cleanliness },
+  ];
 
   useEffect(() => {
     if (visible) {
@@ -114,13 +122,20 @@ export function PetStatusPopup({
                   style={[styles.petImage, pixelatedImageStyle]}
                 />
               </View>
-              <View style={styles.statPanel}>
-                <Text style={styles.nameText}>{displayName}</Text>
-                <Text style={styles.subText}>{t('pet.status.defaultName', { name: defaultName })}</Text>
-                <Text style={styles.subText}>{t('pet.status.roomName', { name: displayRoomName })}</Text>
-                <View style={styles.statGrid}>
-                  <StatusChip label={t('pet.status.stage')} value={t(`stage.${progress.stage}`)} />
-                  <StatusChip label={t('pet.status.growth')} value={`${growthPercent}%`} />
+              <View style={styles.infoPanel}>
+                <View style={styles.statPanel}>
+                  <Text style={styles.nameText}>{displayName}</Text>
+                  <Text style={styles.subText}>{t('pet.status.defaultName', { name: defaultName })}</Text>
+                  <Text style={styles.subText}>{t('pet.status.roomName', { name: displayRoomName })}</Text>
+                  <View style={styles.primaryStatRow}>
+                    <StatusChip label={t('pet.status.stage')} value={t(`stage.${progress.stage}`)} />
+                    <StatusChip label={t('pet.status.growth')} value={`${growthPercent}%`} />
+                  </View>
+                  <View style={styles.careStatRow}>
+                    {careStats.map((stat) => (
+                      <StatusChip key={stat.label} label={stat.label} value={`${Math.round(stat.value * 100)}%`} />
+                    ))}
+                  </View>
                 </View>
               </View>
             </View>
@@ -281,6 +296,11 @@ const styles = StyleSheet.create({
     gap: 4,
     marginLeft: 8,
   },
+  careStatRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 6,
+  },
   helperText: {
     color: '#8a6a51',
     fontFamily: pixelFontFamily,
@@ -295,6 +315,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0,
     marginBottom: 7,
+  },
+  infoPanel: {
+    height: petSummaryHeight,
+    flex: 1,
+    minWidth: 0,
   },
   roomInputLabel: {
     marginTop: 12,
@@ -334,7 +359,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff0cc',
     borderColor: '#9a603d',
     borderWidth: 2,
-    height: 104,
+    height: petSummaryHeight,
     justifyContent: 'center',
     overflow: 'hidden',
     width: 104,
@@ -390,9 +415,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     letterSpacing: 0,
   },
-  statGrid: {
+  primaryStatRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 6,
     marginTop: 9,
   },
@@ -404,9 +428,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff8ea',
     borderColor: '#b9824f',
     borderWidth: 2,
-    minWidth: 62,
+    height: statusChipHeight,
     paddingHorizontal: 7,
-    paddingVertical: 6,
+    paddingVertical: 5,
+    width: statusChipWidth,
   },
   statusLabel: {
     color: '#9b6234',
@@ -431,7 +456,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   summaryRow: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
     gap: 12,
   },

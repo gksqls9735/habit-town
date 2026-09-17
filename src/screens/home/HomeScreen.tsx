@@ -1055,6 +1055,7 @@ export function HomeScreen() {
 
         <PetStatusHud
           careMeters={careMeters}
+          onPressPet={() => setIsPetStatusOpen(true)}
           petImage={activePet.stages[currentStage]}
           petName={activePetDisplayName}
           progress={rewardProgress}
@@ -1118,6 +1119,7 @@ export function HomeScreen() {
         ) : null}
 
         <PetStatusPopup
+          careMeters={careMeters}
           defaultName={activePetDefaultName}
           defaultRoomName={activePetDefaultRoomName}
           displayName={activePetDisplayName}
