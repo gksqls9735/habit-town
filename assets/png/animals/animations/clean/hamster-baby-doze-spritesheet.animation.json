@@ -1,0 +1,15 @@
+{
+  "id": "hamster_baby_doze",
+  "source": "assets/png/animals/hamster-baby.png",
+  "frameCount": 4,
+  "frameWidth": 158,
+  "frameHeight": 158,
+  "durationMs": 620,
+  "background": "transparent",
+  "notes": [
+    "4-frame doze animation with fixed feet/body baseline",
+    "The head is separated into a layer and moved down by 0/2/5/8px for a visible nod",
+    "Original head pixels are removed from the body layer before recomposition to avoid overlap artifacts",
+    "Sleeping loop is intended to use frames 2-3-4-3-2 in app code"
+  ]
+}
