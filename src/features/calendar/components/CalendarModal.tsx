@@ -5,37 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { DailyPlan, YearlyGoal } from '../../goals/types';
 import { canEditPlan, getLocalDateKey, getNextMidnightTimestamp } from '../../goals/utils';
-import { useI18n } from '../../i18n';
+import { calendarLocales, useI18n } from '../../i18n';
 import type { AppLanguage, Translate } from '../../i18n';
 import { CalendarRecord, getCalendarHistory } from '../calendarHistory';
 
-LocaleConfig.locales.en = {
-  monthNames: [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ],
-  monthNamesShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-  dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  today: 'Today',
-};
-LocaleConfig.locales.ko = {
-  monthNames: Array.from({ length: 12 }, (_, index) => `${index + 1}월`),
-  monthNamesShort: Array.from({ length: 12 }, (_, index) => `${index + 1}월`),
-  dayNames: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
-  dayNamesShort: ['일', '월', '화', '수', '목', '금', '토'],
-  today: '오늘',
-};
+LocaleConfig.locales.en = calendarLocales.en;
+LocaleConfig.locales.ko = calendarLocales.ko;
 LocaleConfig.defaultLocale = 'ko';
 
 const fontFamily = 'Galmuri11';

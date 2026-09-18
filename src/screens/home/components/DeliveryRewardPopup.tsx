@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
-import { useI18n } from '../../../features/i18n';
+import { rewardRarityLabels, useI18n } from '../../../features/i18n';
 import { getLocalizedInventoryItem, getLocalizedItemName } from '../../../features/items/localizedItems';
-import { DeliveryReward, DeliveryRewardRarity } from '../../../features/rewards/eventRewards';
+import { DeliveryReward } from '../../../features/rewards/eventRewards';
 
 const parcelImage = require('../../../../assets/event/animal-rescue-reward-gift-box.png');
 const pixelFontFamily = 'Galmuri11';
@@ -19,12 +19,6 @@ const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
     : null;
-
-const rarityLabels: Record<DeliveryRewardRarity, string> = {
-  common: 'BASIC',
-  rare: 'RARE',
-  uncommon: 'GOOD',
-};
 
 type DeliveryRewardPopupProps = {
   isBusy: boolean;
@@ -101,7 +95,7 @@ export function DeliveryRewardPopup({
                   style={[styles.parcelImage, pixelatedImageStyle]}
                 />
                 <View style={styles.rewardCard}>
-                  <Text style={styles.rarityText}>{rarityLabels[reward.rarity]}</Text>
+                  <Text style={styles.rarityText}>{rewardRarityLabels[reward.rarity]}</Text>
                   <Text style={styles.rewardName}>{getLocalizedItemName(reward, t)}</Text>
                   <Text style={styles.rewardDetail}>{detail}</Text>
                   <Text style={styles.rewardDescription}>{description}</Text>

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
-import { AppLanguage, useI18n } from '../../../features/i18n';
+import { AppLanguage, languageOptions, useI18n } from '../../../features/i18n';
 
 const pixelFontFamily = 'Galmuri11';
 
@@ -13,11 +13,6 @@ type PetSettingsPopupProps = {
   visible: boolean;
   width: number;
 };
-
-const languageOptions: readonly { label: string; value: AppLanguage }[] = [
-  { label: '한국어', value: 'ko' },
-  { label: 'English', value: 'en' },
-];
 
 export function PetSettingsPopup({
   language,

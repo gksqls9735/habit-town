@@ -19,6 +19,8 @@ All user-visible screen text must go through the project's i18n layer.
 
 - Do not add hardcoded display strings directly in components, modals, buttons, tabs, empty states, error messages, accessibility labels, placeholders, or user-facing status messages.
 - Add or reuse translation keys for every supported app language when adding visible text.
+- Add new app display translations, locale dictionaries, language option labels, and shared display label maps to `src/features/i18n/dictionary.ts`.
+- Do not create page-level or component-level translation dictionaries for user-visible text. Components should import shared dictionary exports or call `t(...)` with keys defined in the common dictionary.
 - Keep persisted domain data, user-authored content, and non-user-facing prompts or parsing rules separate from display translations.
 
 

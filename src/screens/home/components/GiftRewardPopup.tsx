@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
-import { useI18n } from '../../../features/i18n';
+import { rewardRarityLabels, useI18n } from '../../../features/i18n';
 import { getLocalizedInventoryItem, getLocalizedItemName } from '../../../features/items/localizedItems';
-import { DeliveryReward, DeliveryRewardRarity } from '../../../features/rewards/eventRewards';
+import { DeliveryReward } from '../../../features/rewards/eventRewards';
 
 const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
 const giftIcon = require('../../../../assets/ui/reward-button.png');
@@ -20,12 +20,6 @@ const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
     : null;
-const rarityLabels: Record<DeliveryRewardRarity, string> = {
-  common: 'BASIC',
-  rare: 'RARE',
-  uncommon: 'GOOD',
-};
-
 type GiftRewardPopupProps = {
   giftBoxCount: number;
   isBusy: boolean;
@@ -163,7 +157,7 @@ function RewardCard({ reward }: { reward: DeliveryReward }) {
 
   return (
     <View style={styles.rewardCard}>
-      <Text style={styles.cardEyebrow}>{rarityLabels[reward.rarity]}</Text>
+      <Text style={styles.cardEyebrow}>{rewardRarityLabels[reward.rarity]}</Text>
       <Text style={styles.rewardTitle}>{getLocalizedItemName(reward, t)}</Text>
       <RewardDetail reward={reward} text={detail} />
       <Text style={styles.rewardDescription}>{description}</Text>

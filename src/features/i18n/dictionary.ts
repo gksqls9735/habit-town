@@ -674,3 +674,50 @@ export const translations: Record<AppLanguage, Record<string, string>> = {
     'tasks.today': '오늘',
   },
 };
+
+export const calendarLocales = {
+  en: {
+    dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    monthNames: [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ],
+    monthNamesShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    today: 'Today',
+  },
+  ko: {
+    dayNames: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
+    dayNamesShort: ['일', '월', '화', '수', '목', '금', '토'],
+    monthNames: Array.from({ length: 12 }, (_, index) => `${index + 1}월`),
+    monthNamesShort: Array.from({ length: 12 }, (_, index) => `${index + 1}월`),
+    today: '오늘',
+  },
+} satisfies Record<AppLanguage, {
+  dayNames: string[];
+  dayNamesShort: string[];
+  monthNames: string[];
+  monthNamesShort: string[];
+  today: string;
+}>;
+
+export const languageOptions = [
+  { label: '한국어', value: 'ko' },
+  { label: 'English', value: 'en' },
+] as const satisfies readonly { label: string; value: AppLanguage }[];
+
+export const rewardRarityLabels = {
+  common: 'BASIC',
+  rare: 'RARE',
+  uncommon: 'GOOD',
+} as const;

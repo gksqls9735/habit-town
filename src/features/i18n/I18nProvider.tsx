@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
-import { translations } from './translations';
+import { translations } from './dictionary';
 import type { AppLanguage, Translate, TranslationParams } from './types';
 
 type I18nContextValue = {
