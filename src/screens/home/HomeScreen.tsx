@@ -63,6 +63,7 @@ import {
   loadDecorPlacements,
   saveDecorPlacement,
 } from '../../features/room/decorPlacementRepository';
+import { getDecorPresentation } from '../../features/room/decorPresentation';
 import { ShopModal } from '../../features/shop/components/ShopModal';
 import type { GoalCapacityShopItem, InventoryCapacityShopItem, ShopItem } from '../../features/shop/items';
 import {
@@ -266,6 +267,22 @@ export function HomeScreen() {
   const pendingPagePointRef = useRef<PagePoint | null>(null);
   const characterSize = Math.round(132 * roomScale);
   const characterBottom = Math.max(100, Math.round(height * (compactHeight ? 0.15 : 0.18)));
+  const cushionPlacement = placedDecorItems['pet-cushion'];
+  const cushionPresentation = getDecorPresentation('pet-cushion');
+  const cushionDozeZone = useMemo(
+    () => cushionPlacement && cushionPlacement.y >= 0.72
+      ? {
+        centerX: (cushionPlacement.x - 0.5) * roomLayout.width,
+        radius: Math.max(
+          8,
+          Math.round(
+            (cushionPresentation.width * roomScale - characterSize * 0.78) / 2,
+          ),
+        ),
+      }
+      : undefined,
+    [characterSize, cushionPlacement, cushionPresentation.width, roomLayout.width, roomScale],
+  );
   const showLocalDevButton = isLocalhostDevWeb();
   const openGiftRewardPopup = () => {
     setGiftReward(null);
@@ -740,10 +757,17 @@ export function HomeScreen() {
     [activeYearlyGoalLimit, capacityPurchaseCounts],
   );
   const beginDecorPlacement = (item: InventoryItem) => {
+    const existingPlacement = placedDecorItems[item.id];
+    const presentation = getDecorPresentation(item.id);
+
     setPlacementError('');
     setIsRepositioningPlacedItem(false);
-    setPlacementOriginalItem(placedDecorItems[item.id] ?? null);
-    updateDecorPlacementPreview(item, 0.5, 0.5);
+    setPlacementOriginalItem(existingPlacement ?? null);
+    updateDecorPlacementPreview(
+      item,
+      existingPlacement?.x ?? presentation.initialX,
+      existingPlacement?.y ?? presentation.initialY,
+    );
     setPlacementItem(item);
     setIsInventoryOpen(false);
   };
@@ -977,6 +1001,7 @@ export function HomeScreen() {
                 visible={isPetCareMenuOpen}
               />
               <StaticPet
+                dozeZone={cushionDozeZone}
                 onPress={() => setIsPetCareMenuOpen((current) => !current)}
                 pet={activePet}
                 petName={activePetDisplayName}
@@ -1278,7 +1303,9 @@ function PlacedDecorObject({
   const { t } = useI18n();
   const displayName = getLocalizedInventoryItem(item, t).name;
   const image = getItemImage(item.id);
-  const size = Math.round(64 * roomScale);
+  const presentation = getDecorPresentation(item.id);
+  const height = Math.round(presentation.height * roomScale);
+  const width = Math.round(presentation.width * roomScale);
   const dragEnabledRef = useRef(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPointRef = useRef({ x: 0, y: 0 });
@@ -1351,12 +1378,13 @@ function PlacedDecorObject({
       style={[
         styles.placedDecorObject,
         {
-          height: size,
+          height,
           left: `${x * 100}%`,
-          marginLeft: -Math.round(size / 2),
-          marginTop: -Math.round(size / 2),
+          marginLeft: -Math.round(width / 2),
+          marginTop: -Math.round(height / 2),
           top: `${y * 100}%`,
-          width: size,
+          width,
+          zIndex: presentation.zIndex,
         },
       ]}
     >
@@ -1488,6 +1516,7 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     right: 0,
+    zIndex: 3,
   },
   deliveryRewardError: {
     alignSelf: 'center',

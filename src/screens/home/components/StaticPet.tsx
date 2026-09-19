@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, ImageStyle, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useI18n } from '../../../features/i18n';
 import { GrowthStage, PetDefinition } from '../types';
@@ -14,15 +14,19 @@ const hamsterBabyWalkRangeRatio = 0.45;
 const hamsterBabyWalkStepRatio = 0.018;
 const hamsterBabyDozeFrameCount = 4;
 const hamsterBabyDozeFrameDurationMs = 560;
-const hamsterBabyDozeRestDurationMs = 5200;
 const hamsterBabyDozeSleepDurationMs = 12000;
 const hamsterBabyDozeLoop = [1, 2, 3, 2, 1];
+const hamsterBabyCushionDozeChance = 0.45;
 const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
     : null;
 
 type StaticPetProps = {
+  dozeZone?: {
+    centerX: number;
+    radius: number;
+  };
   onPress?: () => void;
   pet: PetDefinition;
   petName: string;
@@ -30,7 +34,7 @@ type StaticPetProps = {
   stage: GrowthStage;
 };
 
-export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps) {
+export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: StaticPetProps) {
   const { t } = useI18n();
   const petSource = pet.stages[stage];
   const [walkFrameIndex, setWalkFrameIndex] = useState(0);
@@ -39,7 +43,7 @@ export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps
   const [isWalking, setIsWalking] = useState(false);
   const [isDozing, setIsDozing] = useState(false);
   const [dozeFrameIndex, setDozeFrameIndex] = useState(0);
-  const [idleCycleCount, setIdleCycleCount] = useState(0);
+  const isInsideDozeZoneRef = useRef(false);
   const shouldUseWalkAnimation = pet.id === 'hamster' && stage === 'baby';
   const walkRange = Math.round(size * hamsterBabyWalkRangeRatio);
   const walkStep = Math.max(2, Math.round(size * hamsterBabyWalkStepRatio));
@@ -129,7 +133,7 @@ export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps
       setIsWalking(false);
       setIsDozing(false);
       setDozeFrameIndex(0);
-      setIdleCycleCount(0);
+      isInsideDozeZoneRef.current = false;
       return;
     }
 
@@ -157,13 +161,6 @@ export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps
     const timeoutId = setTimeout(() => {
       if (isWalking) {
         setIsWalking(false);
-        setIdleCycleCount((current) => current + 1);
-        return;
-      }
-
-      if (idleCycleCount % 2 === 1) {
-        setIsDozing(true);
-        setDozeFrameIndex(1);
         return;
       }
 
@@ -171,20 +168,7 @@ export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps
     }, isWalking ? hamsterBabyWalkBurstDurationMs : hamsterBabyWalkRestDurationMs);
 
     return () => clearTimeout(timeoutId);
-  }, [idleCycleCount, isDozing, isWalking, shouldUseWalkAnimation]);
-
-  useEffect(() => {
-    if (!shouldUseWalkAnimation || isWalking || isDozing) {
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setIsDozing(true);
-      setDozeFrameIndex(1);
-    }, hamsterBabyDozeRestDurationMs);
-
-    return () => clearTimeout(timeoutId);
-  }, [idleCycleCount, isDozing, isWalking, shouldUseWalkAnimation]);
+  }, [isDozing, isWalking, shouldUseWalkAnimation]);
 
   useEffect(() => {
     if (!shouldUseWalkAnimation || !isDozing) {
@@ -210,7 +194,6 @@ export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps
     const timeoutId = setTimeout(() => {
       setIsDozing(false);
       setDozeFrameIndex(0);
-      setIdleCycleCount((current) => current + 1);
     }, hamsterBabyDozeSleepDurationMs);
 
     return () => clearTimeout(timeoutId);
@@ -224,6 +207,23 @@ export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps
     const intervalId = setInterval(() => {
       setWalkOffsetX((current) => {
         const next = current + (walkDirection === 'right' ? walkStep : -walkStep);
+        const isInsideDozeZone = dozeZone
+          ? Math.abs(next - dozeZone.centerX) <= dozeZone.radius
+          : false;
+
+        if (
+          isInsideDozeZone
+          && !isInsideDozeZoneRef.current
+          && Math.random() < hamsterBabyCushionDozeChance
+        ) {
+          isInsideDozeZoneRef.current = true;
+          setIsWalking(false);
+          setIsDozing(true);
+          setDozeFrameIndex(1);
+          return next;
+        }
+
+        isInsideDozeZoneRef.current = isInsideDozeZone;
 
         if (next >= walkRange) {
           setWalkDirection('left');
@@ -240,13 +240,16 @@ export function StaticPet({ onPress, pet, petName, size, stage }: StaticPetProps
     }, hamsterBabyWalkMoveDurationMs);
 
     return () => clearInterval(intervalId);
-  }, [isWalking, shouldUseWalkAnimation, walkDirection, walkRange, walkStep]);
+  }, [dozeZone, isWalking, shouldUseWalkAnimation, walkDirection, walkRange, walkStep]);
+
+  useEffect(() => {
+    isInsideDozeZoneRef.current = false;
+  }, [dozeZone?.centerX, dozeZone?.radius]);
 
   const handlePress = () => {
     if (isDozing) {
       setIsDozing(false);
       setDozeFrameIndex(0);
-      setIdleCycleCount((current) => current + 1);
     }
 
     onPress?.();
