@@ -1004,12 +1004,14 @@ export function HomeScreen() {
                 onDragEnd={finishPlacedDecorDrag}
                 onDragMove={movePlacedDecorFromPagePoint}
                 onLongPress={beginPlacedDecorEdit}
+                petBaselineY={roomLayout.height - characterBottom}
+                roomHeight={roomLayout.height}
                 roomScale={roomScale}
                 x={placedItem.x}
                 y={placedItem.y}
               />
             ))}
-            <View style={[styles.characterStage, { bottom: characterBottom }]}>
+            <View pointerEvents="box-none" style={[styles.characterStage, { bottom: characterBottom }]}>
               <PetCareBubbleActions
                 onCareAction={selectPetCareAction}
                 visible={isPetCareMenuOpen}
@@ -1302,6 +1304,8 @@ function PlacedDecorObject({
   onDragEnd,
   onDragMove,
   onLongPress,
+  petBaselineY,
+  roomHeight,
   roomScale,
   x,
   y,
@@ -1310,6 +1314,8 @@ function PlacedDecorObject({
   onDragEnd: (item: InventoryItem, pageX: number, pageY: number, didMove: boolean) => void;
   onDragMove: (item: InventoryItem, pageX: number, pageY: number) => void;
   onLongPress: (item: InventoryItem) => void;
+  petBaselineY: number;
+  roomHeight: number;
   roomScale: number;
   x: number;
   y: number;
@@ -1320,6 +1326,12 @@ function PlacedDecorObject({
   const presentation = getDecorPresentation(item.id);
   const height = Math.round(presentation.height * roomScale);
   const width = Math.round(presentation.width * roomScale);
+  const decorBaselineY = y * roomHeight + height * 0.42;
+  const zIndex = item.id === 'toy-storage-basket'
+    && roomHeight > 0
+    && decorBaselineY > petBaselineY + 4
+    ? 4
+    : presentation.zIndex;
   const dragEnabledRef = useRef(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPointRef = useRef({ x: 0, y: 0 });
@@ -1398,7 +1410,7 @@ function PlacedDecorObject({
           marginTop: -Math.round(height / 2),
           top: `${y * 100}%`,
           width,
-          zIndex: presentation.zIndex,
+          zIndex,
         },
       ]}
     >
