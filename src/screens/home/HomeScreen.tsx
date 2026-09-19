@@ -145,6 +145,15 @@ function getCareUsableItems(
   });
 }
 
+function constrainDecorCoordinates(itemId: string, x: number, y: number) {
+  const { placementBounds } = getDecorPresentation(itemId);
+
+  return {
+    x: clamp(x, placementBounds.minX, placementBounds.maxX),
+    y: clamp(y, placementBounds.minY, placementBounds.maxY),
+  };
+}
+
 export function HomeScreen() {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
@@ -409,8 +418,9 @@ export function HomeScreen() {
         placements
           .map((placement) => {
             const item = items.find((candidate) => candidate.id === placement.itemId);
+            const coordinates = constrainDecorCoordinates(placement.itemId, placement.x, placement.y);
 
-            return item ? [item.id, { item, x: placement.x, y: placement.y }] : null;
+            return item ? [item.id, { item, ...coordinates }] : null;
           })
           .filter((entry): entry is [string, PlacedDecorItem] => entry !== null),
       ));
@@ -791,22 +801,24 @@ export function HomeScreen() {
   useEffect(() => {
     requestAnimationFrame(measureRoomWindowFrame);
   }, [height, measureRoomWindowFrame, width]);
-  const getPlacementCoordinates = (event: GestureResponderEvent) => {
+  const getPlacementCoordinates = (event: GestureResponderEvent, item: InventoryItem) => {
     const { locationX, locationY } = event.nativeEvent;
 
-    return {
-      x: clamp(locationX / Math.max(roomLayout.width || width, 1), 0.05, 0.95),
-      y: clamp(locationY / Math.max(roomLayout.height || height, 1), 0.08, 0.94),
-    };
+    return constrainDecorCoordinates(
+      item.id,
+      locationX / Math.max(roomLayout.width || width, 1),
+      locationY / Math.max(roomLayout.height || height, 1),
+    );
   };
-  const getPlacementCoordinatesFromPage = (pageX: number, pageY: number) => {
+  const getPlacementCoordinatesFromPage = (item: InventoryItem, pageX: number, pageY: number) => {
     const frameWidth = roomWindowFrame.width || roomLayout.width || width;
     const frameHeight = roomWindowFrame.height || roomLayout.height || height;
 
-    return {
-      x: clamp((pageX - roomWindowFrame.x) / Math.max(frameWidth, 1), 0.05, 0.95),
-      y: clamp((pageY - roomWindowFrame.y) / Math.max(frameHeight, 1), 0.08, 0.94),
-    };
+    return constrainDecorCoordinates(
+      item.id,
+      (pageX - roomWindowFrame.x) / Math.max(frameWidth, 1),
+      (pageY - roomWindowFrame.y) / Math.max(frameHeight, 1),
+    );
   };
   const isPointInReturnToBagZone = (pageX: number, pageY: number) => {
     const frameWidth = roomWindowFrame.width || roomLayout.width || width;
@@ -817,22 +829,24 @@ export function HomeScreen() {
     return localX >= frameWidth - 126 && localY >= frameHeight - 136;
   };
   const updateDecorPlacementPreview = (item: InventoryItem, x: number, y: number) => {
+    const coordinates = constrainDecorCoordinates(item.id, x, y);
     const placement = {
       item,
-      x,
-      y,
+      ...coordinates,
     };
 
-    pendingPlacementRef.current = { itemId: item.id, x, y };
+    pendingPlacementRef.current = { itemId: item.id, ...coordinates };
     setPlacedDecorItems((current) => ({
       ...current,
       [item.id]: placement,
     }));
   };
   const saveDecorPlacementAndClose = (item: InventoryItem, x: number, y: number) => {
-    const pendingPlacement = pendingPlacementRef.current?.itemId === item.id
+    const requestedPlacement = pendingPlacementRef.current?.itemId === item.id
       ? pendingPlacementRef.current
       : { itemId: item.id, x, y };
+    const coordinates = constrainDecorCoordinates(item.id, requestedPlacement.x, requestedPlacement.y);
+    const pendingPlacement = { itemId: item.id, ...coordinates };
     updateDecorPlacementPreview(item, pendingPlacement.x, pendingPlacement.y);
     void saveDecorPlacement({
       itemId: item.id,
@@ -869,12 +883,12 @@ export function HomeScreen() {
   const placeDecorItem = (event: GestureResponderEvent) => {
     if (!placementItem) return;
 
-    const { x, y } = getPlacementCoordinates(event);
+    const { x, y } = getPlacementCoordinates(event, placementItem);
     saveDecorPlacementAndClose(placementItem, x, y);
   };
   const movePlacedDecorFromPagePoint = (item: InventoryItem, pageX: number, pageY: number) => {
     pendingPagePointRef.current = { x: pageX, y: pageY };
-    const { x, y } = getPlacementCoordinatesFromPage(pageX, pageY);
+    const { x, y } = getPlacementCoordinatesFromPage(item, pageX, pageY);
     updateDecorPlacementPreview(item, x, y);
   };
   const finishPlacedDecorDrag = (item: InventoryItem, pageX: number, pageY: number, didMove: boolean) => {
@@ -888,7 +902,7 @@ export function HomeScreen() {
       return;
     }
 
-    const { x, y } = getPlacementCoordinatesFromPage(pageX, pageY);
+    const { x, y } = getPlacementCoordinatesFromPage(item, pageX, pageY);
     saveDecorPlacementAndClose(item, x, y);
   };
   const placementDragResponder = useMemo(() => PanResponder.create({
@@ -900,19 +914,19 @@ export function HomeScreen() {
         x: event.nativeEvent.pageX,
         y: event.nativeEvent.pageY,
       };
-      const { x, y } = getPlacementCoordinates(event);
+      const { x, y } = getPlacementCoordinates(event, placementItem);
       updateDecorPlacementPreview(placementItem, x, y);
     },
     onPanResponderRelease: (event) => {
       if (!placementItem) return;
 
-      const { x, y } = getPlacementCoordinates(event);
+      const { x, y } = getPlacementCoordinates(event, placementItem);
       saveDecorPlacementAndClose(placementItem, x, y);
     },
     onPanResponderTerminate: (event) => {
       if (!placementItem) return;
 
-      const { x, y } = getPlacementCoordinates(event);
+      const { x, y } = getPlacementCoordinates(event, placementItem);
       saveDecorPlacementAndClose(placementItem, x, y);
     },
     onStartShouldSetPanResponder: () => false,
