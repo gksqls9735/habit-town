@@ -198,6 +198,7 @@ export function HomeScreen() {
   const [isRepositioningPlacedItem, setIsRepositioningPlacedItem] = useState(false);
   const [placementError, setPlacementError] = useState('');
   const [placedDecorItems, setPlacedDecorItems] = useState<Record<string, PlacedDecorItem>>({});
+  const [selectedDecorItemId, setSelectedDecorItemId] = useState<string | null>(null);
   const [roomLayout, setRoomLayout] = useState({ height: 0, width: 0 });
   const [roomWindowFrame, setRoomWindowFrame] = useState<RoomWindowFrame>({
     height: 0,
@@ -771,6 +772,7 @@ export function HomeScreen() {
     const presentation = getDecorPresentation(item.id);
 
     setPlacementError('');
+    setSelectedDecorItemId(null);
     setIsRepositioningPlacedItem(false);
     setPlacementOriginalItem(existingPlacement ?? null);
     updateDecorPlacementPreview(
@@ -783,6 +785,7 @@ export function HomeScreen() {
   };
   const beginPlacedDecorEdit = (item: InventoryItem) => {
     setPlacementError('');
+    setSelectedDecorItemId(null);
     setPlacementOriginalItem(placedDecorItems[item.id] ?? null);
     setIsRepositioningPlacedItem(true);
     setPlacementItem(item);
@@ -875,6 +878,7 @@ export function HomeScreen() {
     setIsRepositioningPlacedItem(false);
     setPlacementItem(null);
     setPlacementError('');
+    setSelectedDecorItemId((current) => current === itemId ? null : current);
     void deleteDecorPlacement(itemId).catch(() => {
       setPlacementError(t('home.error.decorReturn'));
       void refreshRoomBackgroundImages();
@@ -1004,6 +1008,9 @@ export function HomeScreen() {
                 onDragEnd={finishPlacedDecorDrag}
                 onDragMove={movePlacedDecorFromPagePoint}
                 onLongPress={beginPlacedDecorEdit}
+                onPress={(item) => setSelectedDecorItemId((current) => (
+                  current === item.id ? null : item.id
+                ))}
                 petBaselineY={roomLayout.height - characterBottom}
                 roomHeight={roomLayout.height}
                 roomScale={roomScale}
@@ -1011,6 +1018,14 @@ export function HomeScreen() {
                 y={placedItem.y}
               />
             ))}
+            {selectedDecorItemId && placedDecorItems[selectedDecorItemId] ? (
+              <DecorActionMenu
+                placedItem={placedDecorItems[selectedDecorItemId]}
+                roomHeight={roomLayout.height}
+                roomWidth={roomLayout.width}
+                roomScale={roomScale}
+              />
+            ) : null}
             <View pointerEvents="box-none" style={[styles.characterStage, { bottom: characterBottom }]}>
               <PetCareBubbleActions
                 onCareAction={selectPetCareAction}
@@ -1304,6 +1319,7 @@ function PlacedDecorObject({
   onDragEnd,
   onDragMove,
   onLongPress,
+  onPress,
   petBaselineY,
   roomHeight,
   roomScale,
@@ -1314,6 +1330,7 @@ function PlacedDecorObject({
   onDragEnd: (item: InventoryItem, pageX: number, pageY: number, didMove: boolean) => void;
   onDragMove: (item: InventoryItem, pageX: number, pageY: number) => void;
   onLongPress: (item: InventoryItem) => void;
+  onPress: (item: InventoryItem) => void;
   petBaselineY: number;
   roomHeight: number;
   roomScale: number;
@@ -1368,7 +1385,10 @@ function PlacedDecorObject({
       clearLongPressTimer();
       dragEnabledRef.current = false;
 
-      if (!wasDragging) return;
+      if (!wasDragging) {
+        onPress(item);
+        return;
+      }
 
       const didMove = Math.abs(gestureState.dx) + Math.abs(gestureState.dy) > 6;
       onDragEnd(
@@ -1394,7 +1414,7 @@ function PlacedDecorObject({
       );
     },
     onStartShouldSetPanResponder: () => true,
-  }), [item, onDragEnd, onDragMove, onLongPress]);
+  }), [item, onDragEnd, onDragMove, onLongPress, onPress]);
 
   return (
     <View
@@ -1424,6 +1444,64 @@ function PlacedDecorObject({
       ) : (
         <Text style={styles.placedDecorFallback}>{item.symbol}</Text>
       )}
+    </View>
+  );
+}
+
+function DecorActionMenu({
+  placedItem,
+  roomHeight,
+  roomWidth,
+  roomScale,
+}: {
+  placedItem: PlacedDecorItem;
+  roomHeight: number;
+  roomWidth: number;
+  roomScale: number;
+}) {
+  const { t } = useI18n();
+  const presentation = getDecorPresentation(placedItem.item.id);
+  const height = Math.round(presentation.height * roomScale);
+  const menuWidth = 72;
+  const itemCenterX = placedItem.x * roomWidth;
+  const itemTop = placedItem.y * roomHeight - height / 2;
+  const left = clamp(itemCenterX - menuWidth / 2, 8, Math.max(8, roomWidth - menuWidth - 8));
+  const top = Math.max(8, itemTop - 22);
+
+  return (
+    <View
+      style={[
+        styles.decorActionMenu,
+        {
+          left,
+          top,
+        },
+      ]}
+    >
+      <Pressable
+        accessibilityLabel={t('home.decorBringForward')}
+        accessibilityRole="button"
+        hitSlop={5}
+        onPress={() => undefined}
+        style={({ pressed }) => [
+          styles.decorActionButton,
+          pressed && styles.decorActionButtonPressed,
+        ]}
+      >
+        <Text style={styles.decorActionIcon}>⇧</Text>
+      </Pressable>
+      <Pressable
+        accessibilityLabel={t('home.decorSendBackward')}
+        accessibilityRole="button"
+        hitSlop={5}
+        onPress={() => undefined}
+        style={({ pressed }) => [
+          styles.decorActionButton,
+          pressed && styles.decorActionButtonPressed,
+        ]}
+      >
+        <Text style={styles.decorActionIcon}>⇩</Text>
+      </Pressable>
     </View>
   );
 }
@@ -1564,5 +1642,34 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     lineHeight: 15,
     textAlign: 'center',
+  },
+  decorActionButton: {
+    alignItems: 'center',
+    backgroundColor: '#fff8ea',
+    borderColor: '#6f4a36',
+    borderRadius: 17,
+    borderWidth: 2,
+    height: 34,
+    justifyContent: 'center',
+    width: 34,
+  },
+  decorActionButtonPressed: {
+    backgroundColor: '#f4dfbe',
+    transform: [{ translateY: 1 }],
+  },
+  decorActionIcon: {
+    color: '#6f4a36',
+    fontFamily: pixelFontFamily,
+    fontSize: 19,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  decorActionMenu: {
+    flexDirection: 'row',
+    gap: 4,
+    height: 34,
+    position: 'absolute',
+    width: 72,
+    zIndex: 24,
   },
 });
