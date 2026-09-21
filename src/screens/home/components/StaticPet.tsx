@@ -7,6 +7,8 @@ const hamsterBabyWalkSheet = require('../../../../assets/png/animals/animations/
 const hamsterBabyDozeSheet = require('../../../../assets/png/animals/animations/applied/hamster/doze/hamster-baby-doze-spritesheet-v2.png');
 const catBabyWalkSheet = require('../../../../assets/png/animals/animations/applied/cat/walk/cat-baby-walk-spritesheet-v2.png');
 const catBabyDozeSheet = require('../../../../assets/png/animals/animations/applied/cat/doze/cat-baby-doze-spritesheet-v2.png');
+const dogBabyWalkSheet = require('../../../../assets/png/animals/animations/applied/dog/walk/dog-baby-walk-spritesheet-v2.png');
+const dogBabyDozeSheet = require('../../../../assets/png/animals/animations/applied/dog/doze/dog-baby-doze-spritesheet-v2.png');
 const hamsterBabyWalkFrameCount = 4;
 const hamsterBabyWalkFrameDurationMs = 220;
 const hamsterBabyWalkMoveDurationMs = 80;
@@ -25,6 +27,10 @@ const pixelatedImageStyle =
     : null;
 
 type StaticPetProps = {
+  animationActionTrigger?: {
+    action: 'doze' | 'walk';
+    nonce: number;
+  };
   dozeZone?: {
     centerX: number;
     radius: number;
@@ -36,7 +42,15 @@ type StaticPetProps = {
   stage: GrowthStage;
 };
 
-export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: StaticPetProps) {
+export function StaticPet({
+  animationActionTrigger,
+  dozeZone,
+  onPress,
+  pet,
+  petName,
+  size,
+  stage,
+}: StaticPetProps) {
   const { t } = useI18n();
   const petSource = pet.stages[stage];
   const [walkFrameIndex, setWalkFrameIndex] = useState(0);
@@ -49,13 +63,27 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
   const shouldUseHamsterBabyAnimation = pet.id === 'hamster' && stage === 'baby';
   const shouldUseCatBabyWalkAnimation = pet.id === 'cat' && stage === 'baby';
   const shouldUseCatBabyDozeAnimation = pet.id === 'cat' && stage === 'baby';
-  const shouldUseWalkAnimation = shouldUseHamsterBabyAnimation || shouldUseCatBabyWalkAnimation;
-  const shouldUseDozeAnimation = shouldUseHamsterBabyAnimation || shouldUseCatBabyDozeAnimation;
-  const walkSpriteSheet = shouldUseCatBabyWalkAnimation ? catBabyWalkSheet : hamsterBabyWalkSheet;
-  const dozeSpriteSheet = shouldUseCatBabyDozeAnimation ? catBabyDozeSheet : hamsterBabyDozeSheet;
+  const shouldUseDogBabyWalkAnimation = pet.id === 'dog' && stage === 'baby';
+  const shouldUseDogBabyDozeAnimation = pet.id === 'dog' && stage === 'baby';
+  const shouldUseWalkAnimation = shouldUseHamsterBabyAnimation
+    || shouldUseCatBabyWalkAnimation
+    || shouldUseDogBabyWalkAnimation;
+  const shouldUseDozeAnimation = shouldUseHamsterBabyAnimation
+    || shouldUseCatBabyDozeAnimation
+    || shouldUseDogBabyDozeAnimation;
+  const walkSpriteSheet = shouldUseCatBabyWalkAnimation
+    ? catBabyWalkSheet
+    : shouldUseDogBabyWalkAnimation
+      ? dogBabyWalkSheet
+      : hamsterBabyWalkSheet;
+  const dozeSpriteSheet = shouldUseCatBabyDozeAnimation
+    ? catBabyDozeSheet
+    : shouldUseDogBabyDozeAnimation
+      ? dogBabyDozeSheet
+      : hamsterBabyDozeSheet;
   const shouldFlipWalkFrame =
     (shouldUseHamsterBabyAnimation && walkDirection === 'right')
-    || (shouldUseCatBabyWalkAnimation && walkDirection === 'left');
+    || ((shouldUseCatBabyWalkAnimation || shouldUseDogBabyWalkAnimation) && walkDirection === 'left');
   const walkRange = Math.round(size * hamsterBabyWalkRangeRatio);
   const walkStep = Math.max(2, Math.round(size * hamsterBabyWalkStepRatio));
   const containerStyle = [
@@ -159,6 +187,30 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
 
     return () => clearInterval(intervalId);
   }, [isWalking, shouldUseWalkAnimation]);
+
+  useEffect(() => {
+    if (!animationActionTrigger) {
+      return;
+    }
+
+    if (animationActionTrigger.action === 'walk' && shouldUseWalkAnimation) {
+      setIsDozing(false);
+      setDozeFrameIndex(0);
+      setIsWalking(true);
+      setWalkFrameIndex(0);
+      return;
+    }
+
+    if (animationActionTrigger.action === 'doze' && shouldUseDozeAnimation) {
+      setIsWalking(false);
+      setIsDozing(true);
+      setDozeFrameIndex(1);
+    }
+  }, [
+    animationActionTrigger,
+    shouldUseDozeAnimation,
+    shouldUseWalkAnimation,
+  ]);
 
   useEffect(() => {
     if (!shouldUseWalkAnimation) {

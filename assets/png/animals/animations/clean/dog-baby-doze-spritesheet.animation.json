@@ -1,0 +1,15 @@
+{
+  "id": "dog_baby_doze",
+  "source": "C:/Users/KIMJUH~1/AppData/Local/Temp/codex-clipboard-8479460f-715e-4ed1-bc50-8ef78aa8b6c9.png",
+  "frameCount": 4,
+  "frameWidth": 163,
+  "frameHeight": 163,
+  "durationMs": 620,
+  "background": "transparent",
+  "notes": [
+    "4-frame baby dog sleeping animation from the supplied reference",
+    "Transparent background with golden fur, nose, mouth, paws, and outline preserved",
+    "Each frame is nearest-neighbor normalized into the existing 163x163 dog canvas",
+    "Applied asset includes v2 filename for Metro cache busting"
+  ]
+}

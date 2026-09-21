@@ -105,6 +105,10 @@ type RoomBackgroundImages = {
 
 type PetNameMap = Partial<Record<PetDefinition['id'], string>>;
 type PetRoomNameMap = Partial<Record<PetDefinition['id'], string>>;
+type PetAnimationActionTrigger = {
+  action: 'doze' | 'walk';
+  nonce: number;
+};
 
 type PlacedDecorItem = {
   item: InventoryItem;
@@ -212,6 +216,8 @@ export function HomeScreen() {
     floor: roomFloorImage,
     wallpaper: roomWallpaperImage,
   });
+  const [petAnimationActionTrigger, setPetAnimationActionTrigger] =
+    useState<PetAnimationActionTrigger | undefined>();
   const { language, setLanguage, t } = useI18n();
   const goalPlanner = useGoalPlanner();
   const {
@@ -505,6 +511,22 @@ export function HomeScreen() {
 
     if (label === 'event:gift') {
       void sendGiftReward();
+      return;
+    }
+
+    if (label === 'action:walk') {
+      setPetAnimationActionTrigger((current) => ({
+        action: 'walk',
+        nonce: (current?.nonce ?? 0) + 1,
+      }));
+      return;
+    }
+
+    if (label === 'action:doze') {
+      setPetAnimationActionTrigger((current) => ({
+        action: 'doze',
+        nonce: (current?.nonce ?? 0) + 1,
+      }));
       return;
     }
 
@@ -1044,6 +1066,7 @@ export function HomeScreen() {
                 visible={isPetCareMenuOpen}
               />
               <StaticPet
+                animationActionTrigger={petAnimationActionTrigger}
                 dozeZone={cushionDozeZone}
                 onPress={() => setIsPetCareMenuOpen((current) => !current)}
                 pet={activePet}

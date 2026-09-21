@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../../../features/i18n';
 
-const localDevActions = ['event', 'data', 'status', 'reset'] as const;
+const localDevActions = ['event', 'data', 'action', 'reset'] as const;
 const localDevSubActions = {
+  action: ['walk', 'doze'],
   data: ['currency', 'growth', 'growthFull'],
   event: ['parcel', 'gift'],
 } as const;
@@ -27,7 +28,7 @@ export function LocalDevControls({
   const { t } = useI18n();
 
   const handleActionPress = (label: string) => {
-    if (label === 'event' || label === 'data') {
+    if (label === 'event' || label === 'data' || label === 'action') {
       setActiveSubMenu((current) => (current === label ? null : label));
       return;
     }
