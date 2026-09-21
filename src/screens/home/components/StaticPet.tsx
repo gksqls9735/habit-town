@@ -5,6 +5,8 @@ import { GrowthStage, PetDefinition } from '../types';
 
 const hamsterBabyWalkSheet = require('../../../../assets/png/animals/animations/applied/hamster/walk/hamster-baby-walk-spritesheet-v2.png');
 const hamsterBabyDozeSheet = require('../../../../assets/png/animals/animations/applied/hamster/doze/hamster-baby-doze-spritesheet-v2.png');
+const catBabyWalkSheet = require('../../../../assets/png/animals/animations/applied/cat/walk/cat-baby-walk-spritesheet-v2.png');
+const catBabyDozeSheet = require('../../../../assets/png/animals/animations/applied/cat/doze/cat-baby-doze-spritesheet-v2.png');
 const hamsterBabyWalkFrameCount = 4;
 const hamsterBabyWalkFrameDurationMs = 220;
 const hamsterBabyWalkMoveDurationMs = 80;
@@ -44,7 +46,16 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
   const [isDozing, setIsDozing] = useState(false);
   const [dozeFrameIndex, setDozeFrameIndex] = useState(0);
   const isInsideDozeZoneRef = useRef(false);
-  const shouldUseWalkAnimation = pet.id === 'hamster' && stage === 'baby';
+  const shouldUseHamsterBabyAnimation = pet.id === 'hamster' && stage === 'baby';
+  const shouldUseCatBabyWalkAnimation = pet.id === 'cat' && stage === 'baby';
+  const shouldUseCatBabyDozeAnimation = pet.id === 'cat' && stage === 'baby';
+  const shouldUseWalkAnimation = shouldUseHamsterBabyAnimation || shouldUseCatBabyWalkAnimation;
+  const shouldUseDozeAnimation = shouldUseHamsterBabyAnimation || shouldUseCatBabyDozeAnimation;
+  const walkSpriteSheet = shouldUseCatBabyWalkAnimation ? catBabyWalkSheet : hamsterBabyWalkSheet;
+  const dozeSpriteSheet = shouldUseCatBabyDozeAnimation ? catBabyDozeSheet : hamsterBabyDozeSheet;
+  const shouldFlipWalkFrame =
+    (shouldUseHamsterBabyAnimation && walkDirection === 'right')
+    || (shouldUseCatBabyWalkAnimation && walkDirection === 'left');
   const walkRange = Math.round(size * hamsterBabyWalkRangeRatio);
   const walkStep = Math.max(2, Math.round(size * hamsterBabyWalkStepRatio));
   const containerStyle = [
@@ -75,12 +86,12 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
           style={[
             styles.walkFrame,
             { height: size, width: size },
-            walkDirection === 'right' ? styles.walkFrameFacingRight : null,
+            shouldFlipWalkFrame ? styles.walkFrameFacingRight : null,
           ]}
         >
           <Image
             accessibilityIgnoresInvertColors
-            source={hamsterBabyWalkSheet}
+            source={walkSpriteSheet}
             style={[
               styles.walkSpriteSheet,
               pixelatedImageStyle,
@@ -92,11 +103,11 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
             ]}
           />
         </View>
-      ) : shouldUseWalkAnimation && isDozing ? (
+      ) : shouldUseDozeAnimation && isDozing ? (
         <View style={[styles.walkFrame, { height: size, width: size }]}>
           <Image
             accessibilityIgnoresInvertColors
-            source={hamsterBabyDozeSheet}
+            source={dozeSpriteSheet}
             style={[
               styles.walkSpriteSheet,
               pixelatedImageStyle,
@@ -171,7 +182,7 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
   }, [isDozing, isWalking, shouldUseWalkAnimation]);
 
   useEffect(() => {
-    if (!shouldUseWalkAnimation || !isDozing) {
+    if (!shouldUseDozeAnimation || !isDozing) {
       return;
     }
 
@@ -184,10 +195,10 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
     }, hamsterBabyDozeFrameDurationMs);
 
     return () => clearInterval(intervalId);
-  }, [isDozing, shouldUseWalkAnimation]);
+  }, [isDozing, shouldUseDozeAnimation]);
 
   useEffect(() => {
-    if (!shouldUseWalkAnimation || !isDozing) {
+    if (!shouldUseDozeAnimation || !isDozing) {
       return;
     }
 
@@ -197,7 +208,7 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
     }, hamsterBabyDozeSleepDurationMs);
 
     return () => clearTimeout(timeoutId);
-  }, [isDozing, shouldUseWalkAnimation]);
+  }, [isDozing, shouldUseDozeAnimation]);
 
   useEffect(() => {
     if (!shouldUseWalkAnimation || !isWalking) {
@@ -212,7 +223,8 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
           : false;
 
         if (
-          isInsideDozeZone
+          shouldUseDozeAnimation
+          && isInsideDozeZone
           && !isInsideDozeZoneRef.current
           && Math.random() < hamsterBabyCushionDozeChance
         ) {
@@ -240,7 +252,7 @@ export function StaticPet({ dozeZone, onPress, pet, petName, size, stage }: Stat
     }, hamsterBabyWalkMoveDurationMs);
 
     return () => clearInterval(intervalId);
-  }, [dozeZone, isWalking, shouldUseWalkAnimation, walkDirection, walkRange, walkStep]);
+  }, [dozeZone, isWalking, shouldUseDozeAnimation, shouldUseWalkAnimation, walkDirection, walkRange, walkStep]);
 
   useEffect(() => {
     isInsideDozeZoneRef.current = false;

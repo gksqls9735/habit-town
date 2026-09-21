@@ -1,10 +1,41 @@
 import * as SQLite from 'expo-sqlite';
 
 const databaseName = 'habit-town.db';
+const activePetIdKey = 'active_pet_id';
 const petNameKeyPrefix = 'pet_name:';
 const petRoomNameKeyPrefix = 'pet_room_name:';
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
+
+export async function loadActivePetId(): Promise<string | null> {
+  const db = await getPetProfileDatabase();
+  const row = await db.getFirstAsync<{ value: string }>(
+    'SELECT value FROM pet_profile_metadata WHERE key = ?',
+    activePetIdKey,
+  );
+  const petId = normalizePetId(row?.value ?? '');
+
+  return petId || null;
+}
+
+export async function saveActivePetId(petId: string): Promise<string> {
+  const normalizedPetId = normalizePetId(petId);
+
+  if (!normalizedPetId) {
+    throw new Error('Pet id is required.');
+  }
+
+  const db = await getPetProfileDatabase();
+  await db.runAsync(
+    `INSERT INTO pet_profile_metadata (key, value)
+     VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    activePetIdKey,
+    normalizedPetId,
+  );
+
+  return normalizedPetId;
+}
 
 export async function loadPetName(petId: string): Promise<string | null> {
   const db = await getPetProfileDatabase();
@@ -90,6 +121,10 @@ function getPetNameKey(petId: string): string {
 
 function getPetRoomNameKey(petId: string): string {
   return `${petRoomNameKeyPrefix}${petId}`;
+}
+
+function normalizePetId(petId: string): string {
+  return petId.trim().slice(0, 32);
 }
 
 function normalizePetName(name: string): string {

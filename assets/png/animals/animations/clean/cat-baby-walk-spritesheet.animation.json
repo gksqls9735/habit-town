@@ -1,0 +1,15 @@
+{
+  "id": "cat_baby_walk",
+  "source": "C:/Users/KIMJUH~1/AppData/Local/Temp/codex-clipboard-51e9e2d0-0e70-4439-b8b8-cce27ff1eb19.png",
+  "frameCount": 4,
+  "frameWidth": 156,
+  "frameHeight": 156,
+  "durationMs": 220,
+  "background": "transparent",
+  "notes": [
+    "4-frame baby cat side-view walk animation from the supplied reference",
+    "Transparent background with black fur and outline preserved",
+    "Each frame is nearest-neighbor normalized into the existing 156x156 cat canvas",
+    "Applied asset includes v2 filename for Metro cache busting"
+  ]
+}

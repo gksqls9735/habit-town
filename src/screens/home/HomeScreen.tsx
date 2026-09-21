@@ -41,8 +41,10 @@ import { getItemImage } from '../../features/items/itemImages';
 import { getItemCareEffect, getItemShopCategory } from '../../features/items/itemCatalog';
 import { getLocalizedInventoryItem } from '../../features/items/localizedItems';
 import {
+  loadActivePetId,
   loadPetName,
   loadPetRoomName,
+  saveActivePetId,
   savePetName,
   savePetRoomName,
 } from '../../features/pets/petProfileRepository';
@@ -462,6 +464,16 @@ export function HomeScreen() {
           .filter((entry): entry is readonly [PetDefinition['id'], string | null, string] => Boolean(entry[2]))
           .map(([petId, , roomName]) => [petId, roomName]),
       ) as PetRoomNameMap);
+    }).catch(() => {
+      setPetStatusError(t('home.error.profileLoad'));
+    });
+  }, [t]);
+
+  useEffect(() => {
+    void loadActivePetId().then((petId) => {
+      if (petId && pets.some((pet) => pet.id === petId)) {
+        setActivePetId(petId as PetDefinition['id']);
+      }
     }).catch(() => {
       setPetStatusError(t('home.error.profileLoad'));
     });
@@ -1133,6 +1145,9 @@ export function HomeScreen() {
             petRoomNames={customPetRoomNames}
             onSelectPet={(petId) => {
               setActivePetId(petId);
+              void saveActivePetId(petId).catch(() => {
+                setPetStatusError(t('home.error.profileSave'));
+              });
               setIsPetRoomOpen(false);
             }}
             pets={pets}

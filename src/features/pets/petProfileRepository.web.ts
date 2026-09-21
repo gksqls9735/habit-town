@@ -1,8 +1,35 @@
+const activePetIdStorageKey = 'habit-town.pet.active-id';
 const petNameStorageKeyPrefix = 'habit-town.pet.name.';
 const petRoomNameStorageKeyPrefix = 'habit-town.pet.room-name.';
 
+let memoryActivePetId = '';
 const memoryPetNames: Record<string, string> = {};
 const memoryPetRoomNames: Record<string, string> = {};
+
+export async function loadActivePetId(): Promise<string | null> {
+  return readActivePetId();
+}
+
+export async function saveActivePetId(petId: string): Promise<string> {
+  const normalizedPetId = normalizePetId(petId);
+
+  if (!normalizedPetId) {
+    throw new Error('Pet id is required.');
+  }
+
+  memoryActivePetId = normalizedPetId;
+  const storage = getBrowserStorage();
+
+  if (storage) {
+    try {
+      storage.setItem(activePetIdStorageKey, normalizedPetId);
+    } catch {
+      // In-memory state keeps the selection usable when browser persistence is unavailable.
+    }
+  }
+
+  return normalizedPetId;
+}
 
 export async function loadPetName(petId: string): Promise<string | null> {
   return readPetName(petId);
@@ -54,6 +81,22 @@ export async function savePetRoomName(petId: string, roomName: string): Promise<
   return normalizedRoomName;
 }
 
+function readActivePetId(): string | null {
+  if (memoryActivePetId) {
+    return memoryActivePetId;
+  }
+
+  const storage = getBrowserStorage();
+  const petId = storage ? normalizePetId(storage.getItem(activePetIdStorageKey) ?? '') : '';
+
+  if (petId) {
+    memoryActivePetId = petId;
+    return petId;
+  }
+
+  return null;
+}
+
 function readPetName(petId: string): string | null {
   if (memoryPetNames[petId]) {
     return memoryPetNames[petId];
@@ -94,6 +137,10 @@ function getPetNameStorageKey(petId: string): string {
 
 function getPetRoomNameStorageKey(petId: string): string {
   return `${petRoomNameStorageKeyPrefix}${petId}`;
+}
+
+function normalizePetId(petId: string): string {
+  return petId.trim().slice(0, 32);
 }
 
 function normalizePetName(name: string): string {
