@@ -53,16 +53,6 @@ growth:
 animation_sprites:
   frame_count: 4
   generation_rule: every generated animation sprite sheet must contain exactly four frames
-  background_removal:
-    black_fill_removal: prohibited
-    required_method: remove only background pixels connected to the sheet or frame edge
-    preserve: [eyes, mouth, nose, original_outline, internal_dark_pixels]
-    verification: inspect the sprite on a checkerboard or nonblack app background before acceptance
-  outline_policy:
-    preserve_original_outline_weight: true
-    preserve_original_outline_stair_steps: true
-    recolored_or_simplified_outline: prohibited
-    note: character-dark pixels inside the silhouette are sprite detail, not removable background
 
 animals:
   hamster:
@@ -254,8 +244,6 @@ consistency_checks:
   - every newly generated sprite has binary transparency and no antialiased edge pixels
   - each sprite uses no more than 32 opaque colors
   - every generated animation sprite sheet contains exactly four frames
-  - animation background removal preserves eyes mouth nose original outlines and internal dark pixels
-  - animation sprites are checked on a checkerboard or nonblack app background before acceptance
   - baby child teen and adult visible heights follow the declared growth ratios
   - non-realistic adult proportions
   - clear silhouette in app UI

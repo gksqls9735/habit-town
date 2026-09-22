@@ -1,15 +1,17 @@
 {
   "id": "hamster_baby_doze",
-  "source": "assets/png/animals/hamster-baby.png",
+  "source": "assets/png/animals/animations/raw/hamster-baby-doze-large-source-20260922.png",
   "frameCount": 4,
   "frameWidth": 158,
   "frameHeight": 158,
   "durationMs": 620,
   "background": "transparent",
+  "appliedSheet": "assets/png/animals/animations/applied/hamster/doze/hamster-baby-doze-spritesheet-v2.png",
   "notes": [
-    "4-frame doze animation with fixed feet/body baseline",
-    "The head is separated into a layer and moved down by 0/2/5/8px for a visible nod",
-    "Original head pixels are removed from the body layer before recomposition to avoid overlap artifacts",
+    "Repacked from the cleaned large hamster sleeping sprite sheet after comparing cat and dog doze applied sheets",
+    "Frames are 158x158 to match the existing app animation viewport behavior",
+    "Visible hamster width targets 154px inside each frame to match the cat and dog doze frame occupancy",
+    "Source colors, outlines, and alpha values are preserved; only frame cropping and nearest-neighbor resizing are applied",
     "Sleeping loop is intended to use frames 2-3-4-3-2 in app code"
   ]
 }

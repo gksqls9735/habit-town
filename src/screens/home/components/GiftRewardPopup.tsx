@@ -12,6 +12,7 @@ import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { rewardRarityLabels, useI18n } from '../../../features/i18n';
 import { getLocalizedInventoryItem, getLocalizedItemName } from '../../../features/items/localizedItems';
 import { DeliveryReward } from '../../../features/rewards/eventRewards';
+import { formatCountdown } from '../../../features/rewards/useHourlyDelivery';
 
 const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
 const giftIcon = require('../../../../assets/ui/reward-button.png');
@@ -26,6 +27,7 @@ type GiftRewardPopupProps = {
   onClose: () => void;
   onOpenBox: () => void;
   reward: DeliveryReward | null;
+  secondsUntilNext: number | null;
   visible: boolean;
   width: number;
 };
@@ -36,6 +38,7 @@ export function GiftRewardPopup({
   onClose,
   onOpenBox,
   reward,
+  secondsUntilNext,
   visible,
   width,
 }: GiftRewardPopupProps) {
@@ -96,6 +99,12 @@ export function GiftRewardPopup({
                         ? t('gift.boxReadyDescription')
                         : t('gift.boxEmptyDescription')}
                     </Text>
+                    {giftBoxCount <= 0 && secondsUntilNext !== null ? (
+                      <View style={styles.countdownRow}>
+                        <Text style={styles.countdownLabel}>{t('gift.nextGift')}</Text>
+                        <Text style={styles.countdownValue}>{formatCountdown(secondsUntilNext)}</Text>
+                      </View>
+                    ) : null}
                   </View>
                 )}
               </View>
@@ -381,6 +390,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 15,
     marginTop: 7,
+  },
+  countdownRow: {
+    alignItems: 'center',
+    borderColor: '#c8a070',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 8,
+  },
+  countdownLabel: {
+    color: '#9b6234',
+    fontFamily: pixelFontFamily,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0,
+  },
+  countdownValue: {
+    color: '#35281f',
+    fontFamily: pixelFontFamily,
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0,
   },
   rewardTitle: {
     color: '#35281f',

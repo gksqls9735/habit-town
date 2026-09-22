@@ -60,6 +60,7 @@ import {
 } from '../../features/rewards/giftBoxRepository';
 import { experiencePerGrowthStage, growthStages } from '../../features/rewards/rewardSystem';
 import type { CareMeterKey } from '../../features/rewards/rewardSystem';
+import { formatCountdown, useHourlyDelivery } from '../../features/rewards/useHourlyDelivery';
 import {
   deleteDecorPlacement,
   loadDecorPlacements,
@@ -311,6 +312,7 @@ export function HomeScreen() {
     try {
       const nextGiftBoxCount = await increaseGiftBoxCount();
       setGiftBoxCount(nextGiftBoxCount);
+      markDelivered();
       openGiftRewardPopup();
     } catch {
       setGiftRewardError(t('home.error.giftSend'));
@@ -362,6 +364,7 @@ export function HomeScreen() {
     },
   ];
   const popupWidth = Math.min(width - 32, 360);
+  const petStatusPopupWidth = Math.min(width - 32, 420);
   const leftRailActions: RailAction[] = leftActions.map((action) => {
     const translatedAction = { ...action, label: t(`home.action.${action.id}`, undefined, action.label) };
 
@@ -408,6 +411,9 @@ export function HomeScreen() {
     setIsRewardParcelAvailable(true);
     setRewardDeliveryEventKey((current) => current + 1);
   }, []);
+  const { secondsUntilNext, markDelivered } = useHourlyDelivery(
+    useCallback(() => void sendGiftReward(), []),
+  );
   const refreshRoomBackgroundImages = useCallback(() => {
     void Promise.all([loadInventoryItems(), loadDecorPlacements()]).then(([items, placements]) => {
       const equippedWallpaper = items.find(
@@ -1119,6 +1125,7 @@ export function HomeScreen() {
           progress={rewardProgress}
           roomName={activePetRoomName}
         />
+
         <CareItemUsePopup
           errorMessage={careItemError}
           isBusy={isUsingCareItem}
@@ -1193,7 +1200,7 @@ export function HomeScreen() {
           petImage={activePet.stages[currentStage]}
           progress={rewardProgress}
           visible={isPetStatusOpen}
-          width={popupWidth}
+          width={petStatusPopupWidth}
         />
 
         <PetSettingsPopup
@@ -1231,6 +1238,7 @@ export function HomeScreen() {
           onClose={closeGiftReward}
           onOpenBox={openGiftBox}
           reward={giftReward}
+          secondsUntilNext={secondsUntilNext}
           visible={isGiftRewardOpen}
           width={popupWidth}
         />
@@ -1709,5 +1717,26 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 72,
     zIndex: 24,
+  },
+  deliveryCountdownBadge: {
+    alignItems: 'center',
+    left: 0,
+    pointerEvents: 'none',
+    position: 'absolute',
+    right: 0,
+    top: 88,
+    zIndex: 11,
+  },
+  deliveryCountdownText: {
+    backgroundColor: 'rgba(61, 45, 40, 0.72)',
+    borderColor: '#b9824f',
+    borderWidth: 2,
+    color: '#fff8ea',
+    fontFamily: pixelFontFamily,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
 });

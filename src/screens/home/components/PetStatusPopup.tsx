@@ -18,8 +18,6 @@ import type { CareMeterValues, RewardProgress } from '../../../features/rewards/
 
 const pixelFontFamily = 'Galmuri11';
 const petSummaryHeight = 154;
-const statusChipWidth = 62;
-const statusChipHeight = 42;
 const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
@@ -296,11 +294,6 @@ const styles = StyleSheet.create({
     gap: 4,
     marginLeft: 8,
   },
-  careStatRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 6,
-  },
   helperText: {
     color: '#8a6a51',
     fontFamily: pixelFontFamily,
@@ -420,6 +413,11 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 9,
   },
+  careStatRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 6,
+  },
   statPanel: {
     flex: 1,
     minWidth: 0,
@@ -428,16 +426,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff8ea',
     borderColor: '#b9824f',
     borderWidth: 2,
-    height: statusChipHeight,
+    flex: 1,
+    minHeight: 42,
     paddingHorizontal: 7,
     paddingVertical: 5,
-    width: statusChipWidth,
   },
   statusLabel: {
     color: '#9b6234',
     fontFamily: pixelFontFamily,
     fontSize: 8,
     fontWeight: '900',
+    flexWrap: 'wrap',
     letterSpacing: 0,
     marginBottom: 4,
   },
