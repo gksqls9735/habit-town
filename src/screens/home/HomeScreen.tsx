@@ -1238,6 +1238,7 @@ export function HomeScreen() {
           onClose={closeGiftReward}
           onOpenBox={openGiftBox}
           reward={giftReward}
+          secondsUntilNext={secondsUntilNext}
           visible={isGiftRewardOpen}
           width={popupWidth}
         />
