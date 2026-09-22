@@ -1,4 +1,4 @@
-export type DeliveryEventReason = 'growth' | 'manual';
+export type DeliveryEventReason = 'growth' | 'hourly' | 'manual';
 
 const deliveryMessagesByReason: Record<DeliveryEventReason, readonly string[]> = {
   growth: [
@@ -16,6 +16,12 @@ const deliveryMessagesByReason: Record<DeliveryEventReason, readonly string[]> =
     'delivery.message.manual.1',
     'delivery.message.manual.2',
     'delivery.message.manual.3',
+  ],
+  hourly: [
+    'delivery.message.hourly.0',
+    'delivery.message.hourly.1',
+    'delivery.message.hourly.2',
+    'delivery.message.hourly.3',
   ],
 };
 

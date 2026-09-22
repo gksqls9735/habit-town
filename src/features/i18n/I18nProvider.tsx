@@ -1,4 +1,5 @@
-import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { loadLanguage, saveLanguage } from './languageRepository';
 import { translations } from './dictionary';
 import type { AppLanguage, Translate, TranslationParams } from './types';
 
@@ -11,7 +12,20 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<AppLanguage>('ko');
+  const [language, setLanguageState] = useState<AppLanguage>('ko');
+
+  useEffect(() => {
+    loadLanguage().then((saved) => {
+      if (saved) {
+        setLanguageState(saved);
+      }
+    });
+  }, []);
+
+  const setLanguage = (lang: AppLanguage) => {
+    setLanguageState(lang);
+    saveLanguage(lang);
+  };
 
   const value = useMemo<I18nContextValue>(() => {
     const t: Translate = (key, params, fallback) =>
