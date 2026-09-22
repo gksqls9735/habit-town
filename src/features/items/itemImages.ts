@@ -9,7 +9,7 @@ const itemImagesByCode: Partial<Record<ItemCode, ImageSourcePropType>> = {
   'wall-clock': require('../../../assets/png/objects/wall-clock.png'),
   'potted-sprout': require('../../../assets/png/objects/potted-sprout.png'),
   'coral-floor-lamp': require('../../../assets/png/objects/coral-floor-lamp.png'),
-  'low-bookshelf': require('../../../assets/png/objects/low-bookshelf_2.png'),
+  'low-bookshelf': require('../../../assets/png/objects/low-bookshelf-front.png'),
   'sprout-wall-art': require('../../../assets/png/objects/sprout-wall-art.png'),
   'toy-storage-basket': require('../../../assets/png/objects/toy-storage-basket.png'),
   'ivory-wallpaper': require('../../../assets/png/backgrounds/basic-room-wallpaper.png'),
