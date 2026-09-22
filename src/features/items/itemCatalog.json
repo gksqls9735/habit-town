@@ -111,7 +111,7 @@
   },
   "low-bookshelf": {
     "name": "낮은 원목 책장",
-    "imageUrl": "assets/png/objects/low-bookshelf.png",
+    "imageUrl": "assets/png/objects/low-bookshelf_2.png",
     "category": "decor",
     "description": "책과 작은 소품을 단정하게 정리해 줘요.",
     "symbol": "K",

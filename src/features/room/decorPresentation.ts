@@ -30,6 +30,14 @@ const decorPresentations: Partial<Record<string, DecorPresentation>> = {
     width: 142,
     zIndex: 2,
   },
+  'low-bookshelf': {
+    height: 132,
+    initialX: 0.28,
+    initialY: 0.72,
+    placementBounds: { maxX: 0.9, maxY: 0.72, minX: 0.1, minY: 0.72 },
+    width: 148,
+    zIndex: 2,
+  },
   'pet-cushion': {
     height: 82,
     initialX: 0.58,
