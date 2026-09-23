@@ -161,6 +161,16 @@ function constrainDecorCoordinates(itemId: string, x: number, y: number) {
   };
 }
 
+function isDecorCoordinateWithinBounds(itemId: string, x: number, y: number) {
+  const presentation = getDecorPresentation(itemId);
+  const bounds = presentation.dropBounds ?? presentation.placementBounds;
+
+  return x >= bounds.minX
+    && x <= bounds.maxX
+    && y >= bounds.minY
+    && y <= bounds.maxY;
+}
+
 export function HomeScreen() {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isPetRoomOpen, setIsPetRoomOpen] = useState(false);
@@ -201,7 +211,6 @@ export function HomeScreen() {
   const [careItemError, setCareItemError] = useState('');
   const [isUsingCareItem, setIsUsingCareItem] = useState(false);
   const [placementItem, setPlacementItem] = useState<InventoryItem | null>(null);
-  const [placementOriginalItem, setPlacementOriginalItem] = useState<PlacedDecorItem | null>(null);
   const [isRepositioningPlacedItem, setIsRepositioningPlacedItem] = useState(false);
   const [placementError, setPlacementError] = useState('');
   const [placedDecorItems, setPlacedDecorItems] = useState<Record<string, PlacedDecorItem>>({});
@@ -281,7 +290,9 @@ export function HomeScreen() {
   const placementItemDisplayName = placementItem ? getLocalizedInventoryItem(placementItem, t).name : '';
   const currentStage = rewardProgress.stage;
   const previousGrowthStageRef = useRef<GrowthStage | null>(null);
+  const activePlacementItemIdRef = useRef<string | null>(null);
   const roomBackgroundRef = useRef<View | null>(null);
+  const placementOriginalItemRef = useRef<PlacedDecorItem | null>(null);
   const pendingPlacementRef = useRef<PendingDecorPlacement | null>(null);
   const pendingPagePointRef = useRef<PagePoint | null>(null);
   const characterSize = Math.round(132 * roomScale);
@@ -810,23 +821,33 @@ export function HomeScreen() {
   const beginDecorPlacement = (item: InventoryItem) => {
     const existingPlacement = placedDecorItems[item.id];
     const presentation = getDecorPresentation(item.id);
+    const normalizedExistingPlacement = existingPlacement
+      ? { ...existingPlacement, ...constrainDecorCoordinates(item.id, existingPlacement.x, existingPlacement.y) }
+      : null;
 
     setPlacementError('');
     setSelectedDecorItemId(null);
     setIsRepositioningPlacedItem(false);
-    setPlacementOriginalItem(existingPlacement ?? null);
+    activePlacementItemIdRef.current = item.id;
+    placementOriginalItemRef.current = normalizedExistingPlacement;
     updateDecorPlacementPreview(
       item,
-      existingPlacement?.x ?? presentation.initialX,
-      existingPlacement?.y ?? presentation.initialY,
+      normalizedExistingPlacement?.x ?? presentation.initialX,
+      normalizedExistingPlacement?.y ?? presentation.initialY,
     );
     setPlacementItem(item);
     setIsInventoryOpen(false);
   };
   const beginPlacedDecorEdit = (item: InventoryItem) => {
+    const existingPlacement = placedDecorItems[item.id];
+    const normalizedExistingPlacement = existingPlacement
+      ? { ...existingPlacement, ...constrainDecorCoordinates(item.id, existingPlacement.x, existingPlacement.y) }
+      : null;
+
     setPlacementError('');
     setSelectedDecorItemId(null);
-    setPlacementOriginalItem(placedDecorItems[item.id] ?? null);
+    activePlacementItemIdRef.current = item.id;
+    placementOriginalItemRef.current = normalizedExistingPlacement;
     setIsRepositioningPlacedItem(true);
     setPlacementItem(item);
   };
@@ -853,15 +874,14 @@ export function HomeScreen() {
       locationY / Math.max(roomLayout.height || height, 1),
     );
   };
-  const getPlacementCoordinatesFromPage = (item: InventoryItem, pageX: number, pageY: number) => {
+  const getUnconstrainedPlacementCoordinatesFromPage = (pageX: number, pageY: number) => {
     const frameWidth = roomWindowFrame.width || roomLayout.width || width;
     const frameHeight = roomWindowFrame.height || roomLayout.height || height;
 
-    return constrainDecorCoordinates(
-      item.id,
-      (pageX - roomWindowFrame.x) / Math.max(frameWidth, 1),
-      (pageY - roomWindowFrame.y) / Math.max(frameHeight, 1),
-    );
+    return {
+      x: (pageX - roomWindowFrame.x) / Math.max(frameWidth, 1),
+      y: (pageY - roomWindowFrame.y) / Math.max(frameHeight, 1),
+    };
   };
   const isPointInReturnToBagZone = (pageX: number, pageY: number) => {
     const frameWidth = roomWindowFrame.width || roomLayout.width || width;
@@ -871,8 +891,13 @@ export function HomeScreen() {
 
     return localX >= frameWidth - 126 && localY >= frameHeight - 136;
   };
-  const updateDecorPlacementPreview = (item: InventoryItem, x: number, y: number) => {
-    const coordinates = constrainDecorCoordinates(item.id, x, y);
+  const updateDecorPlacementPreview = (
+    item: InventoryItem,
+    x: number,
+    y: number,
+    shouldConstrain = true,
+  ) => {
+    const coordinates = shouldConstrain ? constrainDecorCoordinates(item.id, x, y) : { x, y };
     const placement = {
       item,
       ...coordinates,
@@ -888,6 +913,25 @@ export function HomeScreen() {
     const requestedPlacement = pendingPlacementRef.current?.itemId === item.id
       ? pendingPlacementRef.current
       : { itemId: item.id, x, y };
+    const originalPlacement = placementOriginalItemRef.current;
+
+    if (
+      originalPlacement?.item.id === item.id
+      && !isDecorCoordinateWithinBounds(item.id, requestedPlacement.x, requestedPlacement.y)
+    ) {
+      setPlacedDecorItems((current) => ({
+        ...current,
+        [item.id]: originalPlacement,
+      }));
+      pendingPlacementRef.current = null;
+      pendingPagePointRef.current = null;
+      activePlacementItemIdRef.current = null;
+      placementOriginalItemRef.current = null;
+      setIsRepositioningPlacedItem(false);
+      setPlacementItem(null);
+      return;
+    }
+
     const coordinates = constrainDecorCoordinates(item.id, requestedPlacement.x, requestedPlacement.y);
     const pendingPlacement = { itemId: item.id, ...coordinates };
     updateDecorPlacementPreview(item, pendingPlacement.x, pendingPlacement.y);
@@ -902,7 +946,8 @@ export function HomeScreen() {
       pendingPlacementRef.current = null;
       pendingPagePointRef.current = null;
     });
-    setPlacementOriginalItem(null);
+    activePlacementItemIdRef.current = null;
+    placementOriginalItemRef.current = null;
     setIsRepositioningPlacedItem(false);
     setPlacementItem(null);
   };
@@ -914,7 +959,8 @@ export function HomeScreen() {
     });
     pendingPlacementRef.current = null;
     pendingPagePointRef.current = null;
-    setPlacementOriginalItem(null);
+    activePlacementItemIdRef.current = null;
+    placementOriginalItemRef.current = null;
     setIsRepositioningPlacedItem(false);
     setPlacementItem(null);
     setPlacementError('');
@@ -930,10 +976,44 @@ export function HomeScreen() {
     const { x, y } = getPlacementCoordinates(event, placementItem);
     saveDecorPlacementAndClose(placementItem, x, y);
   };
+  const restoreDecorPlacementAndClose = (item: InventoryItem) => {
+    const originalPlacement = placementOriginalItemRef.current;
+
+    if (originalPlacement?.item.id === item.id) {
+      setPlacedDecorItems((current) => ({
+        ...current,
+        [item.id]: originalPlacement,
+      }));
+    }
+    pendingPlacementRef.current = null;
+    pendingPagePointRef.current = null;
+    activePlacementItemIdRef.current = null;
+    placementOriginalItemRef.current = null;
+    setIsRepositioningPlacedItem(false);
+    setPlacementItem(null);
+  };
   const movePlacedDecorFromPagePoint = (item: InventoryItem, pageX: number, pageY: number) => {
     pendingPagePointRef.current = { x: pageX, y: pageY };
-    const { x, y } = getPlacementCoordinatesFromPage(item, pageX, pageY);
-    updateDecorPlacementPreview(item, x, y);
+    const { x, y } = getUnconstrainedPlacementCoordinatesFromPage(pageX, pageY);
+    updateDecorPlacementPreview(item, x, y, false);
+  };
+  const finishDecorPlacementAtPagePoint = (item: InventoryItem, pageX: number, pageY: number) => {
+    if (activePlacementItemIdRef.current !== item.id) return;
+
+    if (isPointInReturnToBagZone(pageX, pageY)) {
+      removePlacedDecorItem(item.id);
+      return;
+    }
+
+    const { x, y } = getUnconstrainedPlacementCoordinatesFromPage(pageX, pageY);
+    const isMovingExistingItem = placementOriginalItemRef.current?.item.id === item.id;
+
+    if (isMovingExistingItem && !isDecorCoordinateWithinBounds(item.id, x, y)) {
+      restoreDecorPlacementAndClose(item);
+      return;
+    }
+
+    saveDecorPlacementAndClose(item, x, y);
   };
   const finishPlacedDecorDrag = (item: InventoryItem, pageX: number, pageY: number, didMove: boolean) => {
     if (!didMove) {
@@ -941,13 +1021,7 @@ export function HomeScreen() {
       return;
     }
 
-    if (isPointInReturnToBagZone(pageX, pageY)) {
-      removePlacedDecorItem(item.id);
-      return;
-    }
-
-    const { x, y } = getPlacementCoordinatesFromPage(item, pageX, pageY);
-    saveDecorPlacementAndClose(item, x, y);
+    finishDecorPlacementAtPagePoint(item, pageX, pageY);
   };
   const placementDragResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: () => placementItem !== null,
@@ -958,20 +1032,29 @@ export function HomeScreen() {
         x: event.nativeEvent.pageX,
         y: event.nativeEvent.pageY,
       };
-      const { x, y } = getPlacementCoordinates(event, placementItem);
-      updateDecorPlacementPreview(placementItem, x, y);
+      const { x, y } = getUnconstrainedPlacementCoordinatesFromPage(
+        event.nativeEvent.pageX,
+        event.nativeEvent.pageY,
+      );
+      updateDecorPlacementPreview(placementItem, x, y, false);
     },
     onPanResponderRelease: (event) => {
       if (!placementItem) return;
 
-      const { x, y } = getPlacementCoordinates(event, placementItem);
-      saveDecorPlacementAndClose(placementItem, x, y);
+      finishDecorPlacementAtPagePoint(
+        placementItem,
+        event.nativeEvent.pageX,
+        event.nativeEvent.pageY,
+      );
     },
     onPanResponderTerminate: (event) => {
       if (!placementItem) return;
 
-      const { x, y } = getPlacementCoordinates(event, placementItem);
-      saveDecorPlacementAndClose(placementItem, x, y);
+      finishDecorPlacementAtPagePoint(
+        placementItem,
+        event.nativeEvent.pageX,
+        event.nativeEvent.pageY,
+      );
     },
     onStartShouldSetPanResponder: () => false,
   }), [height, placementItem, roomLayout.height, roomLayout.width, width]);
@@ -987,16 +1070,8 @@ export function HomeScreen() {
     const finishPlacement = () => {
       const item = placementItem;
       const pendingPoint = pendingPagePointRef.current;
-      const pendingPlacement = pendingPlacementRef.current;
 
-      if (pendingPoint && isPointInReturnToBagZone(pendingPoint.x, pendingPoint.y)) {
-        removePlacedDecorItem(item.id);
-        return;
-      }
-
-      if (pendingPlacement?.itemId === item.id) {
-        saveDecorPlacementAndClose(item, pendingPlacement.x, pendingPlacement.y);
-      }
+      if (pendingPoint) finishDecorPlacementAtPagePoint(item, pendingPoint.x, pendingPoint.y);
     };
     const handleTouchEnd = (event: TouchEvent) => {
       const touch = event.changedTouches[0];
@@ -1017,7 +1092,7 @@ export function HomeScreen() {
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isPointInReturnToBagZone, placementItem, removePlacedDecorItem, saveDecorPlacementAndClose]);
+  }, [finishDecorPlacementAtPagePoint, placementItem]);
 
   return (
     <SafeAreaView style={styles.screen}>

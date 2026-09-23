@@ -1,4 +1,10 @@
 export type DecorPresentation = {
+  dropBounds?: {
+    maxX: number;
+    maxY: number;
+    minX: number;
+    minY: number;
+  };
   height: number;
   initialX: number;
   initialY: number;
@@ -31,6 +37,7 @@ const decorPresentations: Partial<Record<string, DecorPresentation>> = {
     zIndex: 2,
   },
   'low-bookshelf': {
+    dropBounds: { maxX: 0.9, maxY: 0.82, minX: 0.1, minY: 0.62 },
     height: 132,
     initialX: 0.28,
     initialY: 0.72,
