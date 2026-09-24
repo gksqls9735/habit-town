@@ -12,18 +12,18 @@ import {
 import { RailAction, RailMetrics } from '../types';
 
 const badgeImages = [
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-0.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-1.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-2.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-3.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-4.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-5.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-6.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-7.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-8.png'),
-  require('../../../../assets/ui/today-tasks/today-tasks-badge-9.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-0.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-1.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-2.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-3.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-4.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-5.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-6.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-7.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-8.png'),
+  require('../../../../assets/images/icons/tasks/today-tasks-badge-9.png'),
 ] as const;
-const badgeOverflowImage = require('../../../../assets/ui/today-tasks/today-tasks-badge-9-plus-clear.png');
+const badgeOverflowImage = require('../../../../assets/images/icons/tasks/today-tasks-badge-9-plus-clear.png');
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'

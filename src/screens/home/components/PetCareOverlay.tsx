@@ -12,13 +12,13 @@ import type {
 import { useI18n } from '../../../features/i18n';
 
 const fontFamily = 'Galmuri11';
-const cleanBrushIcon = require('../../../../assets/ui/action/clean-action-object-icon.png');
-const feedBowlFullIcon = require('../../../../assets/ui/action/feed-action-object-icon.png');
-const playBallIcon = require('../../../../assets/ui/action/play-action-object-icon.png');
-const cleanlinessBubblesIcon = require('../../../../assets/ui/needs/cleanliness-bubbles-icon.png');
-const hungerBoltIcon = require('../../../../assets/ui/needs/hunger-bolt-icon.png');
-const lonelinessHeartBubbleIcon = require('../../../../assets/ui/needs/loneliness-heart-bubble-icon.png');
-const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
+const cleanBrushIcon = require('../../../../assets/images/icons/actions/clean-action-object-icon.png');
+const feedBowlFullIcon = require('../../../../assets/images/icons/actions/feed-action-object-icon.png');
+const playBallIcon = require('../../../../assets/images/icons/actions/play-action-object-icon.png');
+const cleanlinessBubblesIcon = require('../../../../assets/images/icons/needs/cleanliness-bubbles-icon.png');
+const hungerBoltIcon = require('../../../../assets/images/icons/needs/hunger-bolt-icon.png');
+const lonelinessHeartBubbleIcon = require('../../../../assets/images/icons/needs/loneliness-heart-bubble-icon.png');
+const coinIcon = require('../../../../assets/images/rewards/gromi-coin.png');
 
 type CareMeterView = {
   color: string;

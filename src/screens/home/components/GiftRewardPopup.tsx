@@ -14,8 +14,8 @@ import { getLocalizedInventoryItem, getLocalizedItemName } from '../../../featur
 import { DeliveryReward } from '../../../features/rewards/eventRewards';
 import { formatCountdown } from '../../../features/rewards/useHourlyDelivery';
 
-const coinIcon = require('../../../../assets/png/ui/gromi-coin.png');
-const giftIcon = require('../../../../assets/ui/reward-button.png');
+const coinIcon = require('../../../../assets/images/rewards/gromi-coin.png');
+const giftIcon = require('../../../../assets/images/icons/navigation/reward-button.png');
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'

@@ -29,7 +29,7 @@ type ShopModalProps = {
 };
 
 const fontFamily = 'Galmuri11';
-const currencyCoinIcon = require('../../../../assets/png/ui/gromi-coin.png');
+const currencyCoinIcon = require('../../../../assets/images/rewards/gromi-coin.png');
 const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)
@@ -97,7 +97,7 @@ export function ShopModal({
         <View style={{ width: panelWidth, maxHeight: height - insets.top - insets.bottom - 32 }}>
           <View accessibilityViewIsModal style={styles.panel}>
             <View style={styles.header}>
-              <Image source={require('../../../../assets/ui/shop-button.png')} resizeMode="contain" style={styles.shopIcon} />
+              <Image source={require('../../../../assets/images/icons/navigation/shop-button.png')} resizeMode="contain" style={styles.shopIcon} />
               <View style={styles.heading}>
                 <Text style={styles.eyebrow}>ROOM SHOP</Text>
                 <Text accessibilityRole="header" style={styles.title}>{t('shop.title')}</Text>

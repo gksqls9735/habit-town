@@ -13,7 +13,7 @@ import { rewardRarityLabels, useI18n } from '../../../features/i18n';
 import { getLocalizedInventoryItem, getLocalizedItemName } from '../../../features/items/localizedItems';
 import { DeliveryReward } from '../../../features/rewards/eventRewards';
 
-const parcelImage = require('../../../../assets/event/animal-rescue-reward-gift-box.png');
+const parcelImage = require('../../../../assets/images/rewards/animal-rescue-reward-gift-box.png');
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'

@@ -34,7 +34,7 @@
   },
   "pet-rug": {
     "name": "포근한 러그",
-    "imageUrl": "assets/png/objects/pet-rug.png",
+    "imageUrl": "assets/images/furniture/pet-rug.png",
     "category": "decor",
     "description": "방 한가운데 포근한 자리를 만들어 줘요.",
     "symbol": "R",
@@ -45,7 +45,7 @@
   },
   "toy-ball": {
     "name": "장난감 공",
-    "imageUrl": "assets/png/objects/toy-ball.png",
+    "imageUrl": "assets/images/furniture/toy-ball.png",
     "category": "pet-care",
     "description": "친구와 함께 데굴데굴 놀 수 있어요.",
     "symbol": "B",
@@ -56,7 +56,7 @@
   },
   "pet-cushion": {
     "name": "푹신한 쿠션",
-    "imageUrl": "assets/png/objects/pet-cushion.png",
+    "imageUrl": "assets/images/furniture/pet-cushion.png",
     "category": "decor",
     "description": "낮잠 시간을 더 편안하게 만들어 줘요.",
     "symbol": "C",
@@ -67,7 +67,7 @@
   },
   "pet-food-bowl": {
     "name": "밥그릇",
-    "imageUrl": "assets/png/objects/pet-food-bowl-v2.png",
+    "imageUrl": "assets/images/furniture/pet-food-bowl-v2.png",
     "category": "pet-care",
     "description": "친구의 맛있는 한 끼를 담는 그릇이에요.",
     "symbol": "F",
@@ -78,7 +78,7 @@
   },
   "wall-clock": {
     "name": "벽시계",
-    "imageUrl": "assets/png/objects/wall-clock-v2.png",
+    "imageUrl": "assets/images/furniture/wall-clock-v2.png",
     "category": "decor",
     "description": "빈 벽에 귀여운 포인트를 더해 줘요.",
     "symbol": "W",
@@ -89,7 +89,7 @@
   },
   "potted-sprout": {
     "name": "새싹 화분",
-    "imageUrl": "assets/png/objects/potted-sprout.png",
+    "imageUrl": "assets/images/furniture/potted-sprout.png",
     "category": "decor",
     "description": "싱그러운 새싹으로 방에 생기를 더해 줘요.",
     "symbol": "G",
@@ -100,7 +100,7 @@
   },
   "coral-floor-lamp": {
     "name": "코랄 플로어 램프",
-    "imageUrl": "assets/png/objects/coral-floor-lamp.png",
+    "imageUrl": "assets/images/furniture/coral-floor-lamp.png",
     "category": "decor",
     "description": "포근한 빛과 산뜻한 색감을 더하는 조명이에요.",
     "symbol": "L",
@@ -111,7 +111,7 @@
   },
   "low-bookshelf": {
     "name": "낮은 원목 책장",
-    "imageUrl": "assets/png/objects/low-bookshelf_2.png",
+    "imageUrl": "assets/images/furniture/low-bookshelf-front.png",
     "category": "decor",
     "description": "책과 작은 소품을 단정하게 정리해 줘요.",
     "symbol": "K",
@@ -122,7 +122,7 @@
   },
   "sprout-wall-art": {
     "name": "새싹 액자",
-    "imageUrl": "assets/png/objects/sprout-wall-art.png",
+    "imageUrl": "assets/images/furniture/sprout-wall-art.png",
     "category": "decor",
     "description": "GROMI의 성장 메시지를 담은 벽 장식이에요.",
     "symbol": "A",
@@ -133,7 +133,7 @@
   },
   "toy-storage-basket": {
     "name": "장난감 수납 바구니",
-    "imageUrl": "assets/png/objects/toy-storage-basket.png",
+    "imageUrl": "assets/images/furniture/toy-storage-basket.png",
     "category": "pet-care",
     "description": "알록달록한 장난감을 깔끔하게 보관해 줘요.",
     "symbol": "T",
@@ -144,7 +144,7 @@
   },
   "ivory-wallpaper": {
     "name": "아이보리 벽지",
-    "imageUrl": "assets/png/backgrounds/basic-room-wallpaper.png",
+    "imageUrl": "assets/images/rooms/wallpapers/basic-room-wallpaper.png",
     "category": "decor",
     "description": "어떤 친구와도 어울리는 밝고 포근한 벽지예요.",
     "symbol": "I",
@@ -155,7 +155,7 @@
   },
   "cacao-flooring": {
     "name": "카카오 바닥재",
-    "imageUrl": "assets/png/backgrounds/basic-room-floor.png",
+    "imageUrl": "assets/images/rooms/flooring/basic-room-floor.png",
     "category": "decor",
     "description": "정돈된 나무 무늬가 살아 있는 따뜻한 바닥재예요.",
     "symbol": "F",
@@ -166,7 +166,7 @@
   },
   "sage-ivory-wallpaper": {
     "name": "세이지 아이보리 벽지",
-    "imageUrl": "assets/png/backgrounds/sage-ivory-wallpaper.png",
+    "imageUrl": "assets/images/rooms/wallpapers/sage-ivory-wallpaper.png",
     "category": "decor",
     "description": "다크 월넛 바닥과 어울리는 산뜻한 세이지 아이보리 벽지예요.",
     "symbol": "S",
@@ -177,7 +177,7 @@
   },
   "powder-blue-wallpaper": {
     "name": "파우더 블루 벽지",
-    "imageUrl": "assets/png/backgrounds/powder-blue-wallpaper.png",
+    "imageUrl": "assets/images/rooms/wallpapers/powder-blue-wallpaper.png",
     "category": "decor",
     "description": "화이트 오크 바닥과 어울리는 맑고 화사한 하늘빛 벽지예요.",
     "symbol": "B",
@@ -188,7 +188,7 @@
   },
   "strawberry-cream-wallpaper": {
     "name": "딸기 크림 벽지",
-    "imageUrl": "assets/png/backgrounds/strawberry-cream-wallpaper.png",
+    "imageUrl": "assets/images/rooms/wallpapers/strawberry-cream-wallpaper.png",
     "category": "decor",
     "description": "작은 딸기와 꽃 패턴으로 방을 산뜻하게 꾸며 주는 벽지예요.",
     "symbol": "R",
@@ -199,7 +199,7 @@
   },
   "cloud-sky-wallpaper": {
     "name": "구름 하늘 벽지",
-    "imageUrl": "assets/png/backgrounds/cloud-sky-wallpaper.png",
+    "imageUrl": "assets/images/rooms/wallpapers/cloud-sky-wallpaper.png",
     "category": "decor",
     "description": "포근한 구름과 별 패턴으로 방을 맑게 밝혀 주는 벽지예요.",
     "symbol": "C",
@@ -210,7 +210,7 @@
   },
   "sage-flower-wallpaper": {
     "name": "세이지 플라워 벽지",
-    "imageUrl": "assets/png/backgrounds/sage-flower-wallpaper.png",
+    "imageUrl": "assets/images/rooms/wallpapers/sage-flower-wallpaper.png",
     "category": "decor",
     "description": "잔잔한 꽃과 잎사귀 패턴으로 방을 차분하게 꾸며 주는 벽지예요.",
     "symbol": "G",
@@ -221,7 +221,7 @@
   },
   "dark-walnut-flooring": {
     "name": "다크 월넛 바닥재",
-    "imageUrl": "assets/png/backgrounds/dark-walnut-flooring.png",
+    "imageUrl": "assets/images/rooms/flooring/dark-walnut-flooring.png",
     "category": "decor",
     "description": "세이지 아이보리 벽지와 대비되는 깊고 단정한 원목 바닥재예요.",
     "symbol": "D",
@@ -232,7 +232,7 @@
   },
   "white-oak-flooring": {
     "name": "화이트 오크 바닥재",
-    "imageUrl": "assets/png/backgrounds/white-oak-flooring.png",
+    "imageUrl": "assets/images/rooms/flooring/white-oak-flooring.png",
     "category": "decor",
     "description": "파우더 블루 벽지와 방을 환하게 밝혀 주는 깔끔한 원목 바닥재예요.",
     "symbol": "O",
@@ -243,7 +243,7 @@
   },
   "herringbone-oak-flooring": {
     "name": "헤링본 오크 바닥재",
-    "imageUrl": "assets/png/backgrounds/herringbone-oak-flooring.png",
+    "imageUrl": "assets/images/rooms/flooring/herringbone-oak-flooring.png",
     "category": "decor",
     "description": "사선으로 짜인 오크 무늬가 방을 따뜻하고 단정하게 만들어 줘요.",
     "symbol": "H",
@@ -254,7 +254,7 @@
   },
   "mint-checker-flooring": {
     "name": "민트 체크 타일",
-    "imageUrl": "assets/png/backgrounds/mint-checker-flooring.png",
+    "imageUrl": "assets/images/rooms/flooring/mint-checker-flooring.png",
     "category": "decor",
     "description": "민트와 아이보리 타일로 방에 산뜻한 리듬을 더해 줘요.",
     "symbol": "M",
@@ -265,7 +265,7 @@
   },
   "terracotta-mosaic-flooring": {
     "name": "테라코타 모자이크 바닥재",
-    "imageUrl": "assets/png/backgrounds/terracotta-mosaic-flooring.png",
+    "imageUrl": "assets/images/rooms/flooring/terracotta-mosaic-flooring.png",
     "category": "decor",
     "description": "따뜻한 테라코타 조각 패턴으로 방에 포근한 개성을 더해 줘요.",
     "symbol": "T",
@@ -276,7 +276,7 @@
   },
   "clean-action-object": {
     "name": "청소 도구",
-    "imageUrl": "assets/ui/action/clean-action-object-icon.png",
+    "imageUrl": "assets/images/icons/actions/clean-action-object-icon.png",
     "category": "pet-care",
     "description": "친구의 방을 말끔하게 정리할 때 쓰는 액션 아이템이에요.",
     "symbol": "C",
@@ -289,7 +289,7 @@
   },
   "pet-shampoo-action-object": {
     "name": "펫 샴푸",
-    "imageUrl": "assets/png/objects/care/pet-shampoo-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/pet-shampoo-action-object-icon.png",
     "category": "pet-care",
     "description": "친구의 몸을 보송하게 씻겨 줄 때 쓰는 청결 아이템이에요.",
     "symbol": "S",
@@ -302,7 +302,7 @@
   },
   "pet-toothpaste-action-object": {
     "name": "펫 전용 치약",
-    "imageUrl": "assets/png/objects/care/pet-toothpaste-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/pet-toothpaste-action-object-icon.png",
     "category": "pet-care",
     "description": "친구의 이를 깨끗하게 닦아 줄 때 쓰는 청결 아이템이에요.",
     "symbol": "T",
@@ -315,7 +315,7 @@
   },
   "dental-chew-action-object": {
     "name": "클린 덴탈껌",
-    "imageUrl": "assets/png/objects/care/dental-chew-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/dental-chew-action-object-icon.png",
     "category": "pet-care",
     "description": "친구가 씹으며 입안을 산뜻하게 관리하는 청결 아이템이에요.",
     "symbol": "D",
@@ -328,7 +328,7 @@
   },
   "premium-kibble-action-object": {
     "name": "프리미엄 사료",
-    "imageUrl": "assets/png/objects/care/premium-kibble-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/premium-kibble-action-object-icon.png",
     "category": "pet-care",
     "description": "친구에게 든든한 한 끼를 챙겨 줄 때 쓰는 음식 아이템이에요.",
     "symbol": "K",
@@ -341,7 +341,7 @@
   },
   "treat-biscuit-jar-action-object": {
     "name": "간식 비스킷 병",
-    "imageUrl": "assets/png/objects/care/treat-biscuit-jar-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/treat-biscuit-jar-action-object-icon.png",
     "category": "pet-care",
     "description": "친구에게 달콤한 보상을 줄 때 쓰는 간식 아이템이에요.",
     "symbol": "J",
@@ -354,7 +354,7 @@
   },
   "wet-food-can-action-object": {
     "name": "촉촉한 습식 캔",
-    "imageUrl": "assets/png/objects/care/wet-food-can-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/wet-food-can-action-object-icon.png",
     "category": "pet-care",
     "description": "친구의 배고픔을 맛있게 채워 줄 때 쓰는 음식 아이템이에요.",
     "symbol": "W",
@@ -367,7 +367,7 @@
   },
   "special-meal-plate-action-object": {
     "name": "든든한 특식 접시",
-    "imageUrl": "assets/png/objects/care/special-meal-plate-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/special-meal-plate-action-object-icon.png",
     "category": "pet-care",
     "description": "친구를 위해 정성스럽게 차려 주는 특별한 음식 아이템이에요.",
     "symbol": "M",
@@ -380,7 +380,7 @@
   },
   "bouncy-ball-action-object": {
     "name": "통통 놀이공",
-    "imageUrl": "assets/png/objects/care/bouncy-ball-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/bouncy-ball-action-object-icon.png",
     "category": "pet-care",
     "description": "친구와 데굴데굴 신나게 놀아 줄 때 쓰는 놀이 아이템이에요.",
     "symbol": "B",
@@ -393,7 +393,7 @@
   },
   "plush-chick-action-object": {
     "name": "병아리 인형",
-    "imageUrl": "assets/png/objects/care/plush-chick-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/plush-chick-action-object-icon.png",
     "category": "pet-care",
     "description": "친구가 포근하게 안고 놀 수 있는 놀이 아이템이에요.",
     "symbol": "P",
@@ -406,7 +406,7 @@
   },
   "feather-wand-action-object": {
     "name": "깃털 낚싯대",
-    "imageUrl": "assets/png/objects/care/feather-wand-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/feather-wand-action-object-icon.png",
     "category": "pet-care",
     "description": "친구의 호기심을 살랑살랑 깨워 주는 놀이 아이템이에요.",
     "symbol": "W",
@@ -419,7 +419,7 @@
   },
   "rope-toy-action-object": {
     "name": "꼬임 로프 장난감",
-    "imageUrl": "assets/png/objects/care/rope-toy-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/rope-toy-action-object-icon.png",
     "category": "pet-care",
     "description": "친구와 잡아당기며 힘차게 놀 수 있는 놀이 아이템이에요.",
     "symbol": "R",
@@ -432,7 +432,7 @@
   },
   "play-tunnel-action-object": {
     "name": "놀이 터널",
-    "imageUrl": "assets/png/objects/care/play-tunnel-action-object-icon.png",
+    "imageUrl": "assets/images/inventory/care/play-tunnel-action-object-icon.png",
     "category": "pet-care",
     "description": "친구가 쏙 들어가 탐험하며 놀 수 있는 놀이 아이템이에요.",
     "symbol": "T",
@@ -445,7 +445,7 @@
   },
   "feed-action-object": {
     "name": "든든한 밥그릇",
-    "imageUrl": "assets/ui/action/feed-action-object-icon.png",
+    "imageUrl": "assets/images/icons/actions/feed-action-object-icon.png",
     "category": "pet-care",
     "description": "친구에게 맛있는 한 끼를 챙겨 줄 때 쓰는 액션 아이템이에요.",
     "symbol": "F",
@@ -458,7 +458,7 @@
   },
   "play-action-object": {
     "name": "놀이 공",
-    "imageUrl": "assets/ui/action/play-action-object-icon.png",
+    "imageUrl": "assets/images/icons/actions/play-action-object-icon.png",
     "category": "pet-care",
     "description": "친구와 신나게 놀아 줄 때 쓰는 액션 아이템이에요.",
     "symbol": "P",
@@ -471,7 +471,7 @@
   },
   "animal-rescue-snack": {
     "name": "보호소 간식",
-    "imageUrl": "assets/event/items/animal-rescue-snack.png",
+    "imageUrl": "assets/images/events/items/animal-rescue-snack.png",
     "category": "pet-care",
     "description": "동물보호협회에서 보내준 마음이 담긴 간식이에요.",
     "symbol": "S",
@@ -485,7 +485,7 @@
   },
   "animal-rescue-fabric": {
     "name": "포근한 천 조각",
-    "imageUrl": "assets/event/items/animal-rescue-fabric.png",
+    "imageUrl": "assets/images/events/items/animal-rescue-fabric.png",
     "category": "material",
     "description": "방 꾸미기 제작에 쓸 수 있는 포근한 천 조각이에요.",
     "symbol": "F",
@@ -499,7 +499,7 @@
   },
   "animal-rescue-paw-charm": {
     "name": "발자국 참",
-    "imageUrl": "assets/event/items/animal-rescue-paw-charm.png",
+    "imageUrl": "assets/images/events/items/animal-rescue-paw-charm.png",
     "category": "decor",
     "description": "작은 발자국 모양의 장식품이에요.",
     "symbol": "P",

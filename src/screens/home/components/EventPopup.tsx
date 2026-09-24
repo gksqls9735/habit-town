@@ -14,10 +14,10 @@ import {
 import { PopupCloseButton } from '../../../components/common/PopupCloseButton';
 import { useI18n } from '../../../features/i18n';
 
-const septemberAttendanceEventBannerImage = require('../../../../assets/ui/event/attendance-banners/september-attendance-event.png');
-const octoberAttendanceEventBannerImage = require('../../../../assets/ui/event/attendance-banners/october-attendance-event.png');
-const novemberAttendanceEventBannerImage = require('../../../../assets/ui/event/attendance-banners/november-attendance-event.png');
-const decemberAttendanceEventBannerImage = require('../../../../assets/ui/event/attendance-banners/december-attendance-event.png');
+const septemberAttendanceEventBannerImage = require('../../../../assets/images/events/attendance/september-attendance-event.png');
+const octoberAttendanceEventBannerImage = require('../../../../assets/images/events/attendance/october-attendance-event.png');
+const novemberAttendanceEventBannerImage = require('../../../../assets/images/events/attendance/november-attendance-event.png');
+const decemberAttendanceEventBannerImage = require('../../../../assets/images/events/attendance/december-attendance-event.png');
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'

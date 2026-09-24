@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import { useI18n } from '../../../features/i18n';
 
-const deliveryTruckImage = require('../../../../assets/event/animal-rescue-reward-truck.png');
-const deliveryParcelImage = require('../../../../assets/event/animal-rescue-reward-gift-box.png');
+const deliveryTruckImage = require('../../../../assets/images/rewards/animal-rescue-reward-truck.png');
+const deliveryParcelImage = require('../../../../assets/images/rewards/animal-rescue-reward-gift-box.png');
 const pixelatedImageStyle =
   Platform.OS === 'web'
     ? ({ imageRendering: 'pixelated' } as unknown as ImageStyle)

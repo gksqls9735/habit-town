@@ -91,8 +91,8 @@ import { leftActions, pets, rightActions } from './homeData';
 import { clamp, isLocalhostDevWeb } from './homeUtils';
 import { GrowthStage, PetDefinition, RailAction, RailMetrics } from './types';
 
-const roomWallpaperImage = require('../../../assets/png/backgrounds/basic-room-wallpaper.png');
-const roomFloorImage = require('../../../assets/png/backgrounds/basic-room-floor.png');
+const roomWallpaperImage = require('../../../assets/images/rooms/wallpapers/basic-room-wallpaper.png');
+const roomFloorImage = require('../../../assets/images/rooms/flooring/basic-room-floor.png');
 const pixelFontFamily = 'Galmuri11';
 const localDevCurrencyGrantAmount = 1000;
 const localDevExperienceGrantAmount = 10;
@@ -351,14 +351,14 @@ export function HomeScreen() {
     }),
     {
       id: 'petRoom',
-      image: require('../../../assets/ui/pet-room-button-simple.png'),
+      image: require('../../../assets/images/icons/navigation/pet-room-button-simple.png'),
       label: t('home.action.petRoom'),
       onPress: () => setIsPetRoomOpen(true),
       symbol: 'R',
     },
     {
       id: 'event',
-      image: require('../../../assets/ui/event-button.png'),
+      image: require('../../../assets/images/icons/navigation/event-button.png'),
       label: t('home.action.event'),
       onPress: () => setIsEventOpen(true),
       symbol: 'E',
@@ -1217,7 +1217,7 @@ export function HomeScreen() {
                     <Image
                       accessibilityIgnoresInvertColors
                       resizeMode="contain"
-                      source={require('../../../assets/ui/return-to-bag-icon.png')}
+                      source={require('../../../assets/images/icons/navigation/return-to-bag-icon.png')}
                       style={styles.returnToBagIcon}
                     />
                   </Pressable>

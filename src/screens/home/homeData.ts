@@ -3,33 +3,33 @@ import { PetDefinition, RailAction } from './types';
 export const leftActions: RailAction[] = [
   {
     id: 'todayTasks',
-    image: require('../../../assets/ui/today-tasks-button-simple.png'),
+    image: require('../../../assets/images/icons/navigation/today-tasks-button-simple.png'),
     label: 'Today',
     symbol: '!',
   },
   {
     id: 'yearlyGoal',
-    image: require('../../../assets/ui/yearly-goals-button-simple.png'),
+    image: require('../../../assets/images/icons/navigation/yearly-goals-button-simple.png'),
     label: 'Goal',
     symbol: 'Y',
   },
   {
     id: 'calendar',
-    image: require('../../../assets/ui/calendar-button-simple.png'),
+    image: require('../../../assets/images/icons/navigation/calendar-button-simple.png'),
     label: 'Calendar',
     symbol: 'C',
   },
   {
     id: 'shop',
-    image: require('../../../assets/ui/shop-button-simple.png'),
+    image: require('../../../assets/images/icons/navigation/shop-button-simple.png'),
     label: 'Shop',
     symbol: '$',
   },
 ];
 
 export const rightActions: RailAction[] = [
-  { id: 'gift', image: require('../../../assets/ui/reward-button-simple.png'), label: 'Gift', symbol: 'G' },
-  { id: 'inventory', image: require('../../../assets/ui/inventory-button-simple.png'), label: 'Bag', symbol: 'I' },
+  { id: 'gift', image: require('../../../assets/images/icons/navigation/reward-button-simple.png'), label: 'Gift', symbol: 'G' },
+  { id: 'inventory', image: require('../../../assets/images/icons/navigation/inventory-button-simple.png'), label: 'Bag', symbol: 'I' },
 ];
 
 export const pets: PetDefinition[] = [
