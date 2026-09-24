@@ -67,7 +67,7 @@
   },
   "pet-food-bowl": {
     "name": "밥그릇",
-    "imageUrl": "assets/png/objects/pet-food-bowl.png",
+    "imageUrl": "assets/png/objects/pet-food-bowl-v2.png",
     "category": "pet-care",
     "description": "친구의 맛있는 한 끼를 담는 그릇이에요.",
     "symbol": "F",
@@ -78,7 +78,7 @@
   },
   "wall-clock": {
     "name": "벽시계",
-    "imageUrl": "assets/png/objects/wall-clock.png",
+    "imageUrl": "assets/png/objects/wall-clock-v2.png",
     "category": "decor",
     "description": "빈 벽에 귀여운 포인트를 더해 줘요.",
     "symbol": "W",

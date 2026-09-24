@@ -152,23 +152,11 @@ function getCareUsableItems(
   });
 }
 
-function constrainDecorCoordinates(itemId: string, x: number, y: number) {
-  const { placementBounds } = getDecorPresentation(itemId);
-
+function constrainDecorCoordinates(x: number, y: number) {
   return {
-    x: clamp(x, placementBounds.minX, placementBounds.maxX),
-    y: clamp(y, placementBounds.minY, placementBounds.maxY),
+    x: clamp(x, 0.05, 0.95),
+    y: clamp(y, 0.08, 0.94),
   };
-}
-
-function isDecorCoordinateWithinBounds(itemId: string, x: number, y: number) {
-  const presentation = getDecorPresentation(itemId);
-  const bounds = presentation.dropBounds ?? presentation.placementBounds;
-
-  return x >= bounds.minX
-    && x <= bounds.maxX
-    && y >= bounds.minY
-    && y <= bounds.maxY;
 }
 
 export function HomeScreen() {
@@ -444,7 +432,7 @@ export function HomeScreen() {
         placements
           .map((placement) => {
             const item = items.find((candidate) => candidate.id === placement.itemId);
-            const coordinates = constrainDecorCoordinates(placement.itemId, placement.x, placement.y);
+            const coordinates = constrainDecorCoordinates(placement.x, placement.y);
 
             return item ? [item.id, { item, ...coordinates }] : null;
           })
@@ -822,7 +810,7 @@ export function HomeScreen() {
     const existingPlacement = placedDecorItems[item.id];
     const presentation = getDecorPresentation(item.id);
     const normalizedExistingPlacement = existingPlacement
-      ? { ...existingPlacement, ...constrainDecorCoordinates(item.id, existingPlacement.x, existingPlacement.y) }
+      ? { ...existingPlacement, ...constrainDecorCoordinates(existingPlacement.x, existingPlacement.y) }
       : null;
 
     setPlacementError('');
@@ -841,7 +829,7 @@ export function HomeScreen() {
   const beginPlacedDecorEdit = (item: InventoryItem) => {
     const existingPlacement = placedDecorItems[item.id];
     const normalizedExistingPlacement = existingPlacement
-      ? { ...existingPlacement, ...constrainDecorCoordinates(item.id, existingPlacement.x, existingPlacement.y) }
+      ? { ...existingPlacement, ...constrainDecorCoordinates(existingPlacement.x, existingPlacement.y) }
       : null;
 
     setPlacementError('');
@@ -869,7 +857,6 @@ export function HomeScreen() {
     const { locationX, locationY } = event.nativeEvent;
 
     return constrainDecorCoordinates(
-      item.id,
       locationX / Math.max(roomLayout.width || width, 1),
       locationY / Math.max(roomLayout.height || height, 1),
     );
@@ -897,7 +884,7 @@ export function HomeScreen() {
     y: number,
     shouldConstrain = true,
   ) => {
-    const coordinates = shouldConstrain ? constrainDecorCoordinates(item.id, x, y) : { x, y };
+    const coordinates = shouldConstrain ? constrainDecorCoordinates(x, y) : { x, y };
     const placement = {
       item,
       ...coordinates,
@@ -913,26 +900,7 @@ export function HomeScreen() {
     const requestedPlacement = pendingPlacementRef.current?.itemId === item.id
       ? pendingPlacementRef.current
       : { itemId: item.id, x, y };
-    const originalPlacement = placementOriginalItemRef.current;
-
-    if (
-      originalPlacement?.item.id === item.id
-      && !isDecorCoordinateWithinBounds(item.id, requestedPlacement.x, requestedPlacement.y)
-    ) {
-      setPlacedDecorItems((current) => ({
-        ...current,
-        [item.id]: originalPlacement,
-      }));
-      pendingPlacementRef.current = null;
-      pendingPagePointRef.current = null;
-      activePlacementItemIdRef.current = null;
-      placementOriginalItemRef.current = null;
-      setIsRepositioningPlacedItem(false);
-      setPlacementItem(null);
-      return;
-    }
-
-    const coordinates = constrainDecorCoordinates(item.id, requestedPlacement.x, requestedPlacement.y);
+    const coordinates = constrainDecorCoordinates(requestedPlacement.x, requestedPlacement.y);
     const pendingPlacement = { itemId: item.id, ...coordinates };
     updateDecorPlacementPreview(item, pendingPlacement.x, pendingPlacement.y);
     void saveDecorPlacement({
@@ -976,22 +944,6 @@ export function HomeScreen() {
     const { x, y } = getPlacementCoordinates(event, placementItem);
     saveDecorPlacementAndClose(placementItem, x, y);
   };
-  const restoreDecorPlacementAndClose = (item: InventoryItem) => {
-    const originalPlacement = placementOriginalItemRef.current;
-
-    if (originalPlacement?.item.id === item.id) {
-      setPlacedDecorItems((current) => ({
-        ...current,
-        [item.id]: originalPlacement,
-      }));
-    }
-    pendingPlacementRef.current = null;
-    pendingPagePointRef.current = null;
-    activePlacementItemIdRef.current = null;
-    placementOriginalItemRef.current = null;
-    setIsRepositioningPlacedItem(false);
-    setPlacementItem(null);
-  };
   const movePlacedDecorFromPagePoint = (item: InventoryItem, pageX: number, pageY: number) => {
     pendingPagePointRef.current = { x: pageX, y: pageY };
     const { x, y } = getUnconstrainedPlacementCoordinatesFromPage(pageX, pageY);
@@ -1006,13 +958,6 @@ export function HomeScreen() {
     }
 
     const { x, y } = getUnconstrainedPlacementCoordinatesFromPage(pageX, pageY);
-    const isMovingExistingItem = placementOriginalItemRef.current?.item.id === item.id;
-
-    if (isMovingExistingItem && !isDecorCoordinateWithinBounds(item.id, x, y)) {
-      restoreDecorPlacementAndClose(item);
-      return;
-    }
-
     saveDecorPlacementAndClose(item, x, y);
   };
   const finishPlacedDecorDrag = (item: InventoryItem, pageX: number, pageY: number, didMove: boolean) => {
@@ -1465,7 +1410,8 @@ function PlacedDecorObject({
   const height = Math.round(presentation.height * roomScale);
   const width = Math.round(presentation.width * roomScale);
   const decorBaselineY = y * roomHeight + height * 0.42;
-  const zIndex = item.id === 'toy-storage-basket'
+  const keepsFloorLayer = item.id === 'pet-cushion' || item.id === 'pet-rug';
+  const zIndex = !keepsFloorLayer
     && roomHeight > 0
     && decorBaselineY > petBaselineY + 4
     ? 4
