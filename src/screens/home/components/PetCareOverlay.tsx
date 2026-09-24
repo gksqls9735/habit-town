@@ -1,4 +1,4 @@
-import { Image, ImageBackground, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageStyle, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 import {
@@ -27,7 +27,6 @@ type CareMeterView = {
 };
 
 type CareActionView = {
-  bubbleImage: ImageSourcePropType;
   color: string;
   icon: ImageSourcePropType;
   key: CareMeterKey;
@@ -41,32 +40,24 @@ const previewNeeds: CareMeterView[] = [
 const actions: CareActionView[] = [
   {
     key: 'cleanliness',
-    bubbleImage: require('../../../../assets/ui/action/clean-action-bubble.png'),
     color: '#d9ebea',
     icon: cleanBrushIcon,
   },
   {
     key: 'hunger',
-    bubbleImage: require('../../../../assets/ui/action/feed-action-bubble.png'),
     color: '#f6e3bb',
     icon: feedBowlFullIcon,
   },
   {
     key: 'loneliness',
-    bubbleImage: require('../../../../assets/ui/action/play-action-bubble.png'),
     color: '#f3ded0',
     icon: playBallIcon,
   },
 ];
 const bubbleActionPositions: ViewStyle[] = [
-  { left: -52, top: 8 },
-  { left: 26, top: -48 },
-  { right: -52, top: 8 },
-];
-const bubbleIconPositions: ImageStyle[] = [
-  { marginLeft: -4, marginTop: -4 },
-  { marginLeft: -2, marginTop: -6 },
-  { marginLeft: 4, marginTop: -4 },
+  { left: 0, top: 18 },
+  { left: 64, top: 1 },
+  { right: 0, top: 18 },
 ];
 const growthRingSegments = 32;
 const pixelStyle = Platform.OS === 'web'
@@ -191,9 +182,11 @@ export function PetCareActions({
 
 /** Pet-side bubble actions open the matching care item flow. */
 export function PetCareBubbleActions({
+  horizontalOffset = 0,
   onCareAction,
   visible,
 }: {
+  horizontalOffset?: number;
   onCareAction: (meter: CareMeterKey) => void;
   visible: boolean;
 }) {
@@ -204,7 +197,10 @@ export function PetCareBubbleActions({
   }
 
   return (
-    <View pointerEvents="box-none" style={styles.bubbleMenu}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.bubbleMenu, { transform: [{ translateX: horizontalOffset }] }]}
+    >
       {actions.map((action, index) => {
         const label = t(`care.action.${action.key}`);
 
@@ -214,24 +210,20 @@ export function PetCareBubbleActions({
             accessibilityRole="button"
             key={action.key}
             onPress={() => onCareAction(action.key)}
-            style={[
+            style={({ pressed }) => [
               styles.bubbleAction,
               bubbleActionPositions[index],
+              { backgroundColor: action.color },
+              pressed && styles.bubbleActionPressed,
             ]}
           >
-            <ImageBackground
+            <Image
               accessibilityIgnoresInvertColors
+              source={action.icon}
+              accessibilityLabel={label}
               resizeMode="contain"
-              source={action.bubbleImage}
-              style={styles.bubbleImage}
-            >
-              <Image
-                source={action.icon}
-                accessibilityLabel={label}
-                resizeMode="contain"
-                style={[styles.bubbleActionIcon, bubbleIconPositions[index]]}
-              />
-            </ImageBackground>
+              style={styles.bubbleActionIcon}
+            />
           </Pressable>
         );
       })}
@@ -268,21 +260,29 @@ const styles = StyleSheet.create({
   actionLabel: { fontFamily, fontSize: 11, color: '#49372a' },
   bubbleAction: {
     alignItems: 'center',
-    height: 78,
+    borderColor: '#6f4a36',
+    borderRadius: 28,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    height: 56,
     justifyContent: 'center',
     position: 'absolute',
-    width: 92,
+    width: 56,
     zIndex: 21,
   },
-  bubbleActionIcon: { height: 34, width: 40 },
-  bubbleImage: { alignItems: 'center', height: '100%', justifyContent: 'center', width: '100%' },
+  bubbleActionIcon: { height: 38, width: 42 },
+  bubbleActionPressed: {
+    borderColor: '#9b5545',
+    borderBottomWidth: 2,
+    transform: [{ translateY: 1 }, { scale: 0.96 }],
+  },
   bubbleMenu: {
-    height: 146,
+    height: 76,
     left: '50%',
-    marginLeft: -73,
+    marginLeft: -92,
     position: 'absolute',
-    top: -68,
-    width: 146,
+    top: -82,
+    width: 184,
     zIndex: 20,
   },
 });

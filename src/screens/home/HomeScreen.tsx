@@ -196,6 +196,7 @@ export function HomeScreen() {
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [activeCareMeter, setActiveCareMeter] = useState<CareMeterKey | null>(null);
   const [isPetCareMenuOpen, setIsPetCareMenuOpen] = useState(false);
+  const [petHorizontalOffset, setPetHorizontalOffset] = useState(0);
   const [careUsableItems, setCareUsableItems] = useState<CareUsableItem[]>([]);
   const [careItemError, setCareItemError] = useState('');
   const [isUsingCareItem, setIsUsingCareItem] = useState(false);
@@ -1170,12 +1171,19 @@ export function HomeScreen() {
             ) : null}
             <View pointerEvents="box-none" style={[styles.characterStage, { bottom: characterBottom }]}>
               <PetCareBubbleActions
+                horizontalOffset={clamp(
+                  petHorizontalOffset,
+                  -Math.max(0, roomLayout.width / 2 - 100),
+                  Math.max(0, roomLayout.width / 2 - 100),
+                )}
                 onCareAction={selectPetCareAction}
                 visible={isPetCareMenuOpen}
               />
               <StaticPet
                 animationActionTrigger={petAnimationActionTrigger}
                 dozeZone={cushionDozeZone}
+                movementPaused={isPetCareMenuOpen}
+                onHorizontalOffsetChange={setPetHorizontalOffset}
                 onPress={() => setIsPetCareMenuOpen((current) => !current)}
                 pet={activePet}
                 petName={activePetDisplayName}

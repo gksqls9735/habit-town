@@ -35,6 +35,8 @@ type StaticPetProps = {
     centerX: number;
     radius: number;
   };
+  movementPaused?: boolean;
+  onHorizontalOffsetChange?: (offset: number) => void;
   onPress?: () => void;
   pet: PetDefinition;
   petName: string;
@@ -45,6 +47,8 @@ type StaticPetProps = {
 export function StaticPet({
   animationActionTrigger,
   dozeZone,
+  movementPaused = false,
+  onHorizontalOffsetChange,
   onPress,
   pet,
   petName,
@@ -193,7 +197,7 @@ export function StaticPet({
       return;
     }
 
-    if (animationActionTrigger.action === 'walk' && shouldUseWalkAnimation) {
+    if (animationActionTrigger.action === 'walk' && shouldUseWalkAnimation && !movementPaused) {
       setIsDozing(false);
       setDozeFrameIndex(0);
       setIsWalking(true);
@@ -208,12 +212,13 @@ export function StaticPet({
     }
   }, [
     animationActionTrigger,
+    movementPaused,
     shouldUseDozeAnimation,
     shouldUseWalkAnimation,
   ]);
 
   useEffect(() => {
-    if (!shouldUseWalkAnimation) {
+    if (!shouldUseWalkAnimation || movementPaused) {
       return;
     }
 
@@ -231,7 +236,14 @@ export function StaticPet({
     }, isWalking ? hamsterBabyWalkBurstDurationMs : hamsterBabyWalkRestDurationMs);
 
     return () => clearTimeout(timeoutId);
-  }, [isDozing, isWalking, shouldUseWalkAnimation]);
+  }, [isDozing, isWalking, movementPaused, shouldUseWalkAnimation]);
+
+  useEffect(() => {
+    if (movementPaused && isWalking) {
+      setIsWalking(false);
+      setWalkFrameIndex(0);
+    }
+  }, [isWalking, movementPaused]);
 
   useEffect(() => {
     if (!shouldUseDozeAnimation || !isDozing) {
@@ -263,7 +275,7 @@ export function StaticPet({
   }, [isDozing, shouldUseDozeAnimation]);
 
   useEffect(() => {
-    if (!shouldUseWalkAnimation || !isWalking) {
+    if (!shouldUseWalkAnimation || !isWalking || movementPaused) {
       return;
     }
 
@@ -304,18 +316,17 @@ export function StaticPet({
     }, hamsterBabyWalkMoveDurationMs);
 
     return () => clearInterval(intervalId);
-  }, [dozeZone, isWalking, shouldUseDozeAnimation, shouldUseWalkAnimation, walkDirection, walkRange, walkStep]);
+  }, [dozeZone, isWalking, movementPaused, shouldUseDozeAnimation, shouldUseWalkAnimation, walkDirection, walkRange, walkStep]);
+
+  useEffect(() => {
+    onHorizontalOffsetChange?.(walkOffsetX);
+  }, [onHorizontalOffsetChange, walkOffsetX]);
 
   useEffect(() => {
     isInsideDozeZoneRef.current = false;
   }, [dozeZone?.centerX, dozeZone?.radius]);
 
   const handlePress = () => {
-    if (isDozing) {
-      setIsDozing(false);
-      setDozeFrameIndex(0);
-    }
-
     onPress?.();
   };
 
