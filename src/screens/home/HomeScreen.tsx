@@ -1618,11 +1618,11 @@ function DecorActionMenu({
   const { t } = useI18n();
   const presentation = getDecorPresentation(placedItem.item.id);
   const height = Math.round(presentation.height * roomScale);
-  const menuWidth = 72;
+  const menuWidth = 84;
   const itemCenterX = placedItem.x * roomWidth;
   const itemTop = placedItem.y * roomHeight - height / 2;
   const left = clamp(itemCenterX - menuWidth / 2, 8, Math.max(8, roomWidth - menuWidth - 8));
-  const top = Math.max(8, itemTop - 22);
+  const top = Math.max(8, itemTop - 28);
 
   return (
     <View
@@ -1644,7 +1644,7 @@ function DecorActionMenu({
           pressed && styles.decorActionButtonPressed,
         ]}
       >
-        <Text style={styles.decorActionIcon}>⇧</Text>
+        <LayerOrderIcon activeLayer="front" />
       </Pressable>
       <Pressable
         accessibilityLabel={t('home.decorSendBackward')}
@@ -1656,8 +1656,29 @@ function DecorActionMenu({
           pressed && styles.decorActionButtonPressed,
         ]}
       >
-        <Text style={styles.decorActionIcon}>⇩</Text>
+        <LayerOrderIcon activeLayer="back" />
       </Pressable>
+    </View>
+  );
+}
+
+function LayerOrderIcon({ activeLayer }: { activeLayer: 'back' | 'front' }) {
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.layerOrderIcon}>
+      <View
+        style={[
+          styles.layerOrderTile,
+          styles.layerOrderTileBack,
+          activeLayer === 'back' && styles.layerOrderTileBackActive,
+        ]}
+      />
+      <View
+        style={[
+          styles.layerOrderTile,
+          styles.layerOrderTileFront,
+          activeLayer === 'front' && styles.layerOrderTileFrontActive,
+        ]}
+      />
     </View>
   );
 }
@@ -1801,32 +1822,59 @@ const styles = StyleSheet.create({
   },
   decorActionButton: {
     alignItems: 'center',
-    backgroundColor: '#fff8ea',
-    borderColor: '#6f4a36',
-    borderRadius: 17,
+    backgroundColor: '#fff4d8',
+    borderColor: '#74462f',
+    borderRadius: 7,
     borderWidth: 2,
-    height: 34,
+    height: 40,
     justifyContent: 'center',
-    width: 34,
+    shadowColor: '#8f593b',
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    width: 40,
   },
   decorActionButtonPressed: {
-    backgroundColor: '#f4dfbe',
+    backgroundColor: '#f4dfb8',
+    shadowOffset: { height: 1, width: 0 },
     transform: [{ translateY: 1 }],
-  },
-  decorActionIcon: {
-    color: '#6f4a36',
-    fontFamily: pixelFontFamily,
-    fontSize: 19,
-    fontWeight: '900',
-    lineHeight: 22,
   },
   decorActionMenu: {
     flexDirection: 'row',
     gap: 4,
-    height: 34,
+    height: 42,
     position: 'absolute',
-    width: 72,
+    width: 84,
     zIndex: 300,
+  },
+  layerOrderIcon: {
+    height: 25,
+    position: 'relative',
+    width: 27,
+  },
+  layerOrderTile: {
+    borderColor: '#74462f',
+    borderRadius: 2,
+    borderWidth: 2,
+    height: 15,
+    position: 'absolute',
+    width: 17,
+  },
+  layerOrderTileBack: {
+    backgroundColor: '#fff9e9',
+    left: 1,
+    top: 1,
+  },
+  layerOrderTileBackActive: {
+    backgroundColor: '#9eb78d',
+  },
+  layerOrderTileFront: {
+    backgroundColor: '#fff9e9',
+    bottom: 1,
+    right: 1,
+  },
+  layerOrderTileFrontActive: {
+    backgroundColor: '#ed8979',
   },
   deliveryCountdownBadge: {
     alignItems: 'center',
