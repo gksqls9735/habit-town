@@ -113,6 +113,7 @@ type PetAnimationActionTrigger = {
 
 type PlacedDecorItem = {
   item: InventoryItem;
+  layerOrder: number;
   x: number;
   y: number;
 };
@@ -428,16 +429,26 @@ export function HomeScreen() {
           ? getItemImage(equippedWallpaper.id) ?? roomWallpaperImage
           : roomWallpaperImage,
       });
+      const normalizedPlacements = placements
+        .sort((a, b) => a.layerOrder - b.layerOrder)
+        .map((placement, layerOrder) => ({ ...placement, layerOrder }));
+
       setPlacedDecorItems(Object.fromEntries(
-        placements
+        normalizedPlacements
           .map((placement) => {
             const item = items.find((candidate) => candidate.id === placement.itemId);
             const coordinates = constrainDecorCoordinates(placement.x, placement.y);
 
-            return item ? [item.id, { item, ...coordinates }] : null;
+            return item ? [item.id, { item, layerOrder: placement.layerOrder, ...coordinates }] : null;
           })
           .filter((entry): entry is [string, PlacedDecorItem] => entry !== null),
       ));
+      const changedLayerPlacements = normalizedPlacements.filter(
+        (placement, index) => placement.layerOrder !== placements[index]?.layerOrder,
+      );
+      if (changedLayerPlacements.length > 0) {
+        void Promise.all(changedLayerPlacements.map(saveDecorPlacement));
+      }
     });
   }, []);
   useEffect(() => {
@@ -885,16 +896,18 @@ export function HomeScreen() {
     shouldConstrain = true,
   ) => {
     const coordinates = shouldConstrain ? constrainDecorCoordinates(x, y) : { x, y };
-    const placement = {
-      item,
-      ...coordinates,
-    };
-
     pendingPlacementRef.current = { itemId: item.id, ...coordinates };
-    setPlacedDecorItems((current) => ({
-      ...current,
-      [item.id]: placement,
-    }));
+    setPlacedDecorItems((current) => {
+      const layerOrder = current[item.id]?.layerOrder
+        ?? Object.values(current).reduce((highest, placedItem) => (
+          Math.max(highest, placedItem.layerOrder)
+        ), -1) + 1;
+
+      return {
+        ...current,
+        [item.id]: { item, layerOrder, ...coordinates },
+      };
+    });
   };
   const saveDecorPlacementAndClose = (item: InventoryItem, x: number, y: number) => {
     const requestedPlacement = pendingPlacementRef.current?.itemId === item.id
@@ -902,9 +915,14 @@ export function HomeScreen() {
       : { itemId: item.id, x, y };
     const coordinates = constrainDecorCoordinates(requestedPlacement.x, requestedPlacement.y);
     const pendingPlacement = { itemId: item.id, ...coordinates };
+    const layerOrder = placedDecorItems[item.id]?.layerOrder
+      ?? Object.values(placedDecorItems).reduce((highest, placedItem) => (
+        Math.max(highest, placedItem.layerOrder)
+      ), -1) + 1;
     updateDecorPlacementPreview(item, pendingPlacement.x, pendingPlacement.y);
     void saveDecorPlacement({
       itemId: item.id,
+      layerOrder,
       x: pendingPlacement.x,
       y: pendingPlacement.y,
     }).catch(() => {
@@ -935,6 +953,65 @@ export function HomeScreen() {
     setSelectedDecorItemId((current) => current === itemId ? null : current);
     void deleteDecorPlacement(itemId).catch(() => {
       setPlacementError(t('home.error.decorReturn'));
+      void refreshRoomBackgroundImages();
+    });
+  };
+  const changeDecorLayerOrder = (itemId: string, direction: 'backward' | 'forward') => {
+    const orderedItems = Object.values(placedDecorItems)
+      .sort((a, b) => a.layerOrder - b.layerOrder);
+    const currentItem = placedDecorItems[itemId];
+
+    if (!currentItem) return;
+
+    const currentPresentation = getDecorPresentation(currentItem.item.id);
+    const currentWidth = currentPresentation.width * roomScale;
+    const currentHeight = currentPresentation.height * roomScale;
+    const currentCenterX = currentItem.x * roomLayout.width;
+    const currentCenterY = currentItem.y * roomLayout.height;
+    const overlappingItems = orderedItems.filter((candidate) => {
+      if (candidate.item.id === itemId || candidate.item.id === 'pet-rug') return false;
+
+      const candidatePresentation = getDecorPresentation(candidate.item.id);
+      const candidateWidth = candidatePresentation.width * roomScale;
+      const candidateHeight = candidatePresentation.height * roomScale;
+      const candidateCenterX = candidate.x * roomLayout.width;
+      const candidateCenterY = candidate.y * roomLayout.height;
+
+      return Math.abs(currentCenterX - candidateCenterX) < (currentWidth + candidateWidth) / 2
+        && Math.abs(currentCenterY - candidateCenterY) < (currentHeight + candidateHeight) / 2;
+    });
+    const targetItem = direction === 'forward'
+      ? overlappingItems.find((candidate) => candidate.layerOrder > currentItem.layerOrder)
+      : overlappingItems
+        .slice()
+        .reverse()
+        .find((candidate) => candidate.layerOrder < currentItem.layerOrder);
+
+    if (!targetItem) return;
+
+    const nextCurrentItem = { ...currentItem, layerOrder: targetItem.layerOrder };
+    const nextTargetItem = { ...targetItem, layerOrder: currentItem.layerOrder };
+
+    setPlacedDecorItems((current) => ({
+      ...current,
+      [currentItem.item.id]: nextCurrentItem,
+      [targetItem.item.id]: nextTargetItem,
+    }));
+    void Promise.all([
+      saveDecorPlacement({
+        itemId: nextCurrentItem.item.id,
+        layerOrder: nextCurrentItem.layerOrder,
+        x: nextCurrentItem.x,
+        y: nextCurrentItem.y,
+      }),
+      saveDecorPlacement({
+        itemId: nextTargetItem.item.id,
+        layerOrder: nextTargetItem.layerOrder,
+        x: nextTargetItem.x,
+        y: nextTargetItem.y,
+      }),
+    ]).catch(() => {
+      setPlacementError(t('home.error.decorSave'));
       void refreshRoomBackgroundImages();
     });
   };
@@ -1061,7 +1138,9 @@ export function HomeScreen() {
               source={roomBackgroundImages.floor}
               style={styles.roomFloorImage}
             />
-            {Object.values(placedDecorItems).map((placedItem) => (
+            {Object.values(placedDecorItems)
+              .sort((a, b) => a.layerOrder - b.layerOrder)
+              .map((placedItem) => (
               <PlacedDecorObject
                 item={placedItem.item}
                 key={placedItem.item.id}
@@ -1072,14 +1151,17 @@ export function HomeScreen() {
                   current === item.id ? null : item.id
                 ))}
                 petBaselineY={roomLayout.height - characterBottom}
+                layerOrder={placedItem.layerOrder}
                 roomHeight={roomLayout.height}
                 roomScale={roomScale}
                 x={placedItem.x}
                 y={placedItem.y}
               />
-            ))}
+              ))}
             {selectedDecorItemId && placedDecorItems[selectedDecorItemId] ? (
               <DecorActionMenu
+                onBringForward={() => changeDecorLayerOrder(selectedDecorItemId, 'forward')}
+                onSendBackward={() => changeDecorLayerOrder(selectedDecorItemId, 'backward')}
                 placedItem={placedDecorItems[selectedDecorItemId]}
                 roomHeight={roomLayout.height}
                 roomWidth={roomLayout.width}
@@ -1387,6 +1469,7 @@ function PlacedDecorObject({
   onLongPress,
   onPress,
   petBaselineY,
+  layerOrder,
   roomHeight,
   roomScale,
   x,
@@ -1398,6 +1481,7 @@ function PlacedDecorObject({
   onLongPress: (item: InventoryItem) => void;
   onPress: (item: InventoryItem) => void;
   petBaselineY: number;
+  layerOrder: number;
   roomHeight: number;
   roomScale: number;
   x: number;
@@ -1411,11 +1495,12 @@ function PlacedDecorObject({
   const width = Math.round(presentation.width * roomScale);
   const decorBaselineY = y * roomHeight + height * 0.42;
   const keepsFloorLayer = item.id === 'pet-cushion' || item.id === 'pet-rug';
-  const zIndex = !keepsFloorLayer
+  const isInFrontOfPet = !keepsFloorLayer
     && roomHeight > 0
-    && decorBaselineY > petBaselineY + 4
-    ? 4
-    : presentation.zIndex;
+    && decorBaselineY > petBaselineY + 4;
+  const zIndex = item.id === 'pet-rug'
+    ? 0
+    : (isInFrontOfPet ? 200 : 10) + layerOrder;
   const dragEnabledRef = useRef(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPointRef = useRef({ x: 0, y: 0 });
@@ -1516,11 +1601,15 @@ function PlacedDecorObject({
 }
 
 function DecorActionMenu({
+  onBringForward,
+  onSendBackward,
   placedItem,
   roomHeight,
   roomWidth,
   roomScale,
 }: {
+  onBringForward: () => void;
+  onSendBackward: () => void;
   placedItem: PlacedDecorItem;
   roomHeight: number;
   roomWidth: number;
@@ -1549,7 +1638,7 @@ function DecorActionMenu({
         accessibilityLabel={t('home.decorBringForward')}
         accessibilityRole="button"
         hitSlop={5}
-        onPress={() => undefined}
+        onPress={onBringForward}
         style={({ pressed }) => [
           styles.decorActionButton,
           pressed && styles.decorActionButtonPressed,
@@ -1561,7 +1650,7 @@ function DecorActionMenu({
         accessibilityLabel={t('home.decorSendBackward')}
         accessibilityRole="button"
         hitSlop={5}
-        onPress={() => undefined}
+        onPress={onSendBackward}
         style={({ pressed }) => [
           styles.decorActionButton,
           pressed && styles.decorActionButtonPressed,
@@ -1638,7 +1727,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: 0,
-    zIndex: 30,
+    zIndex: 400,
   },
   placementHitArea: {
     bottom: 0,
@@ -1687,7 +1776,7 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     right: 0,
-    zIndex: 3,
+    zIndex: 100,
   },
   deliveryRewardError: {
     alignSelf: 'center',
@@ -1737,7 +1826,7 @@ const styles = StyleSheet.create({
     height: 34,
     position: 'absolute',
     width: 72,
-    zIndex: 24,
+    zIndex: 300,
   },
   deliveryCountdownBadge: {
     alignItems: 'center',

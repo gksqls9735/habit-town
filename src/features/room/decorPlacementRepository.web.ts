@@ -64,6 +64,7 @@ function writeDecorPlacements(placements: readonly DecorPlacement[]): void {
 function normalizePlacement(placement: DecorPlacement): DecorPlacement {
   return {
     itemId: placement.itemId,
+    layerOrder: normalizeLayerOrder(placement.layerOrder),
     x: clampPlacementCoordinate(placement.x),
     y: clampPlacementCoordinate(placement.y),
   };
@@ -74,10 +75,16 @@ function isDecorPlacement(value: unknown): value is DecorPlacement {
   const placement = value as Record<string, unknown>;
 
   return typeof placement.itemId === 'string'
+    && (placement.layerOrder === undefined
+      || (typeof placement.layerOrder === 'number' && Number.isFinite(placement.layerOrder)))
     && typeof placement.x === 'number'
     && Number.isFinite(placement.x)
     && typeof placement.y === 'number'
     && Number.isFinite(placement.y);
+}
+
+function normalizeLayerOrder(value: number | undefined): number {
+  return Number.isFinite(value) ? Math.max(0, Math.round(value ?? 0)) : 0;
 }
 
 function clonePlacements(placements: readonly DecorPlacement[]): DecorPlacement[] {

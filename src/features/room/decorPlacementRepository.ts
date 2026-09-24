@@ -5,6 +5,7 @@ const databaseName = 'habit-town.db';
 
 type DecorPlacementRow = {
   item_id: string;
+  layer_order: number;
   x: number;
   y: number;
 };
@@ -14,11 +15,12 @@ let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 export async function loadDecorPlacements(): Promise<DecorPlacement[]> {
   const db = await getDecorPlacementDatabase();
   const rows = await db.getAllAsync<DecorPlacementRow>(
-    'SELECT item_id, x, y FROM room_decor_placements ORDER BY updated_at ASC',
+    'SELECT item_id, layer_order, x, y FROM room_decor_placements ORDER BY layer_order ASC, updated_at ASC',
   );
 
   return rows.map((row) => ({
     itemId: row.item_id,
+    layerOrder: normalizeLayerOrder(row.layer_order),
     x: clampPlacementCoordinate(row.x),
     y: clampPlacementCoordinate(row.y),
   }));
@@ -27,13 +29,15 @@ export async function loadDecorPlacements(): Promise<DecorPlacement[]> {
 export async function saveDecorPlacement(placement: DecorPlacement): Promise<void> {
   const db = await getDecorPlacementDatabase();
   await db.runAsync(
-    `INSERT INTO room_decor_placements (item_id, x, y, updated_at)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO room_decor_placements (item_id, layer_order, x, y, updated_at)
+     VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(item_id) DO UPDATE SET
+       layer_order = excluded.layer_order,
        x = excluded.x,
        y = excluded.y,
        updated_at = excluded.updated_at`,
     placement.itemId,
+    normalizeLayerOrder(placement.layerOrder),
     clampPlacementCoordinate(placement.x),
     clampPlacementCoordinate(placement.y),
     Date.now(),
@@ -56,13 +60,25 @@ async function openDecorPlacementDatabase() {
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS room_decor_placements (
       item_id TEXT PRIMARY KEY NOT NULL,
+      layer_order INTEGER NOT NULL DEFAULT 0,
       x REAL NOT NULL,
       y REAL NOT NULL,
       updated_at INTEGER NOT NULL
     );
   `);
 
+  const columns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(room_decor_placements)');
+  if (!columns.some((column) => column.name === 'layer_order')) {
+    await db.execAsync(
+      'ALTER TABLE room_decor_placements ADD COLUMN layer_order INTEGER NOT NULL DEFAULT 0',
+    );
+  }
+
   return db;
+}
+
+function normalizeLayerOrder(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
 }
 
 function clampPlacementCoordinate(value: number): number {
