@@ -15,7 +15,7 @@ import { DeliveryReward } from '../../../features/rewards/eventRewards';
 import { formatCountdown } from '../../../features/rewards/useHourlyDelivery';
 
 const coinIcon = require('../../../../assets/images/rewards/gromi-coin.png');
-const giftIcon = require('../../../../assets/images/icons/navigation/reward-button.png');
+const giftIcon = require('../../../../assets/images/rewards/gift-box-popup-icon.png');
 const pixelFontFamily = 'Galmuri11';
 const pixelatedImageStyle =
   Platform.OS === 'web'
@@ -49,6 +49,9 @@ export function GiftRewardPopup({
   }
 
   const canOpenGiftBox = giftBoxCount > 0 && !reward;
+  const nextGiftCountdown = secondsUntilNext === null
+    ? t('gift.checking')
+    : formatCountdown(secondsUntilNext);
 
   return (
     <View style={styles.popupLayer}>
@@ -99,12 +102,10 @@ export function GiftRewardPopup({
                         ? t('gift.boxReadyDescription')
                         : t('gift.boxEmptyDescription')}
                     </Text>
-                    {giftBoxCount <= 0 && secondsUntilNext !== null ? (
-                      <View style={styles.countdownRow}>
-                        <Text style={styles.countdownLabel}>{t('gift.nextGift')}</Text>
-                        <Text style={styles.countdownValue}>{formatCountdown(secondsUntilNext)}</Text>
-                      </View>
-                    ) : null}
+                    <View style={styles.countdownRow}>
+                      <Text style={styles.countdownLabel}>{t('gift.nextGift')}</Text>
+                      <Text style={styles.countdownValue}>{nextGiftCountdown}</Text>
+                    </View>
                   </View>
                 )}
               </View>
